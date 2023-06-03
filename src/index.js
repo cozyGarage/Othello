@@ -1,8 +1,9 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import OthelloGame from './OthelloGame';
 import registerServiceWorker from './registerServiceWorker';
 import './index.css';
 
-ReactDOM.render(<OthelloGame />, document.getElementById('root'));
+const root = createRoot(document.getElementById("root"));
+root.render(<OthelloGame />);
 registerServiceWorker();

@@ -1,39 +1,76 @@
 .gameInfo {
-    font-size: 36px;
-    padding-left: 80px;
-    padding-right: 80px;
-    font-family: "Verdana";
+  display: grid;
+  align-self: center;
+  align-items: center;
+  grid-template-columns: repeat(8, 60px);
+  grid-template-rows:repeat(2, 60px);
+  gap: 5px;
+  padding-bottom: 10px;
+}
+
+.board {
+  display: inline-flex;
+  flex-direction: column;
+  border: 0 solid black;
+  margin-top: 60px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+  background-color: var(--green);
+}
+
+
+/* .gameInfo {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+} */
+
+.gameInfo .spacer {
+  flex: 1;
+}
+
+@keyframes turn-text-animation {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
   }
-  
-  .board {
-    display: inline-flex;
-    flex-direction: column;
-    border: 0 solid black;
-    margin-top: 80px;
-    border-top-width: 1px;
-    border-left-width: 1px;
+  100% {
+    opacity: 100%;
+    transform: translateX(0);
   }
-  
-  .black {
-    color: black;
-  }
-  
-  .white {
-    color: white;
-  }
-  
-  .gameInfo {
-    display: flex;
-  }
-  
-  .gameInfo .spacer {
-    flex: 1;
-  }
-  
-  .label{
-    margin-right: 16px;
-  }
-  
-  .scoreDelimitter{
-    margin: 0 8px;
-  }
+}
+
+.label{
+  margin-right: 16px;
+  animation: 0.6s ease-in-out turn-text-animation;
+  color: var(--turquoise);
+}
+
+.scoreDelimitter{
+  margin: 0 8px;
+}
+
+.playerInfo {
+  align-self: center;
+  grid-column-start: 1;
+  grid-column-end: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: solid 1px var(--light-gray);
+  background-color: var(--light-gray);
+}
+
+.scoreInfo {
+  align-self: center;
+  grid-column-start: 7;
+  grid-column-end: 9;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: solid 1px var(--light-gray);
+  background-color: var(--light-gray);
+}

@@ -1,24 +1,24 @@
 .Tile {
-    width: 60px;
-    height: 60px;
-    border: 0 solid black;
-    border-bottom-width: 1px;
-    border-right-width: 1px;
-    cursor: pointer;
-  }
-  
-  .B {
-    fill: black;
-  }
-  
-  .W {
-    fill: white;
-  }
-  
-  .P, .E {
-    fill: green;
-  }
-  
-  .P:hover {
-    fill: gray;
-  }
+  width: 60px;
+  height: 60px;
+  border: 0 solid black;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+  cursor: pointer;
+}
+
+.B {
+  fill: var(--black);
+}
+
+.W {
+  fill: var(--white);
+}
+
+.P, .E {
+  fill: var(--green);
+}
+
+.P:hover {
+  fill: var(--turquoise);
+}
