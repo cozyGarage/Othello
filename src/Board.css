@@ -1,0 +1,39 @@
+.gameInfo {
+    font-size: 36px;
+    padding-left: 80px;
+    padding-right: 80px;
+    font-family: "Verdana";
+  }
+  
+  .board {
+    display: inline-flex;
+    flex-direction: column;
+    border: 0 solid black;
+    margin-top: 80px;
+    border-top-width: 1px;
+    border-left-width: 1px;
+  }
+  
+  .black {
+    color: black;
+  }
+  
+  .white {
+    color: white;
+  }
+  
+  .gameInfo {
+    display: flex;
+  }
+  
+  .gameInfo .spacer {
+    flex: 1;
+  }
+  
+  .label{
+    margin-right: 16px;
+  }
+  
+  .scoreDelimitter{
+    margin: 0 8px;
+  }
