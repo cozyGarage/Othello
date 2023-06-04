@@ -16,7 +16,7 @@ const Board = ({board, onPlayerTurn}) => {
       <div className="gameInfo">
         <span className="playerInfo shadow border">
           <span className="label"></span>
-          <span className={player.toLowerCase()}>{player}</span>
+          <span className={player.toLowerCase()}>{player}, You are up</span>
         </span>
         <span className="spacer"/>
         <span className="scoreInfo shawdow border">
