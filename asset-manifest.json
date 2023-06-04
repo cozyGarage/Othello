@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/Othello/static/css/main.7f815d05.css",
+    "main.js": "/Othello/static/js/main.5b3639cf.js",
+    "index.html": "/Othello/index.html",
+    "main.7f815d05.css.map": "/Othello/static/css/main.7f815d05.css.map",
+    "main.5b3639cf.js.map": "/Othello/static/js/main.5b3639cf.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.7f815d05.css",
+    "static/js/main.5b3639cf.js"
+  ]
+}
