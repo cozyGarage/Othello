@@ -26,7 +26,7 @@
   border-top-width: 1px;
   border-left-width: 1px;
   background-color: var(--green);
-  
+  position: relative;
 }
 
 
@@ -100,13 +100,33 @@
   }
 }
 
+.statsInfo {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background-color: var(--green);
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 5px;
+  font-family: "Verdana";
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--dark-gray);
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 4px;
+}
+
+.stat {
+  padding: 5px 15px;
+}
+
 .controls {
   display: flex;
   justify-content: center;
+  gap: 15px;
   margin-top: 15px;
 }
 
-.restart-button {
+.restart-button, .undo-button, .hint-button {
   background-color: var(--green);
   color: var(--dark-gray);
   border: 2px solid rgba(211, 211, 211, 0.4);
@@ -121,14 +141,39 @@
   transition: all 0.2s ease;
 }
 
-.restart-button:hover {
+.restart-button:hover, .undo-button:hover:not(:disabled), .hint-button:hover:not(:disabled) {
   background-color: #5cb85c;
   transform: translateY(-2px);
   box-shadow: rgba(0, 0, 0, 0.5) 0px 4px 8px,
     rgba(0, 0, 0, 0.4) 0px 9px 15px -3px, rgba(0, 0, 0, 0.3) 0px -3px 0px inset;
 }
 
-.restart-button:active {
+.restart-button:active, .undo-button:active:not(:disabled), .hint-button:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 2px inset;
+}
+
+.undo-button:disabled, .hint-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #ccc;
+}
+
+.hint-button {
+  background-color: #f0ad4e;
+}
+
+.hint-button:hover:not(:disabled) {
+  background-color: #ec971f;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
 }

@@ -4,7 +4,7 @@ import Row from './Row';
 import {B, score} from './game-logic';
 
 // Memoized Board component to prevent unnecessary re-renders
-const Board = React.memo(({board, onPlayerTurn, onRestart, message, gameOver}) => {
+const Board = React.memo(({board, onPlayerTurn, onRestart, onUndo, onShowHint, message, gameOver, moveCount, gameDuration, canUndo, hintMove}) => {
   const playerScore = score(board);
   const player = (board.playerTurn === B) ? 'Black' : 'White';
   const rows = [];
@@ -29,6 +29,10 @@ const Board = React.memo(({board, onPlayerTurn, onRestart, message, gameOver}) =
           <span className="white">{playerScore.white}</span>
         </span>
       </div>
+      <div className="statsInfo">
+        <span className="stat">Moves: {moveCount}</span>
+        <span className="stat">Time: {gameDuration}</span>
+      </div>
       {message && (
         <div className="message">
           {message}
@@ -36,10 +40,37 @@ const Board = React.memo(({board, onPlayerTurn, onRestart, message, gameOver}) =
       )}
       <div className="board shadow border">
         {rows}
+        {hintMove && (
+          <div className="hint-overlay" style={{
+            position: 'absolute',
+            left: `${hintMove[0] * 12.5}%`,
+            top: `${hintMove[1] * 12.5}%`,
+            width: '12.5%',
+            height: '12.5%',
+            border: '3px solid gold',
+            borderRadius: '50%',
+            pointerEvents: 'none',
+            animation: 'pulse 1s infinite'
+          }}/>
+        )}
       </div>
       <div className="controls">
         <button className="restart-button" onClick={onRestart}>
           New Game
+        </button>
+        <button 
+          className="undo-button" 
+          onClick={onUndo}
+          disabled={!canUndo}
+        >
+          Undo
+        </button>
+        <button 
+          className="hint-button" 
+          onClick={onShowHint}
+          disabled={gameOver}
+        >
+          Hint
         </button>
       </div>
     </div>

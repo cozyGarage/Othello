@@ -284,3 +284,66 @@ export const getAnnotatedBoard = (board) => {
     )
   };
 };
+
+// Positional weights for strategic evaluation (corners and edges are valuable)
+const POSITION_WEIGHTS = [
+  [100, -20, 10,  5,  5, 10, -20, 100],
+  [-20, -50, -2, -2, -2, -2, -50, -20],
+  [ 10,  -2, -1, -1, -1, -1,  -2,  10],
+  [  5,  -2, -1, -1, -1, -1,  -2,   5],
+  [  5,  -2, -1, -1, -1, -1,  -2,   5],
+  [ 10,  -2, -1, -1, -1, -1,  -2,  10],
+  [-20, -50, -2, -2, -2, -2, -50, -20],
+  [100, -20, 10,  5,  5, 10, -20, 100]
+];
+
+// Evaluate move quality based on position and tiles flipped
+export const evaluateMove = (board, coord) => {
+  const [x, y] = coord;
+  
+  // Create a temporary board to simulate the move
+  const tempBoard = {
+    playerTurn: board.playerTurn,
+    tiles: board.tiles.map(row => [...row])
+  };
+  
+  try {
+    takeTurn(tempBoard, coord);
+    
+    // Calculate score difference after the move
+    const newScore = score(tempBoard);
+    const currentScore = score(board);
+    const scoreDiff = board.playerTurn === B 
+      ? (newScore.black - currentScore.black)
+      : (newScore.white - currentScore.white);
+    
+    // Position value
+    const positionValue = POSITION_WEIGHTS[y][x];
+    
+    // Combined evaluation: position weight is more important than tiles flipped
+    return positionValue * 2 + scoreDiff;
+  } catch (error) {
+    return -Infinity;
+  }
+};
+
+// Get the best move suggestion
+export const getBestMove = (board) => {
+  const validMoves = getValidMoves(board);
+  if (validMoves.length === 0) {
+    return null;
+  }
+  
+  let bestMove = validMoves[0];
+  let bestScore = evaluateMove(board, bestMove);
+  
+  for (let i = 1; i < validMoves.length; i++) {
+    const moveScore = evaluateMove(board, validMoves[i]);
+    if (moveScore > bestScore) {
+      bestScore = moveScore;
+      bestMove = validMoves[i];
+    }
+  }
+  
+  return bestMove;
+};

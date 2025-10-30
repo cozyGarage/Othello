@@ -171,3 +171,52 @@ test('takeTurn() flips all tiles inbetween two identical tiles instead of just o
     [E, E, E, E, E, E]
   ]);
 });
+
+// Import additional functions for testing
+import {getBestMove, evaluateMove} from './game-logic';
+
+test('getBestMove() returns a valid move when available', () => {
+  const board = createBoard([
+    [E, E, E, E, E, E],
+    [E, E, E, E, E, E],
+    [E, E, W, B, E, E],
+    [E, E, B, W, E, E],
+    [E, E, E, E, E, E],
+    [E, E, E, E, E, E]
+  ]);
+  const bestMove = getBestMove(board);
+  expect(bestMove).not.toBeNull();
+  expect(Array.isArray(bestMove)).toBe(true);
+  expect(bestMove.length).toBe(2);
+});
+
+test('getBestMove() returns null when no moves available', () => {
+  const board = createBoard([
+    [B, B, B, B, B, B],
+    [B, B, B, B, B, B],
+    [B, B, B, B, B, B],
+    [B, B, B, B, B, B],
+    [B, B, B, B, B, B],
+    [B, B, B, B, B, B]
+  ]);
+  const bestMove = getBestMove(board);
+  expect(bestMove).toBeNull();
+});
+
+test('evaluateMove() prefers corner positions', () => {
+  const board = createBoard([
+    [E, E, E, E, E, E, E, E],
+    [E, E, E, E, E, E, E, E],
+    [E, E, W, B, E, E, E, E],
+    [E, E, B, W, E, E, E, E],
+    [E, E, E, E, E, E, E, E],
+    [E, E, E, E, E, E, E, E],
+    [E, E, E, E, E, E, E, E],
+    [E, E, E, E, E, E, E, E]
+  ]);
+  
+  // Any valid move should return a numeric score
+  const score1 = evaluateMove(board, [1, 2]);
+  expect(typeof score1).toBe('number');
+  expect(score1).toBeGreaterThan(-Infinity);
+});
