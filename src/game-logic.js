@@ -11,22 +11,19 @@ export const createBoard = (tiles) => ({
 export const tile = (board, [x, y]) =>
   board.tiles[y][x];
 
+// Optimized score calculation
 export const score = (board) => {
   let blackCount = 0;
   let whiteCount = 0;
 
-  for (let x = 0; x < board.tiles.length; ++x) {
-    for (let y = 0; y < board.tiles.length; ++y) {
-      const tileVal = board.tiles[y][x];
-      if(tileVal===B)
-      {
+  // Use for-of loop which is more efficient for iteration
+  for (const row of board.tiles) {
+    for (const tileVal of row) {
+      if (tileVal === B) {
         blackCount++;
-      }
-      else if (tileVal===W)
-      {
+      } else if (tileVal === W) {
         whiteCount++;
       }
-
     }
   }
 
@@ -168,26 +165,69 @@ export const takeTurn = (board, coord) => {
   board.playerTurn = alternatePlayer(board.playerTurn);
 };
 
-// Check if a move is valid for the current player
+// Check if a move is valid for the current player without mutating the board
 export const isValidMove = (board, coord) => {
   const [x, y] = coord;
   if(board.tiles[y][x] !== E) {
     return false;
   }
   
-  // Temporarily place the piece and check for flippable directions
-  board.tiles[y][x] = board.playerTurn;
-  const flippableDirections = findFlippableDirections(board, coord);
-  board.tiles[y][x] = E; // Revert
+  const startColor = board.playerTurn;
+  const alternateColor = (startColor === W) ? B : W;
   
-  return flippableDirections.length > 0;
+  // Check all 8 directions for valid flips
+  for (const dirName in DIRECTIONS) {
+    const dirModifier = DIRECTIONS[dirName];
+    let checkX = x + dirModifier.xMod;
+    let checkY = y + dirModifier.yMod;
+    
+    // First tile must be opponent's color
+    if (isOutOfBounds(board, [checkX, checkY]) || board.tiles[checkY][checkX] !== alternateColor) {
+      continue;
+    }
+    
+    // Keep moving in this direction
+    let foundOpponent = true;
+    while (foundOpponent) {
+      checkX += dirModifier.xMod;
+      checkY += dirModifier.yMod;
+      
+      if (isOutOfBounds(board, [checkX, checkY])) {
+        break;
+      }
+      
+      const nextTile = board.tiles[checkY][checkX];
+      if (nextTile === E) {
+        break;
+      }
+      if (nextTile === startColor) {
+        // Found a valid flip sequence
+        return true;
+      }
+    }
+  }
+  
+  return false;
 };
 
 // Get all valid moves for the current player
+// Optimized to only check tiles adjacent to existing pieces
 export const getValidMoves = (board) => {
   const validMoves = [];
-  for (let y = 0; y < board.tiles.length; y++) {
-    for (let x = 0; x < board.tiles[y].length; x++) {
+  const boardSize = board.tiles.length;
+  
+  for (let y = 0; y < boardSize; y++) {
+    for (let x = 0; x < boardSize; x++) {
+      // Skip if tile is occupied
+      if (board.tiles[y][x] !== E) {
+        continue;
+      }
+      
+      // Optimization: only check tiles adjacent to existing pieces
+      if (!hasAdjacentPiece(board, [x, y])) {
+        continue;
+      }
+      
       if (isValidMove(board, [x, y])) {
         validMoves.push([x, y]);
       }
@@ -230,10 +270,17 @@ export const getWinner = (board) => {
   return null; // Tie
 };
 
-const annotateSquare = (square, board, coord) =>
-  (square !== E) ? square : isValidMove(board, coord) ? P : E;
-
-export const getAnnotatedBoard = (board) => ({
-  ...board,
-  tiles: board.tiles.map((row, y) => row.map((square, x) => annotateSquare(square, board, [x, y])))
-});
+// Optimized annotated board generation using pre-calculated valid moves
+export const getAnnotatedBoard = (board) => {
+  const validMoves = getValidMoves(board);
+  const validMovesSet = new Set(validMoves.map(([x, y]) => `${x},${y}`));
+  
+  return {
+    ...board,
+    tiles: board.tiles.map((row, y) => 
+      row.map((square, x) => 
+        square !== E ? square : (validMovesSet.has(`${x},${y}`) ? P : E)
+      )
+    )
+  };
+};

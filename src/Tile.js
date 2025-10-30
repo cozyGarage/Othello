@@ -2,8 +2,8 @@ import React from 'react';
 import {P} from './game-logic';
 import './Tile.css';
 
-
-const Tile = ({tile, x, y, onPlayerTurn}) => {
+// Memoized Tile component to prevent unnecessary re-renders
+const Tile = React.memo(({tile, x, y, onPlayerTurn}) => {
   const handleClick = (tile === P)
     ? () => onPlayerTurn([x, y])
     : x => x;
@@ -15,6 +15,6 @@ const Tile = ({tile, x, y, onPlayerTurn}) => {
       </svg>
     </div>
   );
-}
+});
 
 export default Tile;

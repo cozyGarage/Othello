@@ -3,7 +3,8 @@ import './Board.css';
 import Row from './Row';
 import {B, score} from './game-logic';
 
-const Board = ({board, onPlayerTurn, onRestart, message, gameOver}) => {
+// Memoized Board component to prevent unnecessary re-renders
+const Board = React.memo(({board, onPlayerTurn, onRestart, message, gameOver}) => {
   const playerScore = score(board);
   const player = (board.playerTurn === B) ? 'Black' : 'White';
   const rows = [];
@@ -43,6 +44,6 @@ const Board = ({board, onPlayerTurn, onRestart, message, gameOver}) => {
       </div>
     </div>
   );
-};
+});
 
 export default Board;
