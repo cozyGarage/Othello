@@ -1,5 +1,5 @@
 import React from 'react';
-import './Row.css';
+import './styles/game.css';
 import Tile from './Tile';
 import { P, type TileValue, type Coordinate } from './game-logic';
 

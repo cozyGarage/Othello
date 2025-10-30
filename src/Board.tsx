@@ -1,6 +1,7 @@
-import React from 'react';
-import './Board.css';
+import React, { useState } from 'react';
+import './styles/game.css';
 import Row from './Row';
+import { PlayerInfo, ScoreBox, GameMessage, SettingsPanel } from './components/ui';
 import { B, score, type Board as BoardType, type Coordinate } from './game-logic';
 
 interface BoardProps {
@@ -13,6 +14,7 @@ interface BoardProps {
 }
 
 const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, onRestart, message, gameOver, lastMove }) => {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const playerScore = score(board);
   const player = (board.playerTurn === B) ? 'Black' : 'White';
   const rows: React.ReactElement[] = [];
@@ -31,23 +33,14 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, onRestart, message, 
 
   return (
     <div className="Board shadow border">
+      <button className="settings-icon-button" onClick={() => setSettingsOpen(true)} aria-label="Settings">
+        ⚙️
+      </button>
       <div className="gameInfo">
-        <div className="playerInfo shadow border">
-          <span className={player.toLowerCase()}>
-            {gameOver ? 'Game Over' : `${player}, You are up`}
-          </span>
-        </div>
-        <div className="scoreInfo shadow border">
-          <span className="black">{playerScore.black}</span>
-          <span className="scoreDelimitter">-</span>
-          <span className="white">{playerScore.white}</span>
-        </div>
+        <PlayerInfo player={player} isGameOver={gameOver} />
+        <ScoreBox blackScore={playerScore.black} whiteScore={playerScore.white} />
       </div>
-      {message && (
-        <div className="message">
-          {message}
-        </div>
-      )}
+      <GameMessage message={message} />
       <div className="board shadow border">
         {rows}
       </div>
@@ -56,6 +49,7 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, onRestart, message, 
           New Game
         </button>
       </div>
+      <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 };

@@ -1,5 +1,4 @@
 import { Component } from 'react';
-import './OthelloGame.css';
 import Board from './Board';
 import { 
   W, B, E, 

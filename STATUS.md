@@ -322,6 +322,229 @@ You can now confidently:
 
 ---
 
-**Project Status**: ✅ **PRODUCTION READY**
+## 🎨 Phase 5: UX Polish & Animation System (October 30, 2025)
 
-The TypeScript migration is complete and stable. All systems operational. 🎉
+### Visual Theme Upgrade
+**Wooden Board Design:**
+- Changed from dark green (#2d5016) to wooden brown (#8B6F47 → #6B5738)
+- Applied to board, tiles, score boxes, messages, and buttons
+- Creates warm, natural aesthetic matching physical Othello boards
+
+### Glass Glare Effect ✨
+**Goal:** Subtle last-move indicator without intrusive golden glow
+
+**Implementation:**
+```css
+.Tile.last-move::before {
+  width: 50%;              /* Narrow beam fits one tile */
+  left: -50% → 100%;       /* Sweeps left to right */
+  animation: 5s cycle      /* Appears at 1%, gone by 11% (0.5s sweep) */
+  transform: skewX(-20deg) /* Diagonal glass-like appearance */
+  opacity: 0 → 1 → 0       /* Smooth fade in/out */
+}
+```
+
+**Key Features:**
+- Narrow 50% width beam prevents bleeding to adjacent tiles
+- Fast 0.5-second sweep (only 10% of 5-second cycle)
+- Opacity animation creates smooth appearance/disappearance
+- `pointer-events: none` doesn't block tile clicks
+
+### Flip Animation 🔄 (The Brilliant Solution)
+
+**The Challenge:**
+Game logic (`flipTiles()`) updates board tiles instantly. By the time React re-renders with animation, pieces already show new color. Animation would just rotate the already-changed piece.
+
+**Critical Bug Discovered:**
+Old `.js` files from pre-TypeScript era were being loaded by Vite instead of new `.tsx` files! The old `Tile.js` had no animation code at all.
+
+**Solution Part 1 - File Cleanup:**
+```bash
+rm -f src/Tile.js src/Board.js src/Row.js src/OthelloGame.js src/index.js
+```
+
+**Solution Part 2 - State Decoupling (The Clever Part):**
+```typescript
+// Tile.tsx - Two-state approach
+const [displayTile, setDisplayTile] = React.useState(tile);  // What user sees
+const prevTileRef = React.useRef(tile);                      // Track changes
+
+// When flip detected (B→W or W→B):
+useEffect(() => {
+  const isFlip = (prev === 'B' && current === 'W') || 
+                 (prev === 'W' && current === 'B');
+  
+  if (isFlip) {
+    setDisplayTile(prev);      // Show OLD color first
+    setIsAnimating(true);
+    
+    setTimeout(() => {
+      setDisplayTile(current); // Switch at 300ms (90° rotation)
+    }, 300);
+    
+    setTimeout(() => {
+      setIsAnimating(false);   // End animation at 600ms
+    }, 600);
+  }
+}, [tile]);
+```
+
+**How It Works:**
+1. User places piece → `flipTiles()` updates board immediately (game state = W)
+2. useEffect detects B→W change
+3. `displayTile` stays as B (old color)
+4. Animation starts: piece flips away showing BLACK
+5. At 300ms (90° rotation): piece invisible (opacity: 0)
+6. `displayTile` switches to W (new color)
+7. Animation continues: piece flips in showing WHITE
+8. At 600ms: Animation complete
+
+**CSS Animation Coordination:**
+```css
+@keyframes flipAnimation {
+  0%   { transform: rotateY(0deg); }
+  50%  { transform: rotateY(90deg) scale(1.1); }  /* Peak */
+  100% { transform: rotateY(180deg); }
+}
+
+@keyframes flipPieceVisibility {
+  45%  { opacity: 1; }
+  50%  { opacity: 0; }  /* Invisible at peak - color change happens here */
+  55%  { opacity: 1; }
+}
+```
+
+**Key Insights:**
+- **Separating visual state from game state** allows game logic to remain unchanged
+- **Coordinated timing** between state change (300ms) and CSS opacity (50% = 300ms)
+- **No refactoring of game-logic.ts** needed (keeps tests passing)
+- **Animation shows correct color progression** from user's perspective
+
+### Responsive Design
+- Tiles: `min(60px, calc((100vw - 60px) / 8))` - scales proportionally
+- Board: `overflow: visible` - allows glass glare to extend beyond borders
+- Mobile-friendly: viewport-aware sizing prevents edge clipping
+
+---
+
+## 🔧 Phase 6: Code Refactoring (October 30, 2025)
+
+**Goal:** Clean up technical debt before adding new features
+
+### ✅ Step 1: CSS Consolidation (COMPLETE)
+
+**Before:**
+- 5 CSS files scattered across src/
+- Duplicated animations
+- Hard to maintain
+
+**After:**
+- `src/styles/game.css` - All component styles (420+ lines)
+  - Board, Row, Tile base styles
+  - Wooden theme colors
+  - Glass glare effect with documentation
+  - Responsive design
+- `src/styles/animations.css` - All keyframe animations (120+ lines)
+  - Flip animations (flipAnimation, flipPieceVisibility)
+  - Glass glare timing (glassGlare)
+  - UI animations (fadeIn, slideIn)
+  - Score animations (scoreIncrease, floatUp)
+
+**Changes:**
+1. Created `src/styles/` directory
+2. Consolidated Board.css + Row.css + Tile.css → `game.css`
+3. Updated animations.css with new flip keyframes → `animations.css`
+4. Updated all component imports (Board, Row, Tile, index)
+5. Deleted old CSS files
+
+**Verification:**
+- ✅ Build: 401ms (TypeScript + Vite)
+- ✅ Tests: 36/36 passing
+- ✅ Dev server: 171ms startup
+- ✅ Visual test: All animations working (flip, glass glare, hover)
+
+### ✅ Step 2: Extract Custom Hooks (COMPLETE)
+
+**Goal:** Move animation logic out of Tile.tsx into reusable hooks
+
+**Created:**
+- `src/hooks/useFlipAnimation.ts` (100+ lines)
+  - Manages `displayTile` state (visual representation)
+  - Tracks `isAnimating` flag
+  - Computes `tileClasses` string
+  - Comprehensive JSDoc documentation
+
+**Changes:**
+- Simplified `Tile.tsx` from 106 to ~40 lines
+- Extracted 60+ lines of animation logic
+- Improved separation of concerns
+- Better testability and reusability
+
+**Verification:**
+- ✅ Tests: 36/36 passing (578ms)
+- ✅ Build: 384ms
+- ✅ TypeScript: 0 errors
+
+### ✅ Step 3: Extract UI Components (COMPLETE)
+
+**Goal:** Break down Board.tsx into smaller, focused components
+
+**Created:**
+- `src/components/ui/PlayerInfo.tsx` - Turn indicator
+- `src/components/ui/ScoreBox.tsx` - Score display
+- `src/components/ui/GameMessage.tsx` - Message display
+- `src/components/ui/index.ts` - Barrel export
+
+**Changes:**
+- Simplified `Board.tsx` from 64 to 43 lines
+- Each component has clear single responsibility
+- Fully typed with JSDoc documentation
+- Clean imports: `import { PlayerInfo, ScoreBox } from './components/ui'`
+
+**Verification:**
+- ✅ Tests: 36/36 passing (420ms)
+- ✅ Build: 382ms (43 modules)
+- ✅ Dev Server: 110ms startup
+- ✅ TypeScript: 0 errors, strict mode
+
+### ✅ Step 4: Add Feature Flags (COMPLETE)
+
+**Goal:** Make features toggleable for easier development
+
+**Created:**
+- `src/config/features.ts` (90+ lines)
+  - 7 feature flags: animations, glassGlare, soundEffects, moveHistory, scoreAnimations, loadingScreen, debug
+  - Helper functions: `isFeatureEnabled()`, `toggleFeature()`
+  - Individual getters: `hasAnimations()`, `hasGlassGlare()`, etc.
+  - Full TypeScript support with `FeatureFlags` interface
+
+- `src/components/ui/SettingsPanel.tsx` (80+ lines)
+  - Interactive UI to toggle features at runtime
+  - Clean modal design with wooden theme
+  - Checkbox controls for each feature
+  - Real-time feature toggling
+
+**Integration:**
+- Updated `useFlipAnimation` hook to respect `animations` and `glassGlare` flags
+- Added settings button to Board component
+- Added debug logging on app startup
+- Settings panel with 7 toggleable features
+
+**CSS:**
+- Added 150+ lines of settings panel styles to `game.css`
+- Modal overlay with dark background
+- Smooth animations (fadeIn, slideIn)
+- Responsive design for mobile
+
+**Verification:**
+- ✅ Tests: 36/36 passing (410ms)
+- ✅ Build: 485ms (45 modules, +2KB CSS)
+- ✅ Dev Server: 116ms startup
+- ✅ TypeScript: 0 errors, strict mode
+- ✅ Settings panel: Working, live toggle
+
+---
+
+**Project Status**: ✅ **PRODUCTION READY WITH POLISHED UX** + 🔄 **REFACTORING IN PROGRESS**
+
+Phase 6: Steps 1-3 complete (CSS, Hooks, UI Components). Step 4 next (Feature Flags). 🎉

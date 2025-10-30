@@ -19,12 +19,12 @@ Use this to describe UI problems:
 - [ ] **Alignment**: Elements not lined up properly
 - [ ] **Spacing**: Too much/little space between elements
 - [ ] **Size**: Component too big/small
-- [ ] **Responsive**: Broken on mobile/desktop
+- [ ] **Responsive**: Broken on mobile/desktop , the edge of the board is cut off on mobile
 - [ ] **Overflow**: Content spilling outside container
 
 #### Styling
 - [ ] **Colors**: Wrong colors or invisible elements
-- [ ] **Shadows**: Missing or too weak
+- [ ] **Shadows**: Missing or too weak. maybe hard to see the pieces against the dark green background
 - [ ] **Borders**: Missing, wrong size, or wrong color
 - [ ] **Gradients**: Not showing or wrong direction
 - [ ] **Transparency**: Too transparent or not transparent enough

@@ -1,7 +1,8 @@
 import React from 'react';
 import { P, type TileValue, type Coordinate } from './game-logic';
-import './Tile.css';
-import './animations.css';
+import { useFlipAnimation } from './hooks/useFlipAnimation';
+import './styles/game.css';
+import './styles/animations.css';
 
 interface TileProps {
   tile: TileValue;
@@ -20,26 +21,30 @@ const Tile: React.FC<TileProps> = ({
   isLastMove = false,
   isValidMove = false 
 }) => {
-  const [isAnimating, setIsAnimating] = React.useState(false);
-  
-  const handleClick = (tile === P)
-    ? () => {
-        setIsAnimating(true);
-        onPlayerTurn([x, y]);
-        setTimeout(() => setIsAnimating(false), 500);
-      }
-    : () => {};
-
-  const tileClasses = [
-    'Tile',
+  // Use custom hook for flip animation logic
+  const { tileClasses, isAnimating } = useFlipAnimation({
     tile,
-    isLastMove ? 'last-move' : '',
-    isValidMove ? 'valid-move' : '',
-    isAnimating ? 'tile-flip' : ''
-  ].filter(Boolean).join(' ');
+    x,
+    y,
+    isLastMove,
+    isValidMove
+  });
+
+  const handleClick = () => {
+    if (tile === P) {
+      onPlayerTurn([x, y]);
+    }
+  };
 
   return (
-    <div className={tileClasses} onClick={handleClick}>
+    <div 
+      className={tileClasses} 
+      onClick={handleClick}
+      data-x={x}
+      data-y={y}
+      data-last-move={isLastMove ? 'true' : 'false'}
+      data-animating={isAnimating ? 'true' : 'false'}
+    >
       <div className="tile-inner">
         <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
           <circle cx="100" cy="100" r="92"/>

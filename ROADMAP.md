@@ -12,10 +12,10 @@
 **Goal:** Make the game feel professional and polished like chess.com
 
 #### 1.1 Visual Polish
-- [ ] **Smooth animations** - Tile flipping, placement
-- [ ] **Move highlighting** - Show last move, valid moves
+- [v] **Smooth animations** - Tile flipping, placement
+- [v] **Move highlighting** - Show last move, valid moves
 - [ ] **Better tile design** - 3D effect, shadows
-- [ ] **Score display** - Prominent, animated score changes
+- [v] **Score display** - Prominent, animated score changes
 - [ ] **Modern UI layout** - Match chess.com aesthetic
 
 #### 1.2 Enhanced Gameplay
