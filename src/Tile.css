@@ -15,10 +15,37 @@
   fill: var(--white);
 }
 
-.P, .E {
+.E {
   fill: var(--green);
+}
+
+.P {
+  fill: var(--green);
+  opacity: 0.6;
+}
+
+.P circle {
+  stroke: var(--turquoise);
+  stroke-width: 8;
+  stroke-dasharray: 10, 5;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .P:hover {
   fill: var(--turquoise);
+  opacity: 0.8;
+}
+
+.P:hover circle {
+  animation: none;
+  stroke-width: 10;
 }

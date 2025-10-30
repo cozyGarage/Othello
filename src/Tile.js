@@ -1,5 +1,5 @@
 import React from 'react';
-import {B, W, P} from './game-logic';
+import {P} from './game-logic';
 import './Tile.css';
 
 
