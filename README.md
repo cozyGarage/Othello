@@ -13,29 +13,14 @@
 ![Bun](https://img.shields.io/badge/Bun-1.3.1-orange?style=flat-square&logo=bun)
 ![Vite](https://img.shields.io/badge/Vite-5.4.21-646CFF?style=flat-square&logo=vite)
 ![Tests](https://img.shields.io/badge/Tests-63%20passing-success?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-![Maintained](https://img.shields.io/badge/Maintained-Yes-brightgreen?style=flat-square)
 
 </div>
 
 ---
 
-## 📖 Table of Contents
-
-- [About](#-about)
-- [Features](#-features)
-- [How to Play](#-how-to-play)
-- [Getting Started](#-getting-started)
-- [Development](#-development)
-- [Deployment](#-deployment)
-- [Project Structure](#-project-structure)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Acknowledgments](#-acknowledgments)
-
 ## 🎯 About
 
-Othello (also known as Reversi) is a classic strategy board game for two players. This implementation brings the timeless game to your browser with a clean, intuitive interface and smooth gameplay. Challenge yourself against another player and master the art of strategic disc flipping!
+Othello (also known as Reversi) is a classic strategy board game for two players. This implementation brings the timeless game to your browser with a clean, modern interface powered by Bun, TypeScript, and Vite for lightning-fast performance.
 
 ## ✨ Features
 
@@ -113,115 +98,58 @@ This project now uses **Bun**, a fast all-in-one JavaScript runtime that replace
 
 ### Available Scripts
 
-- `bun run dev` - Runs the app in development mode with hot reload
-- `bun test` - Runs all tests once
-- `bun test --watch` - Runs tests in watch mode
-- `bun run build` - Builds the app for production
-- `bun run preview` - Preview the production build locally
-- `bun run deploy` - Deploys to GitHub Pages
-
-### Running Tests
-
-Run tests once:
 ```bash
-bun test
+bun run dev      # Start development server
+bun test         # Run all tests
+bun run build    # Build for production
+bun run preview  # Preview production build
 ```
-
-Run tests in watch mode:
-```bash
-bun test --watch
-```
-
-Tests are written using Bun's built-in test runner with a Jest-compatible API.
-
-### Test Coverage
-
-The project includes comprehensive tests:
-- **Basic tests** (`game-logic.test.js`) - Core game mechanics
-- **Advanced tests** (`game-logic.advanced.test.js`) - Complex scenarios including:
-  - Valid move detection
-  - Game over conditions
-  - Winner determination
-  - Multi-directional piece flipping
-  - Edge cases and corner scenarios
-
-### Building for Production
-
-```bash
-bun run build
-```
-
-Creates an optimized production build in the `dist` folder with:
-- Minified JavaScript and CSS
-- Source maps for debugging
-- Optimized assets
-
-Preview the production build:
-```bash
-bun run preview
-```
-
-## 🚀 Deployment
-
-The app is automatically deployed to GitHub Pages. To deploy manually:
-
-```bash
-bun run deploy
-```
-
-The live version is available at: [https://cozygarage.github.io/Othello/](https://cozygarage.github.io/Othello/)
 
 ## 📁 Project Structure
 
 ```
-Othello/
-├── public/                    # Static assets
-│   ├── manifest.json
-│   └── robots.txt
-├── src/
-│   ├── Board.js              # Game board component
-│   ├── Row.js                # Board row component
-│   ├── Tile.js               # Individual tile component
-│   ├── OthelloGame.js        # Main game component
-│   ├── game-logic.js         # Core game logic
-│   ├── game-logic.test.js    # Basic tests
-│   └── game-logic.advanced.test.js  # Advanced tests
-├── index.html                 # Vite entry point
-├── vite.config.js            # Vite configuration
-├── bunfig.toml               # Bun configuration
-├── package.json
-└── README.md
+src/
+├── game-logic.ts              # Core game logic (TypeScript)
+├── game-logic.test.ts         # Unit tests
+├── game-logic.advanced.test.ts # Advanced tests
+├── integration.test.ts        # Integration tests
+├── OthelloGame.tsx            # Main game component
+├── Board.tsx                  # Board component
+├── Row.tsx                    # Row component
+├── Tile.tsx                   # Tile component
+└── index.tsx                  # Entry point
 ```
 
-## 🤝 Contributing
+## 🧪 Testing
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+**63 tests** covering unit, advanced, and integration scenarios:
+- Game logic validation
+- Move detection and validation
+- Multi-directional flipping
+- Game over detection
+- DOM rendering
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+```bash
+bun test                # Run all tests
+bun test --watch        # Watch mode
+bun test game-logic     # Run specific test file
+```
 
-## 📄 License
+## 🚀 Deployment
 
-This project is open source and available under the MIT License.
+Automatic deployment to GitHub Pages on push to `main` via GitHub Actions.
 
-## 🙏 Acknowledgments
+**Live:** [https://cozygarage.github.io/Othello/](https://cozygarage.github.io/Othello/)
 
-- Built with [React](https://reactjs.org/)
-- Powered by [Bun](https://bun.sh/) - Fast all-in-one JavaScript runtime
-- Bundled with [Vite](https://vitejs.dev/) - Next generation frontend tooling
-- Deployed on [GitHub Pages](https://pages.github.com/)
+## � Documentation
+
+- **[STATUS.md](./STATUS.md)** - Development history and what we've built
+- **[IMPROVEMENTS.md](./IMPROVEMENTS.md)** - Future enhancement ideas
 
 ---
 
 <div align="center">
 
 **Made with ❤️ by cozyGarage**
-
-© 2025 cozyGarage. All rights reserved.
-
-For detailed Create React App documentation, see [CRA_README.md](./CRA_README.md)
 
 </div>
