@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { features, toggleFeature, type FeatureFlags } from '../../config/features';
+import { soundEffects } from '../../utils/soundEffects';
 import '../../styles/game.css';
 
 interface SettingsPanelProps {
@@ -25,6 +26,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose })
     const newValue = !localFeatures[feature];
     toggleFeature(feature, newValue);
     setLocalFeatures({ ...features });
+    
+    // Sync sound effects manager with feature flag
+    if (feature === 'soundEffects') {
+      soundEffects.setEnabled(newValue);
+    }
   };
 
   const featureLabels: Record<keyof FeatureFlags, string> = {

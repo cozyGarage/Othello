@@ -1,7 +1,8 @@
 import { Component } from 'react';
 import Board from './Board';
 import { LoadingScreen } from './components/ui';
-import { hasLoadingScreen } from './config/features';
+import { hasLoadingScreen, hasSoundEffects } from './config/features';
+import { soundEffects } from './utils/soundEffects';
 import { 
   W, B, E, 
   getAnnotatedBoard, 
@@ -41,6 +42,16 @@ class OthelloGame extends Component<{}, OthelloGameState> {
         this.setState({ isLoading: false });
       }, 1500); // 1.5 second loading
     }
+
+    // Initialize sound effects (resume audio context after user interaction)
+    const initSound = () => {
+      soundEffects.resume();
+      document.removeEventListener('click', initSound);
+    };
+    document.addEventListener('click', initSound, { once: true });
+
+    // Sync sound effects with feature flag
+    soundEffects.setEnabled(hasSoundEffects());
   }
 
   createInitialBoard(): BoardType {
@@ -63,11 +74,23 @@ class OthelloGame extends Component<{}, OthelloGameState> {
 
     try {
       takeTurn(this.state.board, coord);
+      
+      // Play flip sound
+      if (hasSoundEffects()) {
+        soundEffects.playFlip();
+      }
+      
       this.setState({ lastMove: coord }, () => {
         this.checkGameState();
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An error occurred';
+      
+      // Play error sound
+      if (hasSoundEffects()) {
+        soundEffects.playInvalidMove();
+      }
+      
       this.setState({ message });
       setTimeout(() => this.setState({ message: null }), 2000);
     }
@@ -87,6 +110,12 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       } else {
         message = 'Game Over! It\'s a tie!';
       }
+      
+      // Play game over sound
+      if (hasSoundEffects()) {
+        soundEffects.playGameOver();
+      }
+      
       this.setState({ gameOver: true, message, board });
       return;
     }

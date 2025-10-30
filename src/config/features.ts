@@ -49,10 +49,10 @@ export interface FeatureFlags {
 export const features: FeatureFlags = {
   animations: true,
   glassGlare: true,
-  soundEffects: false, // Disabled by default until implemented
-  moveHistory: false,  // Disabled by default until implemented
-  scoreAnimations: false, // Disabled by default until implemented
-  loadingScreen: false,   // Disabled by default until implemented
+  soundEffects: true, // Web Audio API - no dependencies needed
+  moveHistory: false,  // Not yet implemented
+  scoreAnimations: false, // Disabled by default (can be overwhelming)
+  loadingScreen: false,   // Disabled by default (optional UX)
   debug: false, // Enable for development debugging
 };
 
