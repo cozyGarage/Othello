@@ -40,7 +40,7 @@ test('board.playerTurn tells us whose turn is next.', () => {
     [E, E, E, E, E, E]
   ]);
   expect(board.playerTurn).toEqual(B);
-  takeTurn(board, [1, 3])
+  takeTurn(board, [1, 2]); // Valid move that flips W to B
   expect(board.playerTurn).toEqual(W);
 });
 
@@ -56,7 +56,7 @@ test('takeTurn() errors if a piece is placed on an existing one.', () => {
   expect(() => takeTurn(board, [2, 2])).toThrow('Error: You cannot place a piece on an occupied square.');
 });
 
-test('takeTurn() errors if a piece is not placed adjacent to another piece.', () => {
+test('takeTurn() errors if a move does not flip opponent pieces.', () => {
   const board = createBoard([
     [E, E, E, E, E, E],
     [E, E, E, E, E, E],
@@ -65,7 +65,7 @@ test('takeTurn() errors if a piece is not placed adjacent to another piece.', ()
     [E, E, E, E, E, E],
     [E, E, E, E, E, E]
   ]);
-  expect(() => takeTurn(board, [0, 0])).toThrow('Error: The piece must be placed adjacent to another piece.');
+  expect(() => takeTurn(board, [0, 0])).toThrow('Error: This move does not flip any opponent pieces.');
 
   const board2 = createBoard([
     [E, E, E, E, E, E],
@@ -75,7 +75,7 @@ test('takeTurn() errors if a piece is not placed adjacent to another piece.', ()
     [E, E, E, E, E, E],
     [E, E, E, E, E, E]
   ]);
-  expect(() => takeTurn(board2, [1, 0])).toThrow('Error: The piece must be placed adjacent to another piece.');
+  expect(() => takeTurn(board2, [1, 0])).toThrow('Error: This move does not flip any opponent pieces.');
 });
 
 test('takeTurn() replaces an empty space with the correct letter.', () => {
@@ -87,13 +87,13 @@ test('takeTurn() replaces an empty space with the correct letter.', () => {
     [E, E, E, E, E, E],
     [E, E, E, E, E, E]
   ]);
-  expect(tile(board, [1, 1])).toEqual(E);
-  takeTurn(board, [1, 1]);
-  expect(tile(board, [1, 1])).toEqual(B);
-  takeTurn(board, [4, 4]);
-  expect(tile(board, [4, 4])).toEqual(W);
-  takeTurn(board, [1, 3]);
-  expect(tile(board, [1, 3])).toEqual(B);
+  expect(tile(board, [1, 2])).toEqual(E);
+  takeTurn(board, [1, 2]); // Black plays - flips white
+  expect(tile(board, [1, 2])).toEqual(B);
+  takeTurn(board, [1, 3]); // White plays - flips black
+  expect(tile(board, [1, 3])).toEqual(W);
+  takeTurn(board, [1, 4]); // Black plays - flips white
+  expect(tile(board, [1, 4])).toEqual(B);
 });
 
 test('tile() returns the tile that it is asked to.', () => {
@@ -138,12 +138,13 @@ test('getAnnotatedBoard() also shows where the player can next place a tile.', (
     [E, E, E, E, E, E]
   ]);
   const annotatedBoard = getAnnotatedBoard(board);
+  // Black (B) can only place where it would flip white pieces
   expect(annotatedBoard.tiles).toEqual([
     [E, E, E, E, E, E],
-    [E, P, P, P, P, E],
-    [E, P, W, B, P, E],
-    [E, P, B, W, P, E],
-    [E, P, P, P, P, E],
+    [E, E, P, E, E, E],
+    [E, P, W, B, E, E],
+    [E, E, B, W, P, E],
+    [E, E, E, P, E, E],
     [E, E, E, E, E, E]
   ]);
 });

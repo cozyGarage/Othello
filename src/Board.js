@@ -1,9 +1,9 @@
 import React from 'react';
 import './Board.css';
 import Row from './Row';
-import {B, score, playerTurn} from './game-logic';
+import {B, score} from './game-logic';
 
-const Board = ({board, onPlayerTurn}) => {
+const Board = ({board, onPlayerTurn, onRestart, message, gameOver}) => {
   const playerScore = score(board);
   const player = (board.playerTurn === B) ? 'Black' : 'White';
   const rows = [];
@@ -16,7 +16,9 @@ const Board = ({board, onPlayerTurn}) => {
       <div className="gameInfo">
         <span className="playerInfo shadow border">
           <span className="label"></span>
-          <span className={player.toLowerCase()}>{player}, You are up</span>
+          <span className={player.toLowerCase()}>
+            {gameOver ? 'Game Over' : `${player}, You are up`}
+          </span>
         </span>
         <span className="spacer"/>
         <span className="scoreInfo shawdow border">
@@ -26,8 +28,18 @@ const Board = ({board, onPlayerTurn}) => {
           <span className="white">{playerScore.white}</span>
         </span>
       </div>
+      {message && (
+        <div className="message">
+          {message}
+        </div>
+      )}
       <div className="board shadow border">
         {rows}
+      </div>
+      <div className="controls">
+        <button className="restart-button" onClick={onRestart}>
+          New Game
+        </button>
       </div>
     </div>
   );

@@ -1,4 +1,30 @@
-You can play game here :https://cozygarage.github.io/Othello/
+# Othello / Reversi Game
+
+🎮 **Play now:** [https://cozygarage.github.io/Othello/](https://cozygarage.github.io/Othello/)
+
+A fully playable implementation of the classic Othello (also known as Reversi) board game built with React.
+
+## How to Play
+
+Othello is a strategy board game for two players (Black and White). The goal is to have the majority of discs of your color on the board at the end of the game.
+
+### Rules
+1. **Starting Position**: The game begins with 4 discs placed in the center of the board in a diagonal pattern (2 black, 2 white)
+2. **Valid Moves**: A valid move must flip at least one opponent disc. You flip discs by placing your disc so that one or more opponent discs are sandwiched between your new disc and another disc of your color
+3. **Taking Turns**: Black always moves first. Players alternate turns
+4. **Passing**: If you have no valid moves, your turn is automatically skipped
+5. **Game End**: The game ends when neither player can make a valid move (usually when the board is full)
+6. **Winner**: The player with the most discs of their color wins
+
+### Features
+- ✨ Visual hints showing valid moves (animated dashed circles)
+- 🎯 Proper move validation following Othello rules
+- 🔄 Automatic pass when no valid moves available
+- 🏆 Game over detection with winner announcement
+- 🆕 Restart button to start a new game
+- 📊 Real-time score tracking
+
+---
 
 This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
 
