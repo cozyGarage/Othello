@@ -317,8 +317,17 @@ export const evaluateMove = (board, coord) => {
       ? (newScore.black - currentScore.black)
       : (newScore.white - currentScore.white);
     
-    // Position value
-    const positionValue = POSITION_WEIGHTS[y][x];
+    // Position value - check bounds to support different board sizes
+    let positionValue = 0;
+    if (y < POSITION_WEIGHTS.length && x < POSITION_WEIGHTS[0].length) {
+      positionValue = POSITION_WEIGHTS[y][x];
+    } else {
+      // For non-standard board sizes, give small positive value to non-edge tiles
+      const boardSize = board.tiles.length;
+      const isCorner = (x === 0 || x === boardSize - 1) && (y === 0 || y === boardSize - 1);
+      const isEdge = x === 0 || x === boardSize - 1 || y === 0 || y === boardSize - 1;
+      positionValue = isCorner ? 100 : isEdge ? 10 : -1;
+    }
     
     // Combined evaluation: position weight is more important than tiles flipped
     return positionValue * 2 + scoreDiff;
