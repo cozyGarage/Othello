@@ -63,8 +63,8 @@ const handleTurn = useCallback((coord) => {
 - [ ] **Statistics**: Track wins, losses, average game time
 
 #### Enhanced UX
-- [ ] **Animations**: Smooth tile flipping animations
-- [ ] **Sound Effects**: Optional audio for moves and game events
+- [x] **Animations**: Smooth tile flipping animations
+- [x] **Sound Effects**: Optional audio for moves and game events
 - [ ] **Dark Mode**: Theme toggle
 - [ ] **Responsive Design**: Better mobile experience
 - [ ] **Keyboard Navigation**: Arrow keys + Enter to play

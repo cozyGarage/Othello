@@ -19,15 +19,15 @@
 - [ ] **Modern UI layout** - Match chess.com aesthetic
 
 #### 1.2 Enhanced Gameplay
-- [ ] **Move history panel** - List all moves (e4, d3 style notation)
+- [x] **Move history panel** - List all moves (e4, d3 style notation)
 - [ ] **Undo/Redo moves** - Take back mistakes
 - [ ] **Game clock/timer** - Optional time controls
 - [ ] **Confirm dialog** - "Are you sure?" for important actions
 - [ ] **Keyboard shortcuts** - Arrow keys navigation, hotkeys
 
 #### 1.3 User Feedback
-- [ ] **Sound effects** - Move sounds, game events
-- [ ] **Visual feedback** - Hover effects, click feedback
+- [x] **Sound effects** - Move sounds, game events
+- [x] **Visual feedback** - Hover effects, click feedback
 - [ ] **Toast notifications** - "Black captures 5 pieces!"
 - [ ] **Game status messages** - Clear turn indicators
 
