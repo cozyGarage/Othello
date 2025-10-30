@@ -16,15 +16,16 @@
 
 ## 📖 Table of Contents
 
-- [About](#about)
-- [Features](#features)
-- [How to Play](#how-to-play)
-- [Getting Started](#getting-started)
-- [Development](#development)
-- [Deployment](#deployment)
-- [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [License](#license)
+- [About](#-about)
+- [Features](#-features)
+- [How to Play](#-how-to-play)
+- [Getting Started](#-getting-started)
+- [Development](#-development)
+- [Deployment](#-deployment)
+- [Project Structure](#-project-structure)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Acknowledgments](#-acknowledgments)
 
 ## 🎯 About
 
