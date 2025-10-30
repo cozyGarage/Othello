@@ -1,15 +1,18 @@
-Othello / Reversi Game
+# Othello / Reversi Game 🎮
 
 <div align="center">
 
 🎮 **[Play Now](https://cozygarage.github.io/Othello/)** 🎮
 
-*A fully playable implementation of the classic Othello (also known as Reversi) board game built with React*
+*A fully playable implementation of the classic Othello (Reversi) board game built with React, TypeScript, and Bun*
 
 ![Deploy Status](https://github.com/cozyGarage/Othello/actions/workflows/deploy.yml/badge.svg)
 ![Tests](https://github.com/cozyGarage/Othello/actions/workflows/test.yml/badge.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue?style=flat-square&logo=typescript)
 ![React](https://img.shields.io/badge/React-18.2.0-blue?style=flat-square&logo=react)
-![Bun](https://img.shields.io/badge/Bun-Latest-orange?style=flat-square&logo=bun)
+![Bun](https://img.shields.io/badge/Bun-1.3.1-orange?style=flat-square&logo=bun)
+![Vite](https://img.shields.io/badge/Vite-5.4.21-646CFF?style=flat-square&logo=vite)
+![Tests](https://img.shields.io/badge/Tests-63%20passing-success?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 ![Maintained](https://img.shields.io/badge/Maintained-Yes-brightgreen?style=flat-square)
 
@@ -36,6 +39,7 @@ Othello (also known as Reversi) is a classic strategy board game for two players
 
 ## ✨ Features
 
+### Game Features
 - 🎨 **Clean Interface** - Modern, intuitive design with smooth animations
 - 🎯 **Move Validation** - Automatic validation following official Othello rules
 - 💡 **Visual Hints** - Animated indicators showing all valid moves
@@ -44,6 +48,14 @@ Othello (also known as Reversi) is a classic strategy board game for two players
 - 📊 **Live Scoring** - Real-time score tracking for both players
 - 🔄 **Quick Restart** - One-click game restart functionality
 - 📱 **Responsive** - Works seamlessly on desktop and mobile devices
+
+### Technical Features
+- ⚡ **Lightning Fast** - Powered by Bun runtime (10-100x faster than npm)
+- 🔥 **Instant Dev Server** - Vite hot reload in ~128ms
+- 🛡️ **Type-Safe** - Full TypeScript with strict mode enabled
+- ✅ **Well-Tested** - 63 tests including unit and integration tests
+- 🤖 **CI/CD** - Automated testing and deployment via GitHub Actions
+- 📦 **Modern Tooling** - Bun + Vite + TypeScript + React
 
 ## 🎮 How to Play
 
