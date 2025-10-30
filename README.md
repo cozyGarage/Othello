@@ -1922,7 +1922,7 @@ import 'moment/locale/es';
 moment.locale('fr');
 ```
 
-This will only work for locales that have been explicitly imported before.
+This will only work for locales that have been explicitly imported before!
 
 ## Something Missing?
 
