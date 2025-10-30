@@ -164,6 +164,22 @@ e462b36 - Add comprehensive documentation for TypeScript fix1. Install dependenc
 
 
 
+---
+
+## Next Phase: Chess.com for Othello
+
+**Goal:** Transform this into a chess.com-like platform for Othello players
+
+See **[ROADMAP.md](./ROADMAP.md)** for the complete plan.
+
+**Recommended Starting Point:** Phase 1 - Core UX Polish
+- Move history panel with undo/redo
+- Smooth animations
+- Better visual feedback
+- Modern UI layout
+
+---
+
 *Last Updated: October 30, 2025***On Pull Request:**
 
 1. Install dependencies
