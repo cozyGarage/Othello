@@ -6,7 +6,10 @@ Othello / Reversi Game
 
 *A fully playable implementation of the classic Othello (also known as Reversi) board game built with React*
 
+![Deploy Status](https://github.com/cozyGarage/Othello/actions/workflows/deploy.yml/badge.svg)
+![Tests](https://github.com/cozyGarage/Othello/actions/workflows/test.yml/badge.svg)
 ![React](https://img.shields.io/badge/React-18.2.0-blue?style=flat-square&logo=react)
+![Bun](https://img.shields.io/badge/Bun-Latest-orange?style=flat-square&logo=bun)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 ![Maintained](https://img.shields.io/badge/Maintained-Yes-brightgreen?style=flat-square)
 
@@ -64,8 +67,7 @@ Othello (also known as Reversi) is a classic strategy board game for two players
 
 ### Prerequisites
 
-- Node.js (v14 or higher)
-- npm or yarn
+- [Bun](https://bun.sh) (v1.0 or higher) - A fast all-in-one JavaScript runtime
 
 ### Installation
 
@@ -75,49 +77,84 @@ git clone https://github.com/cozyGarage/Othello.git
 cd Othello
 ```
 
-2. Install dependencies:
+2. Install dependencies with Bun:
 ```bash
-npm install
+bun install
 ```
 
 3. Start the development server:
 ```bash
-npm start
+bun run dev
 ```
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## 💻 Development
+### Why Bun? ⚡
+
+This project now uses **Bun**, a fast all-in-one JavaScript runtime that replaces Node.js, npm, and bundlers:
+- � **10-100x faster** package installation than npm
+- ⚡ **Built-in test runner** - no need for Jest
+- 📦 **Native bundler** via Vite integration
+- 🔥 **Hot module reloading** out of the box
+
+## �💻 Development
 
 ### Available Scripts
 
-- `npm start` - Runs the app in development mode
-- `npm test` - Launches the test runner
-- `npm run build` - Builds the app for production
-- `npm run deploy` - Deploys to GitHub Pages
+- `bun run dev` - Runs the app in development mode with hot reload
+- `bun test` - Runs all tests once
+- `bun test --watch` - Runs tests in watch mode
+- `bun run build` - Builds the app for production
+- `bun run preview` - Preview the production build locally
+- `bun run deploy` - Deploys to GitHub Pages
 
 ### Running Tests
 
+Run tests once:
 ```bash
-npm test
+bun test
 ```
 
-Tests are written using React Testing Library and Jest.
+Run tests in watch mode:
+```bash
+bun test --watch
+```
+
+Tests are written using Bun's built-in test runner with a Jest-compatible API.
+
+### Test Coverage
+
+The project includes comprehensive tests:
+- **Basic tests** (`game-logic.test.js`) - Core game mechanics
+- **Advanced tests** (`game-logic.advanced.test.js`) - Complex scenarios including:
+  - Valid move detection
+  - Game over conditions
+  - Winner determination
+  - Multi-directional piece flipping
+  - Edge cases and corner scenarios
 
 ### Building for Production
 
 ```bash
-npm run build
+bun run build
 ```
 
-Creates an optimized production build in the `build` folder.
+Creates an optimized production build in the `dist` folder with:
+- Minified JavaScript and CSS
+- Source maps for debugging
+- Optimized assets
+
+Preview the production build:
+```bash
+bun run preview
+```
 
 ## 🚀 Deployment
 
 The app is automatically deployed to GitHub Pages. To deploy manually:
 
 ```bash
-npm run deploy
+bun run deploy
 ```
 
 The live version is available at: [https://cozygarage.github.io/Othello/](https://cozygarage.github.io/Othello/)
@@ -126,14 +163,20 @@ The live version is available at: [https://cozygarage.github.io/Othello/](https:
 
 ```
 Othello/
-├── public/           # Static files
+├── public/                    # Static assets
+│   ├── manifest.json
+│   └── robots.txt
 ├── src/
-│   ├── Board.js      # Game board component
-│   ├── Row.js        # Board row component
-│   ├── Tile.js       # Individual tile component
-│   ├── OthelloGame.js # Main game component
-│   ├── game-logic.js # Core game logic
-│   └── *.test.js     # Test files
+│   ├── Board.js              # Game board component
+│   ├── Row.js                # Board row component
+│   ├── Tile.js               # Individual tile component
+│   ├── OthelloGame.js        # Main game component
+│   ├── game-logic.js         # Core game logic
+│   ├── game-logic.test.js    # Basic tests
+│   └── game-logic.advanced.test.js  # Advanced tests
+├── index.html                 # Vite entry point
+├── vite.config.js            # Vite configuration
+├── bunfig.toml               # Bun configuration
 ├── package.json
 └── README.md
 ```
@@ -155,7 +198,8 @@ This project is open source and available under the MIT License.
 ## 🙏 Acknowledgments
 
 - Built with [React](https://reactjs.org/)
-- Bootstrapped with [Create React App](https://create-react-app.dev/)
+- Powered by [Bun](https://bun.sh/) - Fast all-in-one JavaScript runtime
+- Bundled with [Vite](https://vitejs.dev/) - Next generation frontend tooling
 - Deployed on [GitHub Pages](https://pages.github.com/)
 
 ---

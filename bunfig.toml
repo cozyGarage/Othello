@@ -1,0 +1,11 @@
+[test]
+# Enable experimental test features
+preload = ["./src/setupTests.js"]
+
+[install]
+# Install configuration
+peer = true
+
+[run]
+# Bun run configuration
+bun = true
