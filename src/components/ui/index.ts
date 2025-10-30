@@ -9,3 +9,4 @@ export { PlayerInfo } from './PlayerInfo';
 export { ScoreBox } from './ScoreBox';
 export { GameMessage } from './GameMessage';
 export { SettingsPanel } from './SettingsPanel';
+export { LoadingScreen } from './LoadingScreen';

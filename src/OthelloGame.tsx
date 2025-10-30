@@ -1,5 +1,7 @@
 import { Component } from 'react';
 import Board from './Board';
+import { LoadingScreen } from './components/ui';
+import { hasLoadingScreen } from './config/features';
 import { 
   W, B, E, 
   getAnnotatedBoard, 
@@ -17,6 +19,7 @@ interface OthelloGameState {
   message: string | null;
   gameOver: boolean;
   lastMove: Coordinate | null;
+  isLoading: boolean;
 }
 
 class OthelloGame extends Component<{}, OthelloGameState> {
@@ -26,8 +29,18 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       board: this.createInitialBoard(),
       message: null,
       gameOver: false,
-      lastMove: null
+      lastMove: null,
+      isLoading: hasLoadingScreen()
     };
+  }
+
+  componentDidMount(): void {
+    // Simulate loading for better UX (show loading screen briefly)
+    if (hasLoadingScreen()) {
+      setTimeout(() => {
+        this.setState({ isLoading: false });
+      }, 1500); // 1.5 second loading
+    }
   }
 
   createInitialBoard(): BoardType {
@@ -111,14 +124,17 @@ class OthelloGame extends Component<{}, OthelloGameState> {
   render() {
     return (
       <div className="OthelloGame">
-        <Board 
-          board={getAnnotatedBoard(this.state.board)} 
-          onPlayerTurn={this.handlePlayerTurn}
-          onRestart={this.handleRestart}
-          message={this.state.message}
-          gameOver={this.state.gameOver}
-          lastMove={this.state.lastMove}
-        />
+        <LoadingScreen isLoading={this.state.isLoading} />
+        {!this.state.isLoading && (
+          <Board 
+            board={getAnnotatedBoard(this.state.board)} 
+            onPlayerTurn={this.handlePlayerTurn}
+            onRestart={this.handleRestart}
+            message={this.state.message}
+            gameOver={this.state.gameOver}
+            lastMove={this.state.lastMove}
+          />
+        )}
       </div>
     );
   }
