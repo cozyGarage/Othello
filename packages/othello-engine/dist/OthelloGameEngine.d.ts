@@ -31,27 +31,14 @@ export interface GameEvent {
     data: any;
 }
 type EventListener = (event: GameEvent) => void;
-/**
- * OthelloGameEngine - A framework-agnostic game engine for Othello
- *
- * This class manages the complete game state, handles move validation,
- * tracks history, and provides an event-based API for UI integration.
- *
- * Usage:
- * ```typescript
- * const engine = new OthelloGameEngine();
- * engine.on('stateChange', (event) => {
- *   // Update your UI based on event.data.state
- * });
- * engine.makeMove([3, 2]);
- * ```
- */
 export declare class OthelloGameEngine {
     private board;
     private moveHistory;
     private listeners;
     private blackPlayerId?;
     private whitePlayerId?;
+    private undoStack;
+    private redoStack;
     /**
      * Creates a new Othello game engine
      * @param blackPlayerId - Optional ID for the black player
@@ -59,6 +46,18 @@ export declare class OthelloGameEngine {
      * @param initialBoard - Optional initial board state (for loading saved games)
      */
     constructor(blackPlayerId?: string, whitePlayerId?: string, initialBoard?: TileValue[][]);
+    /**
+     * Create a deep clone of the board for snapshot
+     */
+    private cloneBoard;
+    /**
+     * Create a snapshot of the entire game state
+     */
+    private createSnapshot;
+    /**
+     * Restore game state from a snapshot
+     */
+    private restoreSnapshot;
     /**
      * Subscribe to game events
      * @param eventType - The type of event to listen for
@@ -81,6 +80,26 @@ export declare class OthelloGameEngine {
      * @returns true if the move was successful, false otherwise
      */
     makeMove(coordinate: Coordinate): boolean;
+    /**
+     * Undo the last move
+     * @returns true if undo was successful, false if nothing to undo
+     */
+    undo(): boolean;
+    /**
+     * Redo a previously undone move
+     * @returns true if redo was successful, false if nothing to redo
+     */
+    redo(): boolean;
+    /**
+     * Check if undo is available
+     * @returns true if there are moves to undo
+     */
+    canUndo(): boolean;
+    /**
+     * Check if redo is available
+     * @returns true if there are moves to redo
+     */
+    canRedo(): boolean;
     /**
      * Get the current game state
      * @returns Complete game state including board, score, history, etc.

@@ -1,19 +1,4 @@
 import { createBoard, takeTurn, getValidMoves, isGameOver, getWinner, score, getAnnotatedBoard, B, W, E } from './index';
-/**
- * OthelloGameEngine - A framework-agnostic game engine for Othello
- *
- * This class manages the complete game state, handles move validation,
- * tracks history, and provides an event-based API for UI integration.
- *
- * Usage:
- * ```typescript
- * const engine = new OthelloGameEngine();
- * engine.on('stateChange', (event) => {
- *   // Update your UI based on event.data.state
- * });
- * engine.makeMove([3, 2]);
- * ```
- */
 export class OthelloGameEngine {
     /**
      * Creates a new Othello game engine
@@ -24,6 +9,9 @@ export class OthelloGameEngine {
     constructor(blackPlayerId, whitePlayerId, initialBoard) {
         this.moveHistory = [];
         this.listeners = new Map();
+        // Undo/Redo stacks
+        this.undoStack = [];
+        this.redoStack = [];
         this.blackPlayerId = blackPlayerId;
         this.whitePlayerId = whitePlayerId;
         // Initialize with standard Othello starting position
@@ -38,6 +26,32 @@ export class OthelloGameEngine {
             [E, E, E, E, E, E, E, E]
         ];
         this.board = createBoard(startingBoard);
+    }
+    /**
+     * Create a deep clone of the board for snapshot
+     */
+    cloneBoard(board) {
+        return {
+            tiles: board.tiles.map(row => [...row]),
+            playerTurn: board.playerTurn
+        };
+    }
+    /**
+     * Create a snapshot of the entire game state
+     */
+    createSnapshot() {
+        return {
+            board: this.cloneBoard(this.board),
+            moveHistory: [...this.moveHistory]
+        };
+    }
+    /**
+     * Restore game state from a snapshot
+     */
+    restoreSnapshot(snapshot) {
+        this.board.tiles = snapshot.board.tiles.map(row => [...row]);
+        this.board.playerTurn = snapshot.board.playerTurn;
+        this.moveHistory = [...snapshot.moveHistory];
     }
     /**
      * Subscribe to game events
@@ -81,6 +95,10 @@ export class OthelloGameEngine {
     makeMove(coordinate) {
         try {
             const currentPlayer = this.board.playerTurn;
+            // Save current state to undo stack BEFORE making the move
+            this.undoStack.push(this.createSnapshot());
+            // Clear redo stack when a new move is made
+            this.redoStack = [];
             // Attempt the move
             takeTurn(this.board, coordinate);
             // Record the move in history
@@ -102,9 +120,59 @@ export class OthelloGameEngine {
             return true;
         }
         catch (error) {
+            // Remove the snapshot we just added since move failed
+            this.undoStack.pop();
             this.emit('invalidMove', { coordinate, error: error.message });
             return false;
         }
+    }
+    /**
+     * Undo the last move
+     * @returns true if undo was successful, false if nothing to undo
+     */
+    undo() {
+        if (this.undoStack.length === 0) {
+            return false;
+        }
+        // Save current state to redo stack
+        this.redoStack.push(this.createSnapshot());
+        // Restore previous state
+        const previousState = this.undoStack.pop();
+        this.restoreSnapshot(previousState);
+        // Emit state change event
+        this.emit('stateChange', { state: this.getState(), action: 'undo' });
+        return true;
+    }
+    /**
+     * Redo a previously undone move
+     * @returns true if redo was successful, false if nothing to redo
+     */
+    redo() {
+        if (this.redoStack.length === 0) {
+            return false;
+        }
+        // Save current state to undo stack
+        this.undoStack.push(this.createSnapshot());
+        // Restore redo state
+        const redoState = this.redoStack.pop();
+        this.restoreSnapshot(redoState);
+        // Emit state change event
+        this.emit('stateChange', { state: this.getState(), action: 'redo' });
+        return true;
+    }
+    /**
+     * Check if undo is available
+     * @returns true if there are moves to undo
+     */
+    canUndo() {
+        return this.undoStack.length > 0;
+    }
+    /**
+     * Check if redo is available
+     * @returns true if there are moves to redo
+     */
+    canRedo() {
+        return this.redoStack.length > 0;
     }
     /**
      * Get the current game state
@@ -181,6 +249,9 @@ export class OthelloGameEngine {
         ];
         this.board = createBoard(startingBoard);
         this.moveHistory = [];
+        // Clear undo/redo stacks
+        this.undoStack = [];
+        this.redoStack = [];
         this.emit('stateChange', { state: this.getState() });
     }
     /**

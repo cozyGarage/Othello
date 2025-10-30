@@ -71,12 +71,32 @@ type EventListener = (event: GameEvent) => void;
  * engine.makeMove([3, 2]);
  * ```
  */
+/**
+ * Snapshot of the complete game state for undo/redo
+ */
+interface GameSnapshot {
+  board: BoardSnapshot;
+  moveHistory: Move[];
+}
+
+/**
+ * Snapshot of the board state
+ */
+interface BoardSnapshot {
+  tiles: TileValue[][];
+  playerTurn: 'W' | 'B';
+}
+
 export class OthelloGameEngine {
   private board: Board;
   private moveHistory: Move[] = [];
   private listeners: Map<GameEventType, EventListener[]> = new Map();
   private blackPlayerId?: string;
   private whitePlayerId?: string;
+  
+  // Undo/Redo stacks
+  private undoStack: GameSnapshot[] = [];
+  private redoStack: GameSnapshot[] = [];
 
   /**
    * Creates a new Othello game engine
@@ -105,6 +125,35 @@ export class OthelloGameEngine {
     ];
     
     this.board = createBoard(startingBoard);
+  }
+  
+  /**
+   * Create a deep clone of the board for snapshot
+   */
+  private cloneBoard(board: Board): BoardSnapshot {
+    return {
+      tiles: board.tiles.map(row => [...row]),
+      playerTurn: board.playerTurn
+    };
+  }
+  
+  /**
+   * Create a snapshot of the entire game state
+   */
+  private createSnapshot(): GameSnapshot {
+    return {
+      board: this.cloneBoard(this.board),
+      moveHistory: [...this.moveHistory]
+    };
+  }
+  
+  /**
+   * Restore game state from a snapshot
+   */
+  private restoreSnapshot(snapshot: GameSnapshot): void {
+    this.board.tiles = snapshot.board.tiles.map(row => [...row]);
+    this.board.playerTurn = snapshot.board.playerTurn;
+    this.moveHistory = [...snapshot.moveHistory];
   }
 
   /**
@@ -153,6 +202,12 @@ export class OthelloGameEngine {
     try {
       const currentPlayer = this.board.playerTurn;
       
+      // Save current state to undo stack BEFORE making the move
+      this.undoStack.push(this.createSnapshot());
+      
+      // Clear redo stack when a new move is made
+      this.redoStack = [];
+      
       // Attempt the move
       takeTurn(this.board, coordinate);
       
@@ -177,9 +232,71 @@ export class OthelloGameEngine {
       
       return true;
     } catch (error) {
+      // Remove the snapshot we just added since move failed
+      this.undoStack.pop();
       this.emit('invalidMove', { coordinate, error: (error as Error).message });
       return false;
     }
+  }
+  
+  /**
+   * Undo the last move
+   * @returns true if undo was successful, false if nothing to undo
+   */
+  public undo(): boolean {
+    if (this.undoStack.length === 0) {
+      return false;
+    }
+    
+    // Save current state to redo stack
+    this.redoStack.push(this.createSnapshot());
+    
+    // Restore previous state
+    const previousState = this.undoStack.pop()!;
+    this.restoreSnapshot(previousState);
+    
+    // Emit state change event
+    this.emit('stateChange', { state: this.getState(), action: 'undo' });
+    
+    return true;
+  }
+  
+  /**
+   * Redo a previously undone move
+   * @returns true if redo was successful, false if nothing to redo
+   */
+  public redo(): boolean {
+    if (this.redoStack.length === 0) {
+      return false;
+    }
+    
+    // Save current state to undo stack
+    this.undoStack.push(this.createSnapshot());
+    
+    // Restore redo state
+    const redoState = this.redoStack.pop()!;
+    this.restoreSnapshot(redoState);
+    
+    // Emit state change event
+    this.emit('stateChange', { state: this.getState(), action: 'redo' });
+    
+    return true;
+  }
+  
+  /**
+   * Check if undo is available
+   * @returns true if there are moves to undo
+   */
+  public canUndo(): boolean {
+    return this.undoStack.length > 0;
+  }
+  
+  /**
+   * Check if redo is available
+   * @returns true if there are moves to redo
+   */
+  public canRedo(): boolean {
+    return this.redoStack.length > 0;
   }
 
   /**
@@ -265,6 +382,10 @@ export class OthelloGameEngine {
     
     this.board = createBoard(startingBoard);
     this.moveHistory = [];
+    
+    // Clear undo/redo stacks
+    this.undoStack = [];
+    this.redoStack = [];
     
     this.emit('stateChange', { state: this.getState() });
   }
