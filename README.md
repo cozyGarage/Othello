@@ -1,4 +1,4 @@
-# Othello / Reversi Game
+Othello / Reversi Game
 
 🎮 **Play now:** [https://cozygarage.github.io/Othello/](https://cozygarage.github.io/Othello/)
 
