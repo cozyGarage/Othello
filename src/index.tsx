@@ -3,6 +3,7 @@ import OthelloGame from './OthelloGame';
 // @ts-expect-error - registerServiceWorker is not typed
 import registerServiceWorker from './registerServiceWorker';
 import './index.css';
+import './animations.css';
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {

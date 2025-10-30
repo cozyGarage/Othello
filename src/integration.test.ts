@@ -15,7 +15,7 @@ describe('Integration Tests - React App Rendering', () => {
     });
 
     document = dom.window.document;
-    window = dom.window as Window & typeof globalThis;
+    window = dom.window as unknown as Window & typeof globalThis;
 
     // Set up global objects for React
     (global as any).document = document;

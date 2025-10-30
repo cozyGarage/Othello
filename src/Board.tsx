@@ -9,9 +9,10 @@ interface BoardProps {
   onRestart: () => void;
   message: string | null;
   gameOver: boolean;
+  lastMove: Coordinate | null;
 }
 
-const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, onRestart, message, gameOver }) => {
+const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, onRestart, message, gameOver, lastMove }) => {
   const playerScore = score(board);
   const player = (board.playerTurn === B) ? 'Black' : 'White';
   const rows: React.ReactElement[] = [];
@@ -23,6 +24,7 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, onRestart, message, 
         y={rows.length} 
         tiles={row} 
         onPlayerTurn={onPlayerTurn}
+        lastMove={lastMove}
       />
     );
   }

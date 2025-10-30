@@ -17,6 +17,7 @@ interface OthelloGameState {
   board: BoardType;
   message: string | null;
   gameOver: boolean;
+  lastMove: Coordinate | null;
 }
 
 class OthelloGame extends Component<{}, OthelloGameState> {
@@ -25,7 +26,8 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.state = {
       board: this.createInitialBoard(),
       message: null,
-      gameOver: false
+      gameOver: false,
+      lastMove: null
     };
   }
 
@@ -49,7 +51,9 @@ class OthelloGame extends Component<{}, OthelloGameState> {
 
     try {
       takeTurn(this.state.board, coord);
-      this.checkGameState();
+      this.setState({ lastMove: coord }, () => {
+        this.checkGameState();
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An error occurred';
       this.setState({ message });
@@ -100,7 +104,8 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.setState({
       board: this.createInitialBoard(),
       message: null,
-      gameOver: false
+      gameOver: false,
+      lastMove: null
     });
   }
 
@@ -113,6 +118,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
           onRestart={this.handleRestart}
           message={this.state.message}
           gameOver={this.state.gameOver}
+          lastMove={this.state.lastMove}
         />
       </div>
     );
