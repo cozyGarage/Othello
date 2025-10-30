@@ -1,21 +1,43 @@
-.Board{
+.Board {
+  display: flex;
+  flex-direction: column;
   justify-content: center;
+  align-items: center;
   background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
   border-radius: 16px;
   padding: 24px;
   margin: 20px auto;
-  max-width: 600px;
+  max-width: 560px;
+  width: 100%;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5),
               0 0 20px rgba(0, 0, 0, 0.3);
 }
 
+/* Responsive */
+@media (max-width: 640px) {
+  .Board {
+    max-width: 100%;
+    margin: 10px;
+    padding: 16px;
+  }
+}
+
 .gameInfo {
   display: flex;
-  font-size: 42px;
+  width: 100%;
+  font-size: 36px;
   font-family: "Verdana", sans-serif;
   font-weight: bold;
   margin-bottom: 20px;
   animation: fadeIn 0.5s ease-out;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .gameInfo {
+    font-size: 28px;
+    gap: 12px;
+  }
 }
 
 @keyframes fadeIn {
@@ -29,14 +51,12 @@
   }
 }
 
-.gameInfo .spacer {
-  flex: 0.1;
-}
+/* Removed spacer - using gap instead */
 
 
 
 .board {
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
   border: 3px solid rgba(0, 0, 0, 0.3);
   margin-top: 16px;
@@ -45,6 +65,14 @@
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4),
               inset 0 0 20px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 480px;
+}
+
+@media (max-width: 640px) {
+  .board {
+    max-width: 100%;
+  }
 }
 
 
@@ -65,16 +93,17 @@
 }
 
 .playerInfo {
-  align-self: center;
   display: flex;
-  flex: 2;
+  flex: 1;
   align-items: center;
+  justify-content: center;
   padding: 16px 20px;
   border-radius: 12px;
   background: linear-gradient(135deg, #2d5016 0%, #1e3a0f 100%);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
               inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+  min-width: 0;
 }
 
 .playerInfo:hover {
@@ -83,8 +112,16 @@
               inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
+@media (max-width: 640px) {
+  .playerInfo {
+    padding: 12px 16px;
+    font-size: 0.85em;
+  }
+}
+
 .scoreInfo {
   display: flex;
+  flex: 1;
   justify-content: center;
   align-items: center;
   text-align: center;
@@ -94,7 +131,6 @@
   background: linear-gradient(135deg, #2d5016 0%, #1e3a0f 100%);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
               inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  min-width: 180px;
 }
 
 .scoreInfo span {
@@ -103,6 +139,14 @@
 
 .scoreInfo:hover span {
   transform: scale(1.1);
+}
+
+@media (max-width: 640px) {
+  .scoreInfo {
+    padding: 12px 16px;
+    gap: 8px;
+    font-size: 0.85em;
+  }
 }
 
 .shadow {

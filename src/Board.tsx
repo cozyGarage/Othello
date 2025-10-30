@@ -32,19 +32,16 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, onRestart, message, 
   return (
     <div className="Board shadow border">
       <div className="gameInfo">
-        <span className="playerInfo shadow border">
-          <span className="label"></span>
+        <div className="playerInfo shadow border">
           <span className={player.toLowerCase()}>
             {gameOver ? 'Game Over' : `${player}, You are up`}
           </span>
-        </span>
-        <span className="spacer"/>
-        <span className="scoreInfo shawdow border">
-          <span className="label"></span>
+        </div>
+        <div className="scoreInfo shadow border">
           <span className="black">{playerScore.black}</span>
           <span className="scoreDelimitter">-</span>
           <span className="white">{playerScore.white}</span>
-        </span>
+        </div>
       </div>
       {message && (
         <div className="message">

@@ -89,7 +89,4 @@
   animation: scoreChange 0.4s ease-out;
 }
 
-/* Smooth all transitions */
-* {
-  transition: transform 0.2s ease, opacity 0.2s ease;
-}
+/* Smooth transitions - removed global selector to prevent conflicts */
