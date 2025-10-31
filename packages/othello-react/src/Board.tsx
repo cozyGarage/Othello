@@ -7,7 +7,6 @@ import { B, P, score, type Board as BoardType, type Coordinate } from 'othello-e
 interface BoardProps {
   board: BoardType;
   onPlayerTurn: (coord: Coordinate) => void;
-  onRestart: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
@@ -20,7 +19,6 @@ interface BoardProps {
 const Board: React.FC<BoardProps> = ({ 
   board, 
   onPlayerTurn, 
-  onRestart, 
   onUndo,
   onRedo,
   canUndo = false,
@@ -84,9 +82,6 @@ const Board: React.FC<BoardProps> = ({
             ↷ Redo
           </button>
         </div>
-        <button className="restart-button" onClick={onRestart}>
-          🔄 New Game
-        </button>
       </div>
     </div>
   );

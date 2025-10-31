@@ -1,6 +1,6 @@
 import { Component } from 'react';
 import Board from './Board';
-import { LoadingScreen, SettingsPanel, MoveHistory } from './components/ui';
+import { LoadingScreen, SettingsPanel, MoveHistory, GameMenu } from './components/ui';
 import { hasLoadingScreen, hasSoundEffects, hasMoveHistory } from './config/features';
 import { soundEffects } from './utils/soundEffects';
 import { 
@@ -20,6 +20,7 @@ interface OthelloGameState {
   isLoading: boolean;
   moveHistory: Move[];
   settingsOpen: boolean;
+  soundVolume: number;
 }
 
 class OthelloGame extends Component<{}, OthelloGameState> {
@@ -39,7 +40,8 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       lastMove: null,
       isLoading: hasLoadingScreen(),
       moveHistory: [],
-      settingsOpen: false
+      settingsOpen: false,
+      soundVolume: soundEffects.getVolume()
     };
   }
 
@@ -222,18 +224,29 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     }
   }
 
+  handleVolumeChange = (volume: number): void => {
+    soundEffects.setVolume(volume);
+    this.setState({ soundVolume: volume });
+  }
+
   render() {
     return (
       <div className="OthelloGame">
         <LoadingScreen isLoading={this.state.isLoading} />
         {!this.state.isLoading && (
           <>
+            <GameMenu
+              onNewGame={this.handleRestart}
+              onOpenSettings={() => this.setState({ settingsOpen: true })}
+              soundVolume={this.state.soundVolume}
+              onVolumeChange={this.handleVolumeChange}
+              soundEnabled={hasSoundEffects()}
+            />
             <div className="game-layout">
               <div className="game-main">
                 <Board 
                   board={this.engine.getAnnotatedBoard()} 
                   onPlayerTurn={this.handlePlayerTurn}
-                  onRestart={this.handleRestart}
                   onUndo={this.handleUndo}
                   onRedo={this.handleRedo}
                   canUndo={this.engine.canUndo()}
@@ -242,15 +255,6 @@ class OthelloGame extends Component<{}, OthelloGameState> {
                   gameOver={this.state.gameOver}
                   lastMove={this.state.lastMove}
                 />
-                <div className="game-controls">
-                  <button 
-                    className="settings-icon-button" 
-                    onClick={() => this.setState({ settingsOpen: true })} 
-                    aria-label="Settings"
-                  >
-                    ⚙️ Settings
-                  </button>
-                </div>
               </div>
               {hasMoveHistory() && (
                 <div className="game-sidebar">

@@ -11,3 +11,4 @@ export { GameMessage } from './GameMessage';
 export { SettingsPanel } from './SettingsPanel';
 export { LoadingScreen } from './LoadingScreen';
 export { MoveHistory } from './MoveHistory';
+export { GameMenu } from './GameMenu';

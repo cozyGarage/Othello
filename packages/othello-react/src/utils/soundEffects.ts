@@ -13,6 +13,7 @@
 class SoundEffectsManager {
   private audioContext: AudioContext | null = null;
   private enabled: boolean = true;
+  private volume: number = 100; // 0-100
 
   constructor() {
     // Initialize AudioContext lazily (on first use)
@@ -38,6 +39,27 @@ class SoundEffectsManager {
   }
 
   /**
+   * Set volume (0-100)
+   */
+  setVolume(volume: number): void {
+    this.volume = Math.max(0, Math.min(100, volume));
+  }
+
+  /**
+   * Get current volume (0-100)
+   */
+  getVolume(): number {
+    return this.volume;
+  }
+
+  /**
+   * Calculate effective gain from volume percentage
+   */
+  private getVolumeGain(): number {
+    return this.volume / 100;
+  }
+
+  /**
    * Play piece flip sound
    * Quick, satisfying "tick" sound when piece flips
    */
@@ -46,6 +68,7 @@ class SoundEffectsManager {
 
     const ctx = this.audioContext;
     const currentTime = ctx.currentTime;
+    const volumeGain = this.getVolumeGain();
 
     // Create oscillator for tone
     const oscillator = ctx.createOscillator();
@@ -58,9 +81,9 @@ class SoundEffectsManager {
     oscillator.frequency.setValueAtTime(800, currentTime);
     oscillator.frequency.exponentialRampToValueAtTime(600, currentTime + 0.1);
 
-    // Quick attack and decay
+    // Quick attack and decay (adjusted by volume)
     gainNode.gain.setValueAtTime(0, currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.3, currentTime + 0.01);
+    gainNode.gain.linearRampToValueAtTime(0.3 * volumeGain, currentTime + 0.01);
     gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.1);
 
     oscillator.start(currentTime);
@@ -76,6 +99,7 @@ class SoundEffectsManager {
 
     const ctx = this.audioContext;
     const currentTime = ctx.currentTime;
+    const volumeGain = this.getVolumeGain();
 
     // Create oscillator for buzz
     const oscillator = ctx.createOscillator();
@@ -88,9 +112,9 @@ class SoundEffectsManager {
     oscillator.frequency.setValueAtTime(150, currentTime);
     oscillator.type = 'sawtooth';
 
-    // Quick burst
+    // Quick burst (adjusted by volume)
     gainNode.gain.setValueAtTime(0, currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.2, currentTime + 0.05);
+    gainNode.gain.linearRampToValueAtTime(0.2 * volumeGain, currentTime + 0.05);
     gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.15);
 
     oscillator.start(currentTime);
@@ -122,10 +146,11 @@ class SoundEffectsManager {
       oscillator.frequency.setValueAtTime(frequency, currentTime + delay);
       oscillator.type = 'sine';
 
-      // Smooth envelope
+      // Smooth envelope (adjusted by volume)
+      const volumeGain = this.getVolumeGain();
       const startTime = currentTime + delay;
       gainNode.gain.setValueAtTime(0, startTime);
-      gainNode.gain.linearRampToValueAtTime(0.2, startTime + 0.1);
+      gainNode.gain.linearRampToValueAtTime(0.2 * volumeGain, startTime + 0.1);
       gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.5);
 
       oscillator.start(startTime);
