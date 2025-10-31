@@ -21,11 +21,13 @@ const BoardClean: React.FC<BoardProps> = ({
 }) => {
   const handleTileClick = (row: number, col: number) => {
     if (gameOver) return;
-    onPlayerTurn([row, col]);
+    // Engine expects [x, y] which is [col, row]
+    onPlayerTurn([col, row]);
   };
 
   const isLastMove = (row: number, col: number): boolean => {
-    return lastMove !== null && lastMove[0] === row && lastMove[1] === col;
+    // lastMove is [x, y] which is [col, row]
+    return lastMove !== null && lastMove[0] === col && lastMove[1] === row;
   };
 
   const tiles = [];
