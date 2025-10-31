@@ -8,7 +8,7 @@ export const E = 'E';
 export const P = 'P';
 export const createBoard = (tiles) => ({
     playerTurn: B,
-    tiles
+    tiles,
 });
 export const tile = (board, [x, y]) => board.tiles[y][x];
 export const score = (board) => {
@@ -27,16 +27,16 @@ export const score = (board) => {
     }
     return {
         black: blackCount,
-        white: whiteCount
+        white: whiteCount,
     };
 };
 const isOutOfBounds = (board, [x, y]) => x < 0 || y < 0 || x >= board.tiles.length || y >= board.tiles.length;
 export const hasAdjacentPiece = (board, coord) => {
     const [xCoord, yCoord] = coord;
-    for (let x = xCoord - 1; x <= (xCoord + 1); x++) {
-        for (let y = yCoord - 1; y <= (yCoord + 1); y++) {
+    for (let x = xCoord - 1; x <= xCoord + 1; x++) {
+        for (let y = yCoord - 1; y <= yCoord + 1; y++) {
             // don't check the original coord, only adjacent coords
-            if ((x === xCoord) && (y === yCoord)) {
+            if (x === xCoord && y === yCoord) {
                 continue;
             }
             if (isOutOfBounds(board, [x, y])) {
@@ -50,48 +50,48 @@ export const hasAdjacentPiece = (board, coord) => {
     return false;
 };
 const DIRECTIONS = {
-    'top': {
+    top: {
         xMod: 0,
-        yMod: -1
+        yMod: -1,
     },
     'top-right': {
         xMod: 1,
-        yMod: -1
+        yMod: -1,
     },
-    'right': {
+    right: {
         xMod: 1,
-        yMod: 0
+        yMod: 0,
     },
     'bottom-right': {
         xMod: 1,
-        yMod: 1
+        yMod: 1,
     },
-    'bottom': {
+    bottom: {
         xMod: 0,
-        yMod: 1
+        yMod: 1,
     },
     'bottom-left': {
         xMod: -1,
-        yMod: 1
+        yMod: 1,
     },
-    'left': {
+    left: {
         xMod: -1,
-        yMod: 0
+        yMod: 0,
     },
     'top-left': {
         xMod: -1,
-        yMod: -1
-    }
+        yMod: -1,
+    },
 };
 const findFlippableDirections = (board, [xCoord, yCoord]) => {
     const startColor = board.tiles[yCoord][xCoord];
-    const alternateColor = (startColor === W) ? B : W;
+    const alternateColor = startColor === W ? B : W;
     const flippableDirections = [];
     for (const dirName in DIRECTIONS) {
         const dirModifier = DIRECTIONS[dirName];
         let x = xCoord + dirModifier.xMod;
         let y = yCoord + dirModifier.yMod;
-        if (!isOutOfBounds(board, [x, y]) && (board.tiles[y][x] === alternateColor)) {
+        if (!isOutOfBounds(board, [x, y]) && board.tiles[y][x] === alternateColor) {
             let isAlternateColor = true;
             do {
                 x += dirModifier.xMod;
@@ -127,7 +127,7 @@ const flipTiles = (board, directions, [xCoord, yCoord]) => {
         }
     }
 };
-const alternatePlayer = (player) => (player === B) ? W : B;
+const alternatePlayer = (player) => (player === B ? W : B);
 export const takeTurn = (board, coord) => {
     const [x, y] = coord;
     if (board.tiles[y][x] !== E) {
@@ -171,7 +171,7 @@ export const getValidMoves = (board) => {
 // Check if the game is over
 export const isGameOver = (board) => {
     // Check if board is full
-    const isBoardFull = board.tiles.every(row => row.every(tile => tile !== E));
+    const isBoardFull = board.tiles.every((row) => row.every((tile) => tile !== E));
     if (isBoardFull) {
         return true;
     }
@@ -198,8 +198,8 @@ export const getWinner = (board) => {
     }
     return null; // Tie
 };
-const annotateSquare = (square, board, coord) => (square !== E) ? square : isValidMove(board, coord) ? P : E;
+const annotateSquare = (square, board, coord) => square !== E ? square : isValidMove(board, coord) ? P : E;
 export const getAnnotatedBoard = (board) => ({
     ...board,
-    tiles: board.tiles.map((row, y) => row.map((square, x) => annotateSquare(square, board, [x, y])))
+    tiles: board.tiles.map((row, y) => row.map((square, x) => annotateSquare(square, board, [x, y]))),
 });

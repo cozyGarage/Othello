@@ -5,8 +5,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "bun --cwd packages/othello-react run dev",
-    "build": "bun --cwd packages/othello-engine run build && bun --cwd packages/othello-react run build",
+    "dev": "cd packages/othello-react && bun run dev",
+    "build": "cd packages/othello-engine && bun run build && cd ../othello-react && bun run build",
     "test": "bun test packages/*",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",

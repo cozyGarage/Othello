@@ -11,11 +11,6 @@ export const MoveHistory: React.FC<MoveHistoryProps> = ({ moves, isVisible }) =>
     return null;
   }
 
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString();
-  };
-
   const formatCoordinate = (coord: [number, number]) => {
     const [x, y] = coord;
     const column = String.fromCharCode(65 + x); // A-H
