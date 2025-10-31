@@ -1,33 +1,29 @@
 {
-  "name": "othello",
-  "version": "0.2.0",
-  "homepage": "https://cozygarage.github.io/Othello/",
+  "name": "othello-monorepo",
   "private": true,
-  "type": "module",
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "type-check": "tsc --noEmit",
-    "predeploy": "bun run build",
-    "deploy": "gh-pages -d dist"
+    "dev": "bun --cwd packages/othello-react run dev",
+    "build": "bun --cwd packages/othello-engine run build && bun --cwd packages/othello-react run build",
+    "test": "bun test packages/*",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "type-check": "cd packages/othello-react && bun run type-check && cd ../othello-engine && bun run type-check",
+    "validate": "bun run format:check && bun run lint && bun run test"
   },
   "devDependencies": {
+    "@eslint/js": "^9.38.0",
     "@types/bun": "latest",
-    "@types/jsdom": "^27.0.0",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
-    "@vitejs/plugin-react": "^4.2.0",
-    "gh-pages": "^5.0.0",
-    "happy-dom": "^12.10.3",
-    "jsdom": "^27.0.1",
-    "typescript": "^5.9.3",
-    "vite": "^5.0.0"
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "prettier": "^3.6.2"
   }
 }

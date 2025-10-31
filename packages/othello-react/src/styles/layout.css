@@ -1,0 +1,101 @@
+/* ========================================
+   LAYOUT - Main Structure & Grid
+   Chess.com inspired responsive layout
+   ======================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========== MAIN APP LAYOUT ========== */
+.OthelloGame {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ========== GAME CONTAINER (below navbar) ========== */
+.game-container {
+  display: flex;
+  justify-content: center;
+  align-items: start;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  flex: 1;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* ========== BOARD AREA ========== */
+.board-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+/* ========== SIDEBAR AREA ========== */
+.sidebar-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  position: sticky;
+  top: calc(var(--navbar-height) + var(--spacing-lg));
+  flex: 0 0 var(--sidebar-width);
+}
+
+/* ========== RESPONSIVE BREAKPOINTS ========== */
+
+/* Tablet: Smaller sidebar, switch to column */
+@media (max-width: 1024px) {
+  .sidebar-area {
+    flex: 0 0 280px;
+  }
+}
+
+/* Mobile: Stack vertically */
+@media (max-width: 768px) {
+  .game-container {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+  }
+
+  .board-area {
+    width: 100%;
+  }
+
+  .sidebar-area {
+    position: static;
+    width: 100%;
+    flex: 1 1 auto;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+  .game-container {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-sm);
+  }
+}

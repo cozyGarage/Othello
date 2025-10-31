@@ -4,7 +4,7 @@
 
 🎮 **[Play Now](https://cozygarage.github.io/Othello/)** 🎮
 
-*A fully playable implementation of the classic Othello (Reversi) board game built with React, TypeScript, and Bun*
+_A fully playable implementation of the classic Othello (Reversi) board game built with React, TypeScript, and Bun_
 
 ![Deploy Status](https://github.com/cozyGarage/Othello/actions/workflows/deploy.yml/badge.svg)
 ![Tests](https://github.com/cozyGarage/Othello/actions/workflows/test.yml/badge.svg)
@@ -25,6 +25,7 @@ Othello (also known as Reversi) is a classic strategy board game for two players
 ## ✨ Features
 
 ### Game Features
+
 - 🎨 **Clean Interface** - Modern, intuitive design with smooth animations
 - 🎯 **Move Validation** - Automatic validation following official Othello rules
 - 💡 **Visual Hints** - Animated indicators showing all valid moves
@@ -35,6 +36,7 @@ Othello (also known as Reversi) is a classic strategy board game for two players
 - 📱 **Responsive** - Works seamlessly on desktop and mobile devices
 
 ### Technical Features
+
 - ⚡ **Lightning Fast** - Powered by Bun runtime (10-100x faster than npm)
 - 🔥 **Instant Dev Server** - Vite hot reload in ~128ms
 - 🛡️ **Type-Safe** - Full TypeScript with strict mode enabled
@@ -69,17 +71,20 @@ Othello (also known as Reversi) is a classic strategy board game for two players
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/cozyGarage/Othello.git
 cd Othello
 ```
 
 2. Install dependencies with Bun:
+
 ```bash
 bun install
 ```
 
 3. Start the development server:
+
 ```bash
 bun run dev
 ```
@@ -89,6 +94,7 @@ bun run dev
 ### Why Bun? ⚡
 
 This project now uses **Bun**, a fast all-in-one JavaScript runtime that replaces Node.js, npm, and bundlers:
+
 - � **10-100x faster** package installation than npm
 - ⚡ **Built-in test runner** - no need for Jest
 - 📦 **Native bundler** via Vite integration
@@ -123,6 +129,7 @@ src/
 ## 🧪 Testing
 
 **63 tests** covering unit, advanced, and integration scenarios:
+
 - Game logic validation
 - Move detection and validation
 - Multi-directional flipping
