@@ -28,9 +28,9 @@ describe('UI Components', () => {
           [E, E, E, B, W, E, E, E],
           [E, E, E, E, E, E, E, E],
           [E, E, E, E, E, E, E, E],
-          [E, E, E, E, E, E, E, E]
+          [E, E, E, E, E, E, E, E],
         ],
-        playerTurn: B
+        playerTurn: B,
       };
 
       const scores = score(testBoard);
@@ -48,9 +48,9 @@ describe('UI Components', () => {
           [E, E, E, B, W, W, W, E],
           [E, E, E, E, E, E, E, E],
           [E, E, E, E, E, E, E, E],
-          [E, E, E, E, E, E, E, E]
+          [E, E, E, E, E, E, E, E],
         ],
-        playerTurn: B
+        playerTurn: B,
       };
 
       const scores = score(testBoard);
@@ -90,12 +90,8 @@ describe('UI Components', () => {
   describe('Responsive Layout', () => {
     test('game should support side-by-side layout structure', () => {
       // Test that we have the necessary layout classes
-      const layoutClasses = [
-        'game-layout',
-        'game-main',
-        'game-sidebar'
-      ];
-      
+      const layoutClasses = ['game-layout', 'game-main', 'game-sidebar'];
+
       expect(layoutClasses.length).toBe(3);
       expect(layoutClasses).toContain('game-layout');
       expect(layoutClasses).toContain('game-main');
@@ -114,11 +110,11 @@ describe('UI Components', () => {
       // Test that restart returns game to initial state
       const { OthelloGameEngine } = require('othello-engine');
       const engine = new OthelloGameEngine();
-      
+
       // Make some moves
       engine.makeMove([2, 3]);
       expect(engine.getState().moveHistory.length).toBe(1);
-      
+
       // Reset should clear history
       engine.reset();
       expect(engine.getState().moveHistory.length).toBe(0);
@@ -129,7 +125,7 @@ describe('UI Components', () => {
       type SettingsState = { settingsOpen: boolean };
       const initialState: SettingsState = { settingsOpen: false };
       const openState: SettingsState = { settingsOpen: true };
-      
+
       expect(initialState.settingsOpen).toBe(false);
       expect(openState.settingsOpen).toBe(true);
     });
@@ -138,15 +134,15 @@ describe('UI Components', () => {
   describe('Message Display', () => {
     test('game messages should be displayable', () => {
       const messages = [
-        'Black\'s turn',
-        'White\'s turn',
+        "Black's turn",
+        "White's turn",
         'Game Over! Black wins!',
         'Game Over! White wins!',
-        'Game Over! It\'s a tie!',
+        "Game Over! It's a tie!",
         'Invalid move!',
-        null // No message state
+        null, // No message state
       ];
-      
+
       expect(messages.length).toBe(7);
       expect(messages).toContain(null);
     });
@@ -166,10 +162,10 @@ describe('UI Components', () => {
     test('animations can be disabled', () => {
       const { toggleFeature, features } = require('./config/features');
       const original = features.animations;
-      
+
       toggleFeature('animations', false);
       expect(features.animations).toBe(false);
-      
+
       // Restore
       features.animations = original;
     });
@@ -180,7 +176,7 @@ describe('UI Components', () => {
       type LoadingState = { isLoading: boolean };
       const loading: LoadingState = { isLoading: true };
       const ready: LoadingState = { isLoading: false };
-      
+
       expect(loading.isLoading).toBe(true);
       expect(ready.isLoading).toBe(false);
     });
@@ -195,7 +191,7 @@ describe('Move History Component', () => {
       const row = y + 1; // 1-8
       return `${column}${row}`;
     };
-    
+
     expect(formatCoordinate(0, 0)).toBe('A1');
     expect(formatCoordinate(7, 7)).toBe('H8');
     expect(formatCoordinate(2, 3)).toBe('C4');
@@ -204,9 +200,9 @@ describe('Move History Component', () => {
   test('move history includes all required data', () => {
     const { OthelloGameEngine } = require('othello-engine');
     const engine = new OthelloGameEngine();
-    
+
     engine.makeMove([2, 3]);
-    
+
     const history = engine.getMoveHistory();
     expect(history.length).toBe(1);
     expect(history[0]).toHaveProperty('coordinate');
@@ -225,7 +221,7 @@ describe('Move History Component', () => {
 describe('Settings Panel', () => {
   test('settings should control feature flags', () => {
     const { features } = require('./config/features');
-    
+
     expect(features).toHaveProperty('soundEffects');
     expect(features).toHaveProperty('animations');
     expect(typeof features.soundEffects).toBe('boolean');
@@ -234,10 +230,10 @@ describe('Settings Panel', () => {
 
   test('sound effects can be toggled', () => {
     const { soundEffects } = require('./utils/soundEffects');
-    
+
     soundEffects.setEnabled(false);
     expect(() => soundEffects.playFlip()).not.toThrow();
-    
+
     soundEffects.setEnabled(true);
     expect(() => soundEffects.playFlip()).not.toThrow();
   });

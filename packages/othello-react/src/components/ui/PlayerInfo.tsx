@@ -8,10 +8,10 @@ interface PlayerInfoProps {
 
 /**
  * PlayerInfo Component
- * 
+ *
  * Displays the current player's turn with styled text
  * Shows "Game Over" message when game ends
- * 
+ *
  * @param player - Current player ('Black' or 'White')
  * @param isGameOver - Whether the game has ended
  */

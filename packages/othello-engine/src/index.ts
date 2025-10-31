@@ -34,11 +34,10 @@ export const P: 'P' = 'P';
 
 export const createBoard = (tiles: TileValue[][]): Board => ({
   playerTurn: B,
-  tiles
+  tiles,
 });
 
-export const tile = (board: Board, [x, y]: Coordinate): TileValue =>
-  board.tiles[y]![x]!;
+export const tile = (board: Board, [x, y]: Coordinate): TileValue => board.tiles[y]![x]!;
 
 export const score = (board: Board): Score => {
   let blackCount = 0;
@@ -57,7 +56,7 @@ export const score = (board: Board): Score => {
 
   return {
     black: blackCount,
-    white: whiteCount
+    white: whiteCount,
   };
 };
 
@@ -66,10 +65,10 @@ const isOutOfBounds = (board: Board, [x, y]: Coordinate): boolean =>
 
 export const hasAdjacentPiece = (board: Board, coord: Coordinate): boolean => {
   const [xCoord, yCoord] = coord;
-  for (let x = xCoord - 1; x <= (xCoord + 1); x++) {
-    for (let y = yCoord - 1; y <= (yCoord + 1); y++) {
+  for (let x = xCoord - 1; x <= xCoord + 1; x++) {
+    for (let y = yCoord - 1; y <= yCoord + 1; y++) {
       // don't check the original coord, only adjacent coords
-      if ((x === xCoord) && (y === yCoord)) {
+      if (x === xCoord && y === yCoord) {
         continue;
       }
       if (isOutOfBounds(board, [x, y])) {
@@ -84,43 +83,43 @@ export const hasAdjacentPiece = (board: Board, coord: Coordinate): boolean => {
 };
 
 const DIRECTIONS: Directions = {
-  'top': {
+  top: {
     xMod: 0,
-    yMod: -1
+    yMod: -1,
   },
   'top-right': {
     xMod: 1,
-    yMod: -1
+    yMod: -1,
   },
-  'right': {
+  right: {
     xMod: 1,
-    yMod: 0
+    yMod: 0,
   },
   'bottom-right': {
     xMod: 1,
-    yMod: 1
+    yMod: 1,
   },
-  'bottom': {
+  bottom: {
     xMod: 0,
-    yMod: 1
+    yMod: 1,
   },
   'bottom-left': {
     xMod: -1,
-    yMod: 1
+    yMod: 1,
   },
-  'left': {
+  left: {
     xMod: -1,
-    yMod: 0
+    yMod: 0,
   },
   'top-left': {
     xMod: -1,
-    yMod: -1
-  }
+    yMod: -1,
+  },
 };
 
 const findFlippableDirections = (board: Board, [xCoord, yCoord]: Coordinate): string[] => {
   const startColor = board.tiles[yCoord]![xCoord]!;
-  const alternateColor = (startColor === W) ? B : W;
+  const alternateColor = startColor === W ? B : W;
   const flippableDirections: string[] = [];
 
   for (const dirName in DIRECTIONS) {
@@ -128,7 +127,7 @@ const findFlippableDirections = (board: Board, [xCoord, yCoord]: Coordinate): st
     let x = xCoord + dirModifier.xMod;
     let y = yCoord + dirModifier.yMod;
 
-    if (!isOutOfBounds(board, [x, y]) && (board.tiles[y]![x] === alternateColor)) {
+    if (!isOutOfBounds(board, [x, y]) && board.tiles[y]![x] === alternateColor) {
       let isAlternateColor = true;
 
       do {
@@ -168,8 +167,7 @@ const flipTiles = (board: Board, directions: string[], [xCoord, yCoord]: Coordin
   }
 };
 
-const alternatePlayer = (player: 'W' | 'B'): 'W' | 'B' =>
-  (player === B) ? W : B;
+const alternatePlayer = (player: 'W' | 'B'): 'W' | 'B' => (player === B ? W : B);
 
 export const takeTurn = (board: Board, coord: Coordinate): void => {
   const [x, y] = coord;
@@ -180,13 +178,13 @@ export const takeTurn = (board: Board, coord: Coordinate): void => {
   // First place the piece temporarily to check for flippable directions
   board.tiles[y]![x] = board.playerTurn;
   const flippableDirections = findFlippableDirections(board, coord);
-  
+
   // A move is only valid if it flips at least one opponent piece
   if (flippableDirections.length === 0) {
     board.tiles[y]![x] = E; // Revert the placement
     throw new Error('Error: This move does not flip any opponent pieces.');
   }
-  
+
   flipTiles(board, flippableDirections, coord);
   board.playerTurn = alternatePlayer(board.playerTurn);
 };
@@ -197,12 +195,12 @@ export const isValidMove = (board: Board, coord: Coordinate): boolean => {
   if (board.tiles[y]![x] !== E) {
     return false;
   }
-  
+
   // Temporarily place the piece and check for flippable directions
   board.tiles[y]![x] = board.playerTurn;
   const flippableDirections = findFlippableDirections(board, coord);
   board.tiles[y]![x] = E; // Revert
-  
+
   return flippableDirections.length > 0;
 };
 
@@ -222,23 +220,23 @@ export const getValidMoves = (board: Board): Coordinate[] => {
 // Check if the game is over
 export const isGameOver = (board: Board): boolean => {
   // Check if board is full
-  const isBoardFull = board.tiles.every(row => row.every(tile => tile !== E));
+  const isBoardFull = board.tiles.every((row) => row.every((tile) => tile !== E));
   if (isBoardFull) {
     return true;
   }
-  
+
   // Check if current player has valid moves
   const currentPlayerHasMoves = getValidMoves(board).length > 0;
   if (currentPlayerHasMoves) {
     return false;
   }
-  
+
   // Check if other player has valid moves
   const originalPlayer = board.playerTurn;
   board.playerTurn = alternatePlayer(board.playerTurn);
   const otherPlayerHasMoves = getValidMoves(board).length > 0;
   board.playerTurn = originalPlayer; // Restore
-  
+
   return !otherPlayerHasMoves;
 };
 
@@ -254,9 +252,9 @@ export const getWinner = (board: Board): 'W' | 'B' | null => {
 };
 
 const annotateSquare = (square: TileValue, board: Board, coord: Coordinate): TileValue =>
-  (square !== E) ? square : isValidMove(board, coord) ? P : E;
+  square !== E ? square : isValidMove(board, coord) ? P : E;
 
 export const getAnnotatedBoard = (board: Board): Board => ({
   ...board,
-  tiles: board.tiles.map((row, y) => row.map((square, x) => annotateSquare(square, board, [x, y])))
+  tiles: board.tiles.map((row, y) => row.map((square, x) => annotateSquare(square, board, [x, y]))),
 });

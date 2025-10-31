@@ -37,7 +37,7 @@ describe('Integration Tests - React App Rendering', () => {
 describe('Integration Tests - Game Engine Integration', () => {
   test('should create initial board state with engine', async () => {
     const { OthelloGameEngine, B } = await import('othello-engine');
-    
+
     const engine = new OthelloGameEngine();
     const state = engine.getState();
 
@@ -50,22 +50,22 @@ describe('Integration Tests - Game Engine Integration', () => {
 
   test('should get valid moves for initial position using engine', async () => {
     const { OthelloGameEngine } = await import('othello-engine');
-    
+
     const engine = new OthelloGameEngine();
     const validMoves = engine.getValidMoves();
-    
+
     expect(validMoves.length).toBe(4);
   });
 
   test('should make a valid move and switch turns using engine', async () => {
     const { OthelloGameEngine, B, W } = await import('othello-engine');
-    
+
     const engine = new OthelloGameEngine();
     const initialState = engine.getState();
-    
+
     expect(initialState.currentPlayer).toBe(B);
     engine.makeMove([2, 3]);
-    
+
     const newState = engine.getState();
     expect(newState.currentPlayer).toBe(W);
     expect(newState.board.tiles[3]![2]).toBe(B);
@@ -73,7 +73,7 @@ describe('Integration Tests - Game Engine Integration', () => {
 
   test('should play a full game sequence with engine', async () => {
     const { OthelloGameEngine, B, W } = await import('othello-engine');
-    
+
     const engine = new OthelloGameEngine();
 
     // Make a few valid moves
@@ -82,13 +82,13 @@ describe('Integration Tests - Game Engine Integration', () => {
     const blackMoves = engine.getValidMoves();
     expect(blackMoves.length).toBeGreaterThan(0);
     engine.makeMove(blackMoves[0]!); // Black makes first valid move
-    
+
     state = engine.getState();
     expect(state.currentPlayer).toBe(W);
     const whiteMoves = engine.getValidMoves();
     expect(whiteMoves.length).toBeGreaterThan(0);
     engine.makeMove(whiteMoves[0]!); // White makes first valid move
-    
+
     state = engine.getState();
     expect(state.currentPlayer).toBe(B);
     const blackMoves2 = engine.getValidMoves();
@@ -98,11 +98,11 @@ describe('Integration Tests - Game Engine Integration', () => {
     // Game should not be over yet
     state = engine.getState();
     expect(state.isGameOver).toBe(false);
-    
+
     // Should have valid moves
     const validMoves = engine.getValidMoves();
     expect(validMoves.length).toBeGreaterThan(0);
-    
+
     // Score should be calculated
     const gameScore = engine.getScore();
     expect(gameScore.black).toBeGreaterThan(0);
@@ -122,7 +122,7 @@ describe('Integration Tests - Type Safety', () => {
 
   test('should enforce tile value types', async () => {
     const { W, B, E, P } = await import('othello-engine');
-    
+
     expect(W).toBe('W');
     expect(B).toBe('B');
     expect(E).toBe('E');

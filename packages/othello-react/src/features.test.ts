@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { 
-  features, 
-  isFeatureEnabled, 
+import {
+  features,
+  isFeatureEnabled,
   toggleFeature,
   hasAnimations,
   hasGlassGlare,
@@ -9,7 +9,7 @@ import {
   hasMoveHistory,
   hasScoreAnimations,
   hasLoadingScreen,
-  isDebugMode
+  isDebugMode,
 } from './config/features';
 import { soundEffects } from './utils/soundEffects';
 
@@ -32,13 +32,13 @@ describe('Feature Flags', () => {
 
     test('should toggle features correctly', () => {
       const originalState = features.debug;
-      
+
       toggleFeature('debug', true);
       expect(features.debug).toBe(true);
-      
+
       toggleFeature('debug', false);
       expect(features.debug).toBe(false);
-      
+
       // Restore original state
       features.debug = originalState;
     });
@@ -132,14 +132,14 @@ describe('Move History', () => {
   test('engine should track move history', () => {
     const { OthelloGameEngine } = require('othello-engine');
     const engine = new OthelloGameEngine();
-    
+
     // Initial state should have empty move history
     const initialState = engine.getState();
     expect(initialState.moveHistory).toEqual([]);
-    
+
     // Make a move
     engine.makeMove([2, 3]);
-    
+
     // Move history should have one entry
     const stateAfterMove = engine.getState();
     expect(stateAfterMove.moveHistory.length).toBe(1);
@@ -154,10 +154,10 @@ describe('Score Tracking', () => {
   test('engine should track scores correctly', () => {
     const { OthelloGameEngine, score } = require('othello-engine');
     const engine = new OthelloGameEngine();
-    
+
     const state = engine.getState();
     const scores = score(state.board);
-    
+
     // Initial game should have 2 black and 2 white pieces
     expect(scores.black).toBe(2);
     expect(scores.white).toBe(2);
@@ -166,13 +166,13 @@ describe('Score Tracking', () => {
   test('scores should update after moves', () => {
     const { OthelloGameEngine, score } = require('othello-engine');
     const engine = new OthelloGameEngine();
-    
+
     // Make a valid move
     engine.makeMove([2, 3]);
-    
+
     const state = engine.getState();
     const scores = score(state.board);
-    
+
     // After first move, black should have flipped a white piece
     expect(scores.black).toBeGreaterThan(2);
     expect(scores.black + scores.white).toBeGreaterThan(4);
@@ -190,13 +190,13 @@ describe('Animations', () => {
 
   test('animations can be toggled', () => {
     const originalState = features.animations;
-    
+
     toggleFeature('animations', false);
     expect(hasAnimations()).toBe(false);
-    
+
     toggleFeature('animations', true);
     expect(hasAnimations()).toBe(true);
-    
+
     // Restore
     features.animations = originalState;
   });
@@ -206,23 +206,23 @@ describe('Game State Management', () => {
   test('engine should export and import state correctly', () => {
     const { OthelloGameEngine } = require('othello-engine');
     const engine = new OthelloGameEngine();
-    
+
     // Make some moves
     engine.makeMove([2, 3]);
     engine.makeMove([2, 2]);
-    
+
     // Export state
     const exportedState = engine.exportState();
     expect(typeof exportedState).toBe('string');
-    
+
     // Create new engine and import state
     const newEngine = new OthelloGameEngine();
     newEngine.importState(exportedState);
-    
+
     // States should match
     const originalState = engine.getState();
     const importedState = newEngine.getState();
-    
+
     expect(importedState.moveHistory.length).toBe(originalState.moveHistory.length);
     expect(importedState.currentPlayer).toBe(originalState.currentPlayer);
   });
@@ -230,14 +230,14 @@ describe('Game State Management', () => {
   test('engine should handle reset correctly', () => {
     const { OthelloGameEngine } = require('othello-engine');
     const engine = new OthelloGameEngine();
-    
+
     // Make some moves
     engine.makeMove([2, 3]);
     engine.makeMove([2, 2]);
-    
+
     // Reset
     engine.reset();
-    
+
     // Should be back to initial state
     const state = engine.getState();
     expect(state.moveHistory.length).toBe(0);
@@ -249,12 +249,12 @@ describe('Event System', () => {
   test('engine should emit move events', () => {
     const { OthelloGameEngine } = require('othello-engine');
     const engine = new OthelloGameEngine();
-    
+
     let moveEventFired = false;
     engine.on('move', () => {
       moveEventFired = true;
     });
-    
+
     engine.makeMove([2, 3]);
     expect(moveEventFired).toBe(true);
   });
@@ -262,12 +262,12 @@ describe('Event System', () => {
   test('engine should emit invalidMove events', () => {
     const { OthelloGameEngine } = require('othello-engine');
     const engine = new OthelloGameEngine();
-    
+
     let invalidMoveEventFired = false;
     engine.on('invalidMove', () => {
       invalidMoveEventFired = true;
     });
-    
+
     // Try to make an invalid move
     engine.makeMove([0, 0]);
     expect(invalidMoveEventFired).toBe(true);
@@ -276,12 +276,12 @@ describe('Event System', () => {
   test('engine should emit gameOver events', () => {
     const { OthelloGameEngine } = require('othello-engine');
     const engine = new OthelloGameEngine();
-    
+
     let gameOverEventFired = false;
     engine.on('gameOver', () => {
       gameOverEventFired = true;
     });
-    
+
     // Play until game over (simplified - just check the event system works)
     // We'll manually trigger game over by filling the board
     const state = engine.getState();
@@ -293,12 +293,12 @@ describe('Event System', () => {
   test('engine should emit stateChange events', () => {
     const { OthelloGameEngine } = require('othello-engine');
     const engine = new OthelloGameEngine();
-    
+
     let stateChangeEventFired = false;
     engine.on('stateChange', () => {
       stateChangeEventFired = true;
     });
-    
+
     engine.makeMove([2, 3]);
     expect(stateChangeEventFired).toBe(true);
   });
@@ -309,10 +309,10 @@ describe('Player Management', () => {
     const { OthelloGameEngine } = require('othello-engine');
     const blackPlayerId = 'player1';
     const whitePlayerId = 'player2';
-    
+
     const engine = new OthelloGameEngine(blackPlayerId, whitePlayerId);
     const state = engine.getState();
-    
+
     expect(state.blackPlayerId).toBe(blackPlayerId);
     expect(state.whitePlayerId).toBe(whitePlayerId);
   });
@@ -321,7 +321,7 @@ describe('Player Management', () => {
     const { OthelloGameEngine } = require('othello-engine');
     const engine = new OthelloGameEngine();
     const state = engine.getState();
-    
+
     expect(state.blackPlayerId).toBeUndefined();
     expect(state.whitePlayerId).toBeUndefined();
   });
@@ -331,9 +331,9 @@ describe('Valid Moves', () => {
   test('engine should calculate valid moves correctly', () => {
     const { OthelloGameEngine } = require('othello-engine');
     const engine = new OthelloGameEngine();
-    
+
     const state = engine.getState();
-    
+
     // Initial game should have 4 valid moves for black
     expect(state.validMoves.length).toBe(4);
     expect(state.validMoves).toContainEqual([2, 3]);
@@ -345,9 +345,9 @@ describe('Valid Moves', () => {
   test('annotated board should mark valid moves', () => {
     const { OthelloGameEngine, P } = require('othello-engine');
     const engine = new OthelloGameEngine();
-    
+
     const annotatedBoard = engine.getAnnotatedBoard();
-    
+
     // Valid move positions should be marked with P
     expect(annotatedBoard.tiles[3][2]).toBe(P);
     expect(annotatedBoard.tiles[2][3]).toBe(P);

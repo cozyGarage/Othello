@@ -12,7 +12,7 @@ import {
   getAnnotatedBoard,
   B,
   W,
-  E
+  E,
 } from './index';
 
 /**
@@ -43,11 +43,7 @@ export interface GameState {
 /**
  * Event types that the engine can emit
  */
-export type GameEventType = 
-  | 'move'
-  | 'gameOver'
-  | 'invalidMove'
-  | 'stateChange';
+export type GameEventType = 'move' | 'gameOver' | 'invalidMove' | 'stateChange';
 
 export interface GameEvent {
   type: GameEventType;
@@ -58,10 +54,10 @@ type EventListener = (event: GameEvent) => void;
 
 /**
  * OthelloGameEngine - A framework-agnostic game engine for Othello
- * 
+ *
  * This class manages the complete game state, handles move validation,
  * tracks history, and provides an event-based API for UI integration.
- * 
+ *
  * Usage:
  * ```typescript
  * const engine = new OthelloGameEngine();
@@ -93,7 +89,7 @@ export class OthelloGameEngine {
   private listeners: Map<GameEventType, EventListener[]> = new Map();
   private blackPlayerId?: string;
   private whitePlayerId?: string;
-  
+
   // Undo/Redo stacks
   private undoStack: GameSnapshot[] = [];
   private redoStack: GameSnapshot[] = [];
@@ -104,14 +100,10 @@ export class OthelloGameEngine {
    * @param whitePlayerId - Optional ID for the white player
    * @param initialBoard - Optional initial board state (for loading saved games)
    */
-  constructor(
-    blackPlayerId?: string,
-    whitePlayerId?: string,
-    initialBoard?: TileValue[][]
-  ) {
+  constructor(blackPlayerId?: string, whitePlayerId?: string, initialBoard?: TileValue[][]) {
     this.blackPlayerId = blackPlayerId;
     this.whitePlayerId = whitePlayerId;
-    
+
     // Initialize with standard Othello starting position
     const startingBoard = initialBoard || [
       [E, E, E, E, E, E, E, E],
@@ -121,37 +113,37 @@ export class OthelloGameEngine {
       [E, E, E, B, W, E, E, E],
       [E, E, E, E, E, E, E, E],
       [E, E, E, E, E, E, E, E],
-      [E, E, E, E, E, E, E, E]
+      [E, E, E, E, E, E, E, E],
     ];
-    
+
     this.board = createBoard(startingBoard);
   }
-  
+
   /**
    * Create a deep clone of the board for snapshot
    */
   private cloneBoard(board: Board): BoardSnapshot {
     return {
-      tiles: board.tiles.map(row => [...row]),
-      playerTurn: board.playerTurn
+      tiles: board.tiles.map((row) => [...row]),
+      playerTurn: board.playerTurn,
     };
   }
-  
+
   /**
    * Create a snapshot of the entire game state
    */
   private createSnapshot(): GameSnapshot {
     return {
       board: this.cloneBoard(this.board),
-      moveHistory: [...this.moveHistory]
+      moveHistory: [...this.moveHistory],
     };
   }
-  
+
   /**
    * Restore game state from a snapshot
    */
   private restoreSnapshot(snapshot: GameSnapshot): void {
-    this.board.tiles = snapshot.board.tiles.map(row => [...row]);
+    this.board.tiles = snapshot.board.tiles.map((row) => [...row]);
     this.board.playerTurn = snapshot.board.playerTurn;
     this.moveHistory = [...snapshot.moveHistory];
   }
@@ -189,7 +181,7 @@ export class OthelloGameEngine {
   private emit(eventType: GameEventType, data: any): void {
     const listeners = this.listeners.get(eventType);
     if (listeners) {
-      listeners.forEach(listener => listener({ type: eventType, data }));
+      listeners.forEach((listener) => listener({ type: eventType, data }));
     }
   }
 
@@ -201,35 +193,35 @@ export class OthelloGameEngine {
   public makeMove(coordinate: Coordinate): boolean {
     try {
       const currentPlayer = this.board.playerTurn;
-      
+
       // Save current state to undo stack BEFORE making the move
       this.undoStack.push(this.createSnapshot());
-      
+
       // Clear redo stack when a new move is made
       this.redoStack = [];
-      
+
       // Attempt the move
       takeTurn(this.board, coordinate);
-      
+
       // Record the move in history
       const move: Move = {
         player: currentPlayer,
         coordinate,
         timestamp: Date.now(),
-        scoreAfter: score(this.board)
+        scoreAfter: score(this.board),
       };
       this.moveHistory.push(move);
-      
+
       // Emit events
       this.emit('move', { move, state: this.getState() });
       this.emit('stateChange', { state: this.getState() });
-      
+
       // Check if game is over
       if (isGameOver(this.board)) {
         const winner = getWinner(this.board);
         this.emit('gameOver', { winner, state: this.getState() });
       }
-      
+
       return true;
     } catch (error) {
       // Remove the snapshot we just added since move failed
@@ -238,7 +230,7 @@ export class OthelloGameEngine {
       return false;
     }
   }
-  
+
   /**
    * Undo the last move
    * @returns true if undo was successful, false if nothing to undo
@@ -247,20 +239,20 @@ export class OthelloGameEngine {
     if (this.undoStack.length === 0) {
       return false;
     }
-    
+
     // Save current state to redo stack
     this.redoStack.push(this.createSnapshot());
-    
+
     // Restore previous state
     const previousState = this.undoStack.pop()!;
     this.restoreSnapshot(previousState);
-    
+
     // Emit state change event
     this.emit('stateChange', { state: this.getState(), action: 'undo' });
-    
+
     return true;
   }
-  
+
   /**
    * Redo a previously undone move
    * @returns true if redo was successful, false if nothing to redo
@@ -269,20 +261,20 @@ export class OthelloGameEngine {
     if (this.redoStack.length === 0) {
       return false;
     }
-    
+
     // Save current state to undo stack
     this.undoStack.push(this.createSnapshot());
-    
+
     // Restore redo state
     const redoState = this.redoStack.pop()!;
     this.restoreSnapshot(redoState);
-    
+
     // Emit state change event
     this.emit('stateChange', { state: this.getState(), action: 'redo' });
-    
+
     return true;
   }
-  
+
   /**
    * Check if undo is available
    * @returns true if there are moves to undo
@@ -290,7 +282,7 @@ export class OthelloGameEngine {
   public canUndo(): boolean {
     return this.undoStack.length > 0;
   }
-  
+
   /**
    * Check if redo is available
    * @returns true if there are moves to redo
@@ -313,7 +305,7 @@ export class OthelloGameEngine {
       moveHistory: [...this.moveHistory],
       currentPlayer: this.board.playerTurn,
       blackPlayerId: this.blackPlayerId,
-      whitePlayerId: this.whitePlayerId
+      whitePlayerId: this.whitePlayerId,
     };
   }
 
@@ -377,16 +369,16 @@ export class OthelloGameEngine {
       [E, E, E, B, W, E, E, E],
       [E, E, E, E, E, E, E, E],
       [E, E, E, E, E, E, E, E],
-      [E, E, E, E, E, E, E, E]
+      [E, E, E, E, E, E, E, E],
     ];
-    
+
     this.board = createBoard(startingBoard);
     this.moveHistory = [];
-    
+
     // Clear undo/redo stacks
     this.undoStack = [];
     this.redoStack = [];
-    
+
     this.emit('stateChange', { state: this.getState() });
   }
 
@@ -408,7 +400,7 @@ export class OthelloGameEngine {
       board: this.board,
       moveHistory: this.moveHistory,
       blackPlayerId: this.blackPlayerId,
-      whitePlayerId: this.whitePlayerId
+      whitePlayerId: this.whitePlayerId,
     });
   }
 
@@ -422,7 +414,7 @@ export class OthelloGameEngine {
     this.moveHistory = state.moveHistory;
     this.blackPlayerId = state.blackPlayerId;
     this.whitePlayerId = state.whitePlayerId;
-    
+
     this.emit('stateChange', { state: this.getState() });
   }
 }

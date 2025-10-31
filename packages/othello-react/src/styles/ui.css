@@ -12,7 +12,7 @@
   align-items: center;
   justify-content: center;
   z-index: var(--z-modal);
-  animation: fadeIn 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(6px);
 }
 
@@ -27,18 +27,25 @@
   }
 }
 
+/**
+ * Settings Panel Container
+ * 
+ * IMPORTANT: Remove padding-top to let sticky header sit flush at top
+ * Overflow is on the panel itself (not the content), so sticky positioning works
+ */
 .settings-panel {
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
+  padding: 0; /* Remove padding - header and content manage their own */
   max-width: 500px;
   width: 90%;
   max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7),
-              0 10px 30px rgba(0, 0, 0, 0.5);
-  animation: slideUp 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  overflow-y: auto; /* Scroll container for sticky to work */
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.7),
+    0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes slideUp {
@@ -52,104 +59,175 @@
   }
 }
 
+/**
+ * Settings Header - Title + Close Button (STICKY!)
+ * 
+ * BRILLIANT UX: Header stays visible while scrolling
+ * - User can always close the panel (close button always accessible)
+ * - Title remains visible as context reminder
+ * - Especially important as we add more settings in the future
+ * 
+ * Technical notes:
+ * - position: sticky requires direct parent to be scroll container
+ * - top: 0 sticks to top of scroll container (settings-panel)
+ * - Background prevents content from showing through
+ * - z-index ensures it stays above scrolling content
+ */
 .settings-header {
+  position: sticky; /* THE MAGIC: Sticks to top while scrolling */
+  top: 0; /* Stick to top edge */
+  z-index: 10; /* Above scrolling content */
+  background: var(--color-bg-secondary); /* Solid background (not transparent) */
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-lg);
+  align-items: flex-start;
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md); /* Add padding back */
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  gap: var(--spacing-md);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0; /* Round top corners */
 }
 
-.settings-title {
-  font-size: 24px;
-  font-weight: bold;
+.settings-header-content {
+  flex: 1; /* Take up remaining space */
+}
+
+.settings-header h2 {
   color: var(--color-text-primary);
+  margin: 0 0 8px 0;
+  font-size: 28px;
 }
 
-.settings-close {
-  background: var(--color-accent-red);
+/**
+ * Settings Note - Yellow hint text
+ * 
+ * Provides helpful context to user
+ * Color: Gold/yellow for visibility without being intrusive
+ */
+.settings-note {
+  color: rgba(255, 215, 0, 0.8); /* Gold color for tips */
+  font-size: 13px;
+  margin: 0;
+  text-align: left;
+  font-style: italic;
+  font-weight: 500;
+}
+
+/**
+ * Close Button - Elegant Rotating X (from undo-redo)
+ * 
+ * BRILLIANT DESIGN DECISION: Transparent background
+ * - Minimalist aesthetic
+ * - Doesn't compete with settings content
+ * - Hover state adds subtle feedback
+ * 
+ * Animation: Rotates 90° on hover
+ * - Makes closing feel satisfying
+ * - Visual cue that button is interactive
+ * - Mimics physical mechanism (like closing a valve)
+ */
+.close-button {
+  background: transparent; /* No background = cleaner look */
   border: none;
-  color: white;
-  font-size: 20px;
-  font-weight: bold;
+  color: var(--color-text-primary);
+  font-size: 32px;
   cursor: pointer;
-  padding: var(--spacing-sm) var(--spacing-md);
-  line-height: 1;
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
-  min-width: 36px;
-  min-height: 36px;
+  padding: 0;
+  width: 40px;
+  height: 40px;
   display: flex;
-  align-items: center;
   justify-content: center;
-}
-
-.settings-close:hover {
-  background: #d32f2f;
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.4);
-}
-
-.settings-section {
-  margin-bottom: var(--spacing-lg);
-}
-
-.settings-section-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: var(--spacing-md);
-}
-
-.setting-item {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.1); /* Subtle highlight on hover */
+  transform: rotate(90deg); /* THE MAGIC: Rotate on hover */
+}
+
+/**
+ * Settings Content - Scrollable area
+ * 
+ * Add padding here (not on settings-panel) so content doesn't touch edges
+ */
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-xl) var(--spacing-xl); /* Padding inside scrollable area */
+}
+
+/**
+ * Setting Item - Modular Card Layout (from undo-redo)
+ * 
+ * IMPROVED STRUCTURE (vs old horizontal layout):
+ * Old: [Checkbox Label -------- Toggle]  (label/control compete for space)
+ * New: [Checkbox Label]                   (clear hierarchy)
+ *      [Description text below]
+ * 
+ * Benefits:
+ * 1. More readable - title stands out
+ * 2. Description has full width - no truncation
+ * 3. Checkbox easier to click - larger target
+ * 4. Scales better on mobile
+ */
+.setting-item {
+  background: rgba(255, 255, 255, 0.05); /* Subtle card background */
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
-  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
 }
 
 .setting-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.08); /* Slightly brighter on hover */
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
+/**
+ * Setting Label - Checkbox + Title
+ * 
+ * Uses flexbox to align checkbox with text
+ * Full-width clickable area for better UX
+ */
 .setting-label {
-  font-size: 16px;
-  color: var(--color-text-primary);
-}
-
-.setting-toggle {
-  position: relative;
-  width: 48px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   cursor: pointer;
-  transition: background var(--transition-normal);
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--color-text-primary);
+  margin-bottom: 8px; /* Space before description */
 }
 
-.setting-toggle.active {
-  background: var(--color-accent-green);
+.setting-label input[type='checkbox'] {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  accent-color: #a88f67; /* Othello board color theme */
 }
 
-.setting-toggle::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-  background: white;
-  border-radius: 50%;
-  transition: transform var(--transition-normal);
+.setting-name {
+  flex: 1;
 }
 
-.setting-toggle.active::after {
-  transform: translateX(24px);
+/**
+ * Setting Description - Explanatory Text
+ * 
+ * Positioned below title/checkbox for clear hierarchy
+ * Indented to align with setting name (not checkbox)
+ */
+.setting-description {
+  color: rgba(255, 255, 255, 0.6); /* Muted color = secondary info */
+  font-size: 14px;
+  margin: 0;
+  margin-left: 36px; /* Indent to align with setting name */
+  line-height: 1.5;
 }
+
+/* OLD TOGGLE STYLES REMOVED - Now using native checkbox */
 
 /* ========== LOADING SCREEN ========== */
 .loading-screen {

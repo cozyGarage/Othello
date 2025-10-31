@@ -19,7 +19,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    
+
     /* Additional Checks */
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,

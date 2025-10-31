@@ -57,18 +57,18 @@
     opacity: 0;
   }
   1% {
-    opacity: 1;          /* Fade in */
+    opacity: 1; /* Fade in */
   }
   10% {
-    left: 100%;          /* Sweep complete */
+    left: 100%; /* Sweep complete */
     opacity: 1;
   }
   11% {
-    opacity: 0;          /* Fade out */
+    opacity: 0; /* Fade out */
     left: 100%;
   }
   100% {
-    left: 100%;          /* Stay hidden */
+    left: 100%; /* Stay hidden */
     opacity: 0;
   }
 }

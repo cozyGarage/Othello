@@ -1,6 +1,6 @@
 /**
  * Feature Flags Configuration
- * 
+ *
  * Central place to enable/disable features across the application.
  * Useful for:
  * - A/B testing
@@ -8,11 +8,11 @@
  * - Development testing
  * - Performance optimization (disable animations on slow devices)
  * - User preferences
- * 
+ *
  * Usage:
  * ```tsx
  * import { features } from './config/features';
- * 
+ *
  * if (features.animations) {
  *   // Apply animation
  * }
@@ -22,22 +22,22 @@
 export interface FeatureFlags {
   /** Enable/disable all animations (flip, glass glare, UI transitions) */
   animations: boolean;
-  
+
   /** Enable/disable glass glare effect on last moved tile */
   glassGlare: boolean;
-  
+
   /** Enable/disable sound effects (flip, invalid move, game over) */
   soundEffects: boolean;
-  
+
   /** Enable/disable move history tracking and display */
   moveHistory: boolean;
-  
+
   /** Enable/disable score change animations (pop, float) */
   scoreAnimations: boolean;
-  
+
   /** Enable/disable loading screen */
   loadingScreen: boolean;
-  
+
   /** Enable/disable debug mode (console logs, performance metrics) */
   debug: boolean;
 }
@@ -50,9 +50,9 @@ export const features: FeatureFlags = {
   animations: true,
   glassGlare: true,
   soundEffects: true, // Web Audio API - no dependencies needed
-  moveHistory: true,  // Now implemented - displays move history with timestamps
+  moveHistory: true, // Now implemented - displays move history with timestamps
   scoreAnimations: false, // Disabled by default (can be overwhelming)
-  loadingScreen: false,   // Disabled by default (optional UX)
+  loadingScreen: false, // Disabled by default (optional UX)
   debug: false, // Enable for development debugging
 };
 
@@ -73,7 +73,7 @@ export function isFeatureEnabled(feature: keyof FeatureFlags): boolean {
  */
 export function toggleFeature(feature: keyof FeatureFlags, enabled: boolean): void {
   features[feature] = enabled;
-  
+
   if (features.debug) {
     console.log(`🚩 Feature "${feature}" ${enabled ? 'enabled' : 'disabled'}`);
   }

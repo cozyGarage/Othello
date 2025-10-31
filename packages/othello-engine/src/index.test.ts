@@ -1,5 +1,16 @@
 import { describe, test, expect } from 'bun:test';
-import { W, B, E, P, createBoard, tile, score, takeTurn, getAnnotatedBoard, type Board } from './index';
+import {
+  W,
+  B,
+  E,
+  P,
+  createBoard,
+  tile,
+  score,
+  takeTurn,
+  getAnnotatedBoard,
+  type Board,
+} from './index';
 
 describe('Game Logic Tests', () => {
   test('score() gives the correct score for board configuration', () => {
@@ -9,12 +20,12 @@ describe('Game Logic Tests', () => {
       [E, E, W, B, E, E],
       [E, E, B, W, E, E],
       [E, E, E, E, E, E],
-      [E, E, E, E, E, E]
+      [E, E, E, E, E, E],
     ]);
 
     expect(score(board)).toEqual({
       black: 2,
-      white: 2
+      white: 2,
     });
 
     const board2 = createBoard([
@@ -23,12 +34,12 @@ describe('Game Logic Tests', () => {
       [E, E, W, B, E, E],
       [E, B, B, W, E, E],
       [E, E, E, E, E, E],
-      [E, E, E, E, E, E]
+      [E, E, E, E, E, E],
     ]);
 
     expect(score(board2)).toEqual({
       black: 3,
-      white: 2
+      white: 2,
     });
   });
 
@@ -39,7 +50,7 @@ describe('Game Logic Tests', () => {
       [E, E, W, B, E, E],
       [E, E, B, W, E, E],
       [E, E, E, E, E, E],
-      [E, E, E, E, E, E]
+      [E, E, E, E, E, E],
     ]);
     expect(board.playerTurn).toEqual(B);
     takeTurn(board, [1, 2]); // Valid move that flips W to B
@@ -53,9 +64,11 @@ describe('Game Logic Tests', () => {
       [E, E, W, B, E, E],
       [E, E, B, W, E, E],
       [E, E, E, E, E, E],
-      [E, E, E, E, E, E]
+      [E, E, E, E, E, E],
     ]);
-    expect(() => takeTurn(board, [2, 2])).toThrow('Error: You cannot place a piece on an occupied square.');
+    expect(() => takeTurn(board, [2, 2])).toThrow(
+      'Error: You cannot place a piece on an occupied square.'
+    );
   });
 
   test('takeTurn() errors if a move does not flip opponent pieces', () => {
@@ -65,9 +78,11 @@ describe('Game Logic Tests', () => {
       [E, E, W, B, E, E],
       [E, E, B, W, E, E],
       [E, E, E, E, E, E],
-      [E, E, E, E, E, E]
+      [E, E, E, E, E, E],
     ]);
-    expect(() => takeTurn(board, [0, 0])).toThrow('Error: This move does not flip any opponent pieces.');
+    expect(() => takeTurn(board, [0, 0])).toThrow(
+      'Error: This move does not flip any opponent pieces.'
+    );
 
     const board2 = createBoard([
       [E, E, E, E, E, E],
@@ -75,9 +90,11 @@ describe('Game Logic Tests', () => {
       [E, E, W, B, E, E],
       [E, E, B, W, E, E],
       [E, E, E, E, E, E],
-      [E, E, E, E, E, E]
+      [E, E, E, E, E, E],
     ]);
-    expect(() => takeTurn(board2, [1, 0])).toThrow('Error: This move does not flip any opponent pieces.');
+    expect(() => takeTurn(board2, [1, 0])).toThrow(
+      'Error: This move does not flip any opponent pieces.'
+    );
   });
 
   test('takeTurn() replaces an empty space with the correct letter', () => {
@@ -87,7 +104,7 @@ describe('Game Logic Tests', () => {
       [E, E, W, B, E, E],
       [E, E, B, W, E, E],
       [E, E, E, E, E, E],
-      [E, E, E, E, E, E]
+      [E, E, E, E, E, E],
     ]);
     expect(tile(board, [1, 2])).toEqual(E);
     takeTurn(board, [1, 2]); // Black plays - flips white
@@ -105,7 +122,7 @@ describe('Game Logic Tests', () => {
       [E, E, W, B, E, E],
       [E, E, B, W, E, E],
       [E, E, E, E, E, E],
-      [E, E, E, E, E, E]
+      [E, E, E, E, E, E],
     ]);
     expect(tile(board, [5, 5])).toEqual(E);
   });
@@ -117,7 +134,7 @@ describe('Game Logic Tests', () => {
       [E, E, W, B, E, E],
       [E, E, B, W, E, E],
       [E, E, E, E, E, E],
-      [E, E, E, E, E, E]
+      [E, E, E, E, E, E],
     ]);
     takeTurn(board, [1, 2]);
     expect(board.tiles).toEqual([
@@ -126,7 +143,7 @@ describe('Game Logic Tests', () => {
       [E, B, B, B, E, E],
       [E, E, B, W, E, E],
       [E, E, E, E, E, E],
-      [E, E, E, E, E, E]
+      [E, E, E, E, E, E],
     ]);
   });
 
@@ -137,7 +154,7 @@ describe('Game Logic Tests', () => {
       [E, E, W, B, E, E],
       [E, E, B, W, E, E],
       [E, E, E, E, E, E],
-      [E, E, E, E, E, E]
+      [E, E, E, E, E, E],
     ]);
     const annotatedBoard = getAnnotatedBoard(board);
     // Black (B) can only place where it would flip white pieces
@@ -147,7 +164,7 @@ describe('Game Logic Tests', () => {
       [E, P, W, B, E, E],
       [E, E, B, W, P, E],
       [E, E, E, P, E, E],
-      [E, E, E, E, E, E]
+      [E, E, E, E, E, E],
     ]);
   });
 
@@ -160,8 +177,8 @@ describe('Game Logic Tests', () => {
         [E, E, W, B, E, E],
         [E, B, B, W, E, E],
         [E, E, E, E, E, E],
-        [E, E, E, E, E, E]
-      ]
+        [E, E, E, E, E, E],
+      ],
     };
     takeTurn(board, [0, 3]);
     expect(board.tiles).toEqual([
@@ -170,7 +187,7 @@ describe('Game Logic Tests', () => {
       [E, E, W, B, E, E],
       [W, W, W, W, E, E],
       [E, E, E, E, E, E],
-      [E, E, E, E, E, E]
+      [E, E, E, E, E, E],
     ]);
   });
 });

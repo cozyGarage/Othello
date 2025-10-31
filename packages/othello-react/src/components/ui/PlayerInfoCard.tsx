@@ -1,9 +1,9 @@
 /**
  * PlayerInfoCard Component
- * 
+ *
  * Displays player information on hover/click
  * Placeholder for future implementation with real player data
- * 
+ *
  * Features:
  * - Photo/avatar
  * - Player name
@@ -23,7 +23,7 @@ interface PlayerInfoCardProps {
 /**
  * Hover card showing player details
  * Currently shows placeholder data
- * 
+ *
  * @param playerName - Display name of player
  * @param playerColor - Color of player's pieces ('black' | 'white')
  * @param children - Trigger element that shows card on hover
@@ -31,25 +31,25 @@ interface PlayerInfoCardProps {
 export const PlayerInfoCard: React.FC<PlayerInfoCardProps> = ({
   playerName,
   playerColor,
-  children
+  children,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   return (
-    <div 
+    <div
       className="player-info-trigger"
       onMouseEnter={() => setIsVisible(true)}
       onMouseLeave={() => setIsVisible(false)}
     >
       {children}
-      
+
       {isVisible && (
         <div className="player-info-card">
           {/* Player avatar placeholder */}
           <div className={`player-avatar ${playerColor}`}>
             <span className="avatar-initial">{playerName.charAt(0).toUpperCase()}</span>
           </div>
-          
+
           {/* Player details */}
           <div className="player-details">
             <h4 className="player-name">{playerName}</h4>

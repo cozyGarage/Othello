@@ -5,18 +5,20 @@ import Board from './components/layout/Board';
 import { LoadingScreen, SettingsPanel } from './components/ui';
 import { hasLoadingScreen, hasSoundEffects } from './config/features';
 import { soundEffects } from './utils/soundEffects';
-import { 
+import {
   OthelloGameEngine,
   type Board as BoardType,
   type Coordinate,
   type GameEvent,
   type Move,
-  B, W
+  B,
+  W,
 } from 'othello-engine';
 
 // Import new modular CSS
 import './styles/variables.css';
 import './styles/layout.css';
+import './styles/animations.css';
 import './styles/navbar.css';
 import './styles/board.css';
 import './styles/sidebar.css';
@@ -34,7 +36,7 @@ interface OthelloGameState {
 
 /**
  * OthelloGame - Clean Chess.com inspired layout
- * 
+ *
  * Structure:
  * - Navbar (top)
  * - Game Container (grid: board + sidebar)
@@ -46,10 +48,10 @@ class OthelloGame extends Component<{}, OthelloGameState> {
 
   constructor(props: {}) {
     super(props);
-    
+
     // Initialize the game engine
     this.engine = new OthelloGameEngine();
-    
+
     const initialState = this.engine.getState();
     this.state = {
       board: initialState.board,
@@ -59,7 +61,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       isLoading: hasLoadingScreen(),
       moveHistory: [],
       settingsOpen: false,
-      soundVolume: soundEffects.getVolume()
+      soundVolume: soundEffects.getVolume(),
     };
   }
 
@@ -105,7 +107,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       event.preventDefault();
       this.handleUndo();
     }
-    
+
     // Ctrl+Y or Cmd+Shift+Z for redo
     if (
       ((event.ctrlKey || event.metaKey) && event.key === 'y') ||
@@ -114,125 +116,129 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       event.preventDefault();
       this.handleRedo();
     }
-  }
+  };
 
   handleMoveEvent = (event: GameEvent): void => {
     const { move } = event.data;
-    
+
     if (hasSoundEffects()) {
       soundEffects.playFlip();
     }
-    
+
     const moveHistory = this.engine.getMoveHistory();
     this.setState({ lastMove: move.coordinate, moveHistory });
-  }
+  };
 
   handleInvalidMoveEvent = (event: GameEvent): void => {
     const { error } = event.data;
-    
+
     if (hasSoundEffects()) {
       soundEffects.playInvalidMove();
     }
-    
+
     this.setState({ message: error });
     setTimeout(() => this.setState({ message: null }), 2000);
-  }
+  };
 
   handleGameOverEvent = (event: GameEvent): void => {
     const { winner } = event.data;
     let message: string;
-    
+
     if (winner === B) {
       message = 'Game Over! Black wins!';
     } else if (winner === W) {
       message = 'Game Over! White wins!';
     } else {
-      message = 'Game Over! It\'s a tie!';
+      message = "Game Over! It's a tie!";
     }
-    
+
     if (hasSoundEffects()) {
       soundEffects.playGameOver();
     }
-    
+
     this.setState({ gameOver: true, message });
-  }
+  };
 
   handleStateChangeEvent = (event: GameEvent): void => {
     const state = event.data.state;
     this.setState({ board: state.board });
-    
+
     // Check if current player has no valid moves
     if (!state.isGameOver && state.validMoves.length === 0) {
       const nextPlayerName = state.currentPlayer === B ? 'Black' : 'White';
-      this.setState({ 
-        message: `No valid moves. ${nextPlayerName}'s turn!`
+      this.setState({
+        message: `No valid moves. ${nextPlayerName}'s turn!`,
       });
       setTimeout(() => this.setState({ message: null }), 2000);
     }
-  }
+  };
 
   handlePlayerTurn = (coord: Coordinate): void => {
     if (this.state.gameOver) {
       return;
     }
     this.engine.makeMove(coord);
-  }
+  };
 
   handleRestart = (): void => {
     this.engine.reset();
-    
+
     const initialState = this.engine.getState();
     this.setState({
       board: initialState.board,
       message: null,
       gameOver: false,
       lastMove: null,
-      moveHistory: []
+      moveHistory: [],
     });
-  }
+  };
 
   handleUndo = (): void => {
     const success = this.engine.undo();
-    
+
     if (success) {
       const state = this.engine.getState();
       this.setState({
         board: state.board,
         moveHistory: state.moveHistory,
-        lastMove: state.moveHistory.length > 0 
-          ? state.moveHistory[state.moveHistory.length - 1]!.coordinate 
-          : null,
+        lastMove:
+          state.moveHistory.length > 0
+            ? state.moveHistory[state.moveHistory.length - 1]!.coordinate
+            : null,
         gameOver: false,
-        message: null
+        message: null,
       });
     }
-  }
+  };
 
   handleRedo = (): void => {
     const success = this.engine.redo();
-    
+
     if (success) {
       const state = this.engine.getState();
       this.setState({
         board: state.board,
         moveHistory: state.moveHistory,
-        lastMove: state.moveHistory.length > 0 
-          ? state.moveHistory[state.moveHistory.length - 1]!.coordinate 
-          : null,
+        lastMove:
+          state.moveHistory.length > 0
+            ? state.moveHistory[state.moveHistory.length - 1]!.coordinate
+            : null,
         gameOver: state.isGameOver,
-        message: state.isGameOver 
-          ? (state.winner === B ? 'Game Over! Black wins!' : 
-             state.winner === W ? 'Game Over! White wins!' : 
-             'Game Over! It\'s a tie!') 
-          : null
+        message: state.isGameOver
+          ? state.winner === B
+            ? 'Game Over! Black wins!'
+            : state.winner === W
+              ? 'Game Over! White wins!'
+              : "Game Over! It's a tie!"
+          : null,
       });
     }
-  }
+  };
 
   handleVolumeChange = (volume: number): void => {
     soundEffects.setVolume(volume);
     this.setState({ soundVolume: volume });
-  }
+  };
 
   render() {
     const state = this.engine.getState();
@@ -243,21 +249,21 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     return (
       <div className="OthelloGame">
         <LoadingScreen isLoading={this.state.isLoading} />
-        
+
         {!this.state.isLoading && (
           <>
             <Navbar onPlayClick={this.handleRestart} />
-            
+
             <div className="game-container">
               <div className="board-area">
-                <Board 
-                  board={this.engine.getAnnotatedBoard()} 
+                <Board
+                  board={this.engine.getAnnotatedBoard()}
                   onPlayerTurn={this.handlePlayerTurn}
                   lastMove={this.state.lastMove}
                   gameOver={this.state.gameOver}
                 />
               </div>
-              
+
               <div className="sidebar-area">
                 <Sidebar
                   currentPlayer={currentPlayer}
@@ -275,10 +281,10 @@ class OthelloGame extends Component<{}, OthelloGameState> {
                 />
               </div>
             </div>
-            
-            <SettingsPanel 
-              isOpen={this.state.settingsOpen} 
-              onClose={() => this.setState({ settingsOpen: false })} 
+
+            <SettingsPanel
+              isOpen={this.state.settingsOpen}
+              onClose={() => this.setState({ settingsOpen: false })}
             />
           </>
         )}

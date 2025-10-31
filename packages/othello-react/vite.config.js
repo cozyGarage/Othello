@@ -7,16 +7,16 @@ export default defineConfig({
   base: '/Othello/',
   server: {
     port: 3000,
-    open: true
+    open: true,
   },
   build: {
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: true,
   },
   esbuild: {
     loader: 'tsx',
     include: /src\/.*\.[jt]sx?$/,
-    exclude: []
+    exclude: [],
   },
   optimizeDeps: {
     esbuildOptions: {
@@ -25,10 +25,10 @@ export default defineConfig({
         '.ts': 'tsx',
         '.tsx': 'tsx',
       },
-    }
+    },
   },
   test: {
     globals: true,
-    environment: 'happy-dom'
-  }
+    environment: 'happy-dom',
+  },
 });

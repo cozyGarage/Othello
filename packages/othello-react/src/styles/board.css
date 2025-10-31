@@ -1,11 +1,19 @@
 /* ========================================
    BOARD STYLES - 8x8 Othello Game Board
    
-   Structure:
+   Structure (Updated for Pure CSS Flip Animation):
    - .Board: Outer container with padding and shadow
    - .board-grid: CSS Grid (8x8) holding tiles
-   - .Tile: Individual square (piece or empty)
-   - .piece: Game piece (black or white circle)
+   - .Tile: Individual square with 3D perspective
+   - .tile-inner: Transform container for flip animation
+   - SVG: Piece rendering (black/white circle)
+   
+   Flip Animation:
+   - Uses displayBoard state (shows old color during flip)
+   - .tile-flip class triggers CSS animations
+   - Piece becomes invisible at 90° rotation
+   - Color swaps while invisible
+   - User sees smooth B→W or W→B transition
    
    Responsive:
    - Desktop: 700-750px (85vh max)
@@ -23,11 +31,11 @@
 .Board {
   width: var(--board-max-size);
   height: var(--board-max-size);
-  aspect-ratio: 1;  /* Always square */
-  background: var(--color-board-bg);  /* Gradient background */
+  aspect-ratio: 1; /* Always square */
+  background: var(--color-board-bg); /* Gradient background */
   border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);  /* Space between board edge and grid */
-  box-shadow: var(--shadow-lg);  /* Elevated appearance */
+  padding: var(--spacing-lg); /* Space between board edge and grid */
+  box-shadow: var(--shadow-lg); /* Elevated appearance */
 }
 
 /* 8x8 Grid Container */
@@ -43,7 +51,12 @@
   overflow: hidden;
 }
 
-/* Individual Tile */
+/**
+ * Individual Tile
+ * 
+ * Important: perspective property enables 3D transforms for flip animation
+ * overflow: visible allows glass glare effect to extend beyond tile borders
+ */
 .Tile {
   background: var(--color-board-light);
   display: flex;
@@ -52,7 +65,62 @@
   cursor: pointer;
   transition: all var(--transition-fast);
   position: relative;
+  perspective: 1000px; /* 3D perspective for flip animation */
+  overflow: visible; /* Allow effects to extend beyond borders */
 }
+
+/**
+ * Tile Inner Wrapper
+ * 
+ * CRITICAL for flip animation:
+ * - transform-style: preserve-3d maintains 3D transforms for children
+ * - This allows the SVG piece to rotate in 3D space
+ * - Without this, rotateY would appear flat (no depth)
+ */
+.tile-inner {
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d; /* Enables 3D transforms */
+  position: relative;
+}
+
+/**
+ * SVG Piece Styling
+ * 
+ * SVG elements scale perfectly and look sharp on all displays
+ * We add multiple layers of shadow for realistic depth
+ */
+.Tile svg {
+  width: 85%; /* Leave some margin around piece */
+  height: 85%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Center the SVG */
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2)); /* Layered shadows for depth */
+  transition:
+    filter 0.3s ease,
+    transform 0.3s ease;
+}
+
+/**
+ * Hover Effect - Piece Lift Up
+ * 
+ * IMPORTANT: We use transform on SVG (not tile-inner) to avoid conflicts
+ * - tile-inner handles flip rotation (rotateY)
+ * - SVG handles hover lift (translateZ + scale)
+ * - They work independently without interfering
+ */
+.Tile:hover svg {
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5)) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3)); /* Deeper shadow when lifted */
+  transform: translate(-50%, -50%) translateZ(10px) scale(1.05); /* Lift up + slight grow */
+}
+
+/* 
+ * Circle styling handled inline in JSX for flexibility
+ * Black: fill=#1a1a1a stroke=#000000
+ * White: fill=#ffffff stroke=#cccccc
+ */
 
 /* Checkerboard pattern */
 .Tile.dark {
@@ -63,39 +131,131 @@
   background: var(--color-board-light);
 }
 
+/* Tile hover - subtle brightness (doesn't interfere with piece hover) */
 .Tile:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.05);
 }
 
-/* Valid move indicator */
+/**
+ * Valid Move Indicator - Hint Dot
+ * 
+ * IMPORTANT: We position the dot inside tile-inner (not Tile)
+ * - This ensures it's not affected by 3D transforms
+ * - Using direct child selector (.tile-inner > div) for the dot
+ * - Positioned absolutely within the tile-inner container
+ * 
+ * NO background overlay - just the hint dot itself provides the indicator
+ */
 .Tile.valid-move {
-  background: rgba(76, 175, 80, 0.3);
-  cursor: pointer;
+  cursor: pointer; /* Just cursor change, no background overlay */
 }
 
-.Tile.valid-move::after {
-  content: '';
+/**
+ * Hint Dot Element
+ * 
+ * IMPORTANT: Remove tile background darkening
+ * - Previously the green background was causing visual tile darkening
+ * - Now using transparent background with ONLY border
+ * - Border provides visibility without affecting tile color
+ * 
+ * The dot is rendered as a direct child div in tile-inner (from Board.tsx)
+ * Absolute positioning centers it properly without transform conflicts
+ */
+.Tile.valid-move .tile-inner .hint-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   width: 30%;
   height: 30%;
+  margin-top: -15%; /* Half of height to center */
+  margin-left: -15%; /* Half of width to center */
   border-radius: 50%;
-  background: rgba(76, 175, 80, 0.4);
-  border: 2px solid rgba(76, 175, 80, 0.6);
+  background: transparent; /* No background = no darkening */
+  border: 3px solid rgba(76, 175, 80, 0.7); /* Thicker border for visibility */
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2); /* Outer glow for emphasis */
+  pointer-events: none; /* Don't block tile clicks */
+  transition: all 0.2s ease;
+  z-index: 1; /* Above tile background, below pieces */
 }
 
-.Tile.valid-move:hover::after {
-  background: rgba(76, 175, 80, 0.6);
-  border-color: rgba(76, 175, 80, 0.8);
+.Tile.valid-move:hover .tile-inner .hint-dot {
+  border-color: rgba(76, 175, 80, 0.9); /* Brighter border on hover */
+  box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.3); /* Larger glow */
   transform: scale(1.2);
 }
 
-/* Last move highlight with glare effect */
+/**
+ * LAST MOVE INDICATOR - Dual Glare System
+ * 
+ * We use TWO pseudo-elements for dramatic effect:
+ * - ::before: Sweeping glass glare (from undo-redo branch)
+ * - ::after: Static radial glare (our original)
+ * 
+ * This creates a layered, sophisticated highlight effect
+ */
 .Tile.last-move {
+  box-shadow: inset 0 0 0 3px var(--color-accent-blue);
+  animation: pulse 0.5s ease-out;
+  position: relative;
+  z-index: 10; /* Ensure glare renders above adjacent tiles */
+}
+
+/**
+ * Last Move WITHOUT Glass Glare (when feature disabled)
+ * 
+ * Simple blue border pulse, no glare effects
+ */
+.Tile.last-move-no-glare {
   box-shadow: inset 0 0 0 3px var(--color-accent-blue);
   animation: pulse 0.5s ease-out;
   position: relative;
 }
 
+/**
+ * Glass Glare - Sweeping Beam Effect (NEW from undo-redo)
+ * 
+ * Creates a narrow white beam that sweeps left-to-right across tile
+ * 
+ * Timeline (5 second cycle):
+ * 0-1%: Fade in (0.05s)
+ * 1-10%: Sweep across tile (0.45s) - THE VISIBLE MOMENT
+ * 10-11%: Fade out (0.05s)
+ * 11-100%: Hidden, waiting (4.45s)
+ * 
+ * Result: Subtle shimmer every 5 seconds (10% duty cycle)
+ * 
+ * Design notes:
+ * - transform: skewX(-20deg) creates diagonal "glass" appearance
+ * - width: 50% = narrow focused beam (not full tile width)
+ * - Starts at left: -50% (off-screen) and sweeps to left: 100%
+ */
 .Tile.last-move::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -50%; /* Start off left edge */
+  width: 50%; /* Narrow beam width */
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.9) 50%,
+    /* Bright center stripe */ transparent 100%
+  );
+  transform: skewX(-20deg); /* Diagonal glass-like appearance */
+  pointer-events: none; /* Don't block tile clicks */
+  opacity: 0;
+  animation: glassGlare 5s ease-in-out infinite;
+  z-index: 20;
+}
+
+/**
+ * Static Radial Glare (Original)
+ * 
+ * Creates a permanent subtle highlight after initial pulse
+ * Complements the sweeping glare
+ */
+.Tile.last-move::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -109,17 +269,149 @@
   pointer-events: none;
   opacity: 0;
   animation: glareEffect 0.8s ease-out 0.2s forwards;
+  z-index: 15;
 }
 
+/* Pulse animation for blue border */
 @keyframes pulse {
-  0%, 100% { box-shadow: inset 0 0 0 3px var(--color-accent-blue); }
-  50% { box-shadow: inset 0 0 0 6px var(--color-accent-blue); }
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 3px var(--color-accent-blue);
+  }
+  50% {
+    box-shadow: inset 0 0 0 6px var(--color-accent-blue);
+  }
 }
 
+/**
+ * Glass Glare Animation - Sweeping Beam
+ * 
+ * Key insight: Most of the time (90%) the effect is invisible
+ * This creates anticipation and makes each sweep feel special
+ */
+@keyframes glassGlare {
+  0% {
+    left: -50%;
+    opacity: 0;
+  }
+  1% {
+    opacity: 1; /* Quick fade in */
+  }
+  10% {
+    left: 100%; /* Sweep complete (sweeps in 0.5s) */
+    opacity: 1;
+  }
+  11% {
+    opacity: 0; /* Quick fade out */
+    left: 100%;
+  }
+  100% {
+    left: 100%; /* Stay off-screen right */
+    opacity: 0;
+  }
+}
+
+/* Static glare fade-in */
 @keyframes glareEffect {
-  0% { opacity: 0; }
-  30% { opacity: 1; }
-  100% { opacity: 0.3; }
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.3;
+  } /* Settle to 30% opacity */
+}
+
+/**
+ * INITIAL PIECES - Starting 4 Pieces Glare Effect
+ * 
+ * ONE UNIFIED BEAM sweeps across all 4 center pieces
+ * More realistic physics - light behaves as one source
+ * 
+ * Strategy: Only the TOP-LEFT piece (3,3) creates the beam
+ * But the beam is LARGE enough to cover all 4 pieces (2x2 grid)
+ */
+.Tile.initial-piece {
+  position: relative;
+  z-index: 5;
+}
+
+/**
+ * Glare Source Tile - Special Stacking Context
+ * 
+ * CRITICAL: Higher z-index ensures the glare beam appears above ALL tiles
+ * Including the bottom tiles [4,3] and [4,4]
+ */
+.Tile.glare-source {
+  z-index: 50; /* Above all other tiles and pieces */
+}
+
+/**
+ * Unified Initial Glare - ONE Large Beam
+ * 
+ * PHYSICS-ACCURATE DESIGN:
+ * - ONE light source sweeping across 4 tiles
+ * - Beam is 300% width/height to DEFINITELY cover all 4 tiles
+ * - Only top-left tile (glare-source) creates the effect
+ * - Other 3 pieces just get illuminated by the same beam
+ * - Slower sweep (2s) for dramatic reveal
+ * 
+ * The beam needs to be large enough to illuminate:
+ * - Tile at [3,3] (source)
+ * - Tile at [3,4] (right)
+ * - Tile at [4,3] (bottom) ← This was going under!
+ * - Tile at [4,4] (bottom-right)
+ * 
+ * FIX: Increased size and adjusted positioning to ensure coverage
+ */
+.Tile.glare-source::before {
+  content: '';
+  position: absolute;
+  top: -50%; /* Extend more upward */
+  left: -200%; /* Start way off to the left */
+  width: 250%; /* Extra wide to ensure coverage */
+  height: 250%; /* Extra tall to cover both rows COMPLETELY */
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 20%,
+    rgba(255, 255, 255, 0.5) 35%,
+    rgba(255, 255, 255, 0.8) 45%,
+    rgba(255, 255, 255, 0.9) 50%,
+    /* Bright center of beam */ rgba(255, 255, 255, 0.8) 55%,
+    rgba(255, 255, 255, 0.5) 65%,
+    transparent 80%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  pointer-events: none;
+  opacity: 0;
+  animation: unifiedInitialGlare 1s ease-out 0.2s;
+  z-index: 100; /* Way above everything */
+}
+
+@keyframes unifiedInitialGlare {
+  0% {
+    left: -200%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  70% {
+    left: 200%; /* Sweep all the way past the tiles */
+    opacity: 1;
+  }
+  80% {
+    opacity: 0;
+    left: 200%;
+  }
+  100% {
+    left: 200%;
+    opacity: 0;
+  }
 }
 
 /* Game pieces */
@@ -127,10 +419,12 @@
   width: 85%;
   height: 85%;
   border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4),
-              0 1px 3px rgba(0, 0, 0, 0.3);
-  transition: transform var(--transition-normal),
-              box-shadow var(--transition-normal);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.3);
+  transition:
+    transform var(--transition-normal),
+    box-shadow var(--transition-normal);
   position: relative;
 }
 
@@ -140,9 +434,10 @@
 
 .piece.white {
   background: radial-gradient(circle at 30% 30%, #ffffff, #cccccc);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5),
-              0 1px 3px rgba(0, 0, 0, 0.4),
-              inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.5),
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* Piece glare highlight - repeating shimmer effect */
@@ -176,7 +471,8 @@
 
 /* Repeating glare shimmer for dramatic effect */
 @keyframes glareShimmer {
-  0%, 100% {
+  0%,
+  100% {
     opacity: inherit;
     transform: scale(1);
   }
@@ -188,33 +484,45 @@
 
 .piece:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5),
-              0 2px 6px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .piece.white:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6),
-              0 2px 6px rgba(0, 0, 0, 0.5),
-              inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.6),
+    0 2px 6px rgba(0, 0, 0, 0.5),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Flip animation - 180 degree rotation showing color transition */
-.piece.flipping {
-  animation: flip 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
-  transform-style: preserve-3d;
+/**
+ * FLIP ANIMATION - Pure CSS Solution
+ * 
+ * This is the BRILLIANT technique from undo-redo branch:
+ * Combines two animations to create smooth B→W or W→B transition
+ * 
+ * Animation 1 (tile-inner): Rotates the container 180°
+ * Animation 2 (SVG): Controls piece visibility during rotation
+ * 
+ * Why this works:
+ * - At 0ms: Show OLD color (set by React displayBoard state)
+ * - At 300ms (50% = 90° rotation): Piece becomes invisible (opacity: 0)
+ * - React switches displayBoard to NEW color while invisible
+ * - At 600ms (100% = 180°): Show NEW color, animation complete
+ * 
+ * User sees: Black piece → rotating → White piece
+ * Reality: Black SVG → invisible → White SVG (color swapped mid-rotation)
+ */
+
+/* ========== FLIP ANIMATION ========== */
+/* Flip animation classes - animations defined in animations.css */
+.Tile.tile-flip .tile-inner {
+  animation: flipAnimation 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes flip {
-  0% { 
-    transform: rotateY(0deg) scale(1);
-  }
-  50% { 
-    transform: rotateY(90deg) scale(1.1);
-    opacity: 0.8;
-  }
-  100% { 
-    transform: rotateY(180deg) scale(1);
-  }
+.Tile.tile-flip svg {
+  animation: flipPieceVisibility 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ========== RESPONSIVE ========== */
@@ -222,17 +530,17 @@
   .Board {
     padding: var(--spacing-md);
   }
-  
+
   .board-grid {
     gap: 1px;
   }
-  
+
   /* Larger tap targets on mobile */
   .Tile {
     min-height: 44px;
     min-width: 44px;
   }
-  
+
   .piece {
     width: 80%;
     height: 80%;
@@ -244,13 +552,13 @@
     padding: var(--spacing-sm);
     border-radius: var(--radius-md);
   }
-  
+
   .Tile.valid-move::after {
     width: 30%;
     height: 30%;
     border-width: 3px;
   }
-  
+
   /* Even larger indicators for small screens */
   .Tile.last-move {
     box-shadow: inset 0 0 0 4px var(--color-accent-blue);

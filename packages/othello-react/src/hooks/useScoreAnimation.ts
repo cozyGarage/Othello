@@ -13,10 +13,10 @@ interface UseScoreAnimationResult {
 
 /**
  * Custom hook for animating score changes
- * 
+ *
  * Tracks score changes and triggers CSS animations
  * Shows floating +X indicators when score increases
- * 
+ *
  * @param score - Current score value
  * @returns Object with score CSS class and active score changes
  */
@@ -32,25 +32,25 @@ export function useScoreAnimation(score: number): UseScoreAnimationResult {
 
     if (currentScore !== prevScore && prevScore !== 0) {
       const difference = currentScore - prevScore;
-      
+
       if (difference > 0) {
         // Score increased - trigger animation
         setScoreClass('score-change');
-        
+
         // Add floating indicator
         const newChange: ScoreChange = {
           id: changeIdRef.current++,
           amount: difference,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
-        setScoreChanges(prev => [...prev, newChange]);
-        
+        setScoreChanges((prev) => [...prev, newChange]);
+
         // Remove animation class after animation completes
         setTimeout(() => setScoreClass(''), 500);
-        
+
         // Remove floating indicator after animation completes
         setTimeout(() => {
-          setScoreChanges(prev => prev.filter(change => change.id !== newChange.id));
+          setScoreChanges((prev) => prev.filter((change) => change.id !== newChange.id));
         }, 1000);
       }
     }
@@ -60,6 +60,6 @@ export function useScoreAnimation(score: number): UseScoreAnimationResult {
 
   return {
     scoreClass,
-    scoreChanges
+    scoreChanges,
   };
 }

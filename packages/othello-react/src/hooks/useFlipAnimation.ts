@@ -18,18 +18,18 @@ interface UseFlipAnimationOptions {
 
 /**
  * Custom hook for managing tile flip animations in Othello game
- * 
+ *
  * BRILLIANT SOLUTION: Separate visual state from game state
  * - Game logic updates `tile` instantly (game-logic.ts)
  * - `displayTile` controls what user sees during animation
  * - This allows showing OLD color during first half of flip
- * 
+ *
  * ANIMATION TIMELINE (600ms total):
  * - 0ms: Show OLD color, start flip (rotateY 0° → 180°)
  * - 300ms (50%): Piece at 90° rotation (invisible via CSS opacity: 0)
  *                Perfect moment to switch colors without user seeing swap
  * - 600ms (100%): Animation complete, showing NEW color
- * 
+ *
  * @param options - Configuration object
  * @param options.tile - Current tile state from game logic
  * @param options.x - Tile x coordinate (for effect dependency)
@@ -43,7 +43,7 @@ export function useFlipAnimation({
   x,
   y,
   isLastMove = false,
-  isValidMove = false
+  isValidMove = false,
 }: UseFlipAnimationOptions): UseFlipAnimationResult {
   const [isAnimating, setIsAnimating] = useState(false);
   const [displayTile, setDisplayTile] = useState(tile);
@@ -97,12 +97,14 @@ export function useFlipAnimation({
     displayTile, // Use displayTile for visual appearance during animation
     isLastMove && hasGlassGlare() ? 'last-move' : '', // Respect glassGlare flag
     isValidMove ? 'valid-move' : '',
-    isAnimating && hasAnimations() ? 'tile-flip' : '' // Respect animations flag
-  ].filter(Boolean).join(' ');
+    isAnimating && hasAnimations() ? 'tile-flip' : '', // Respect animations flag
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return {
     displayTile,
     isAnimating,
-    tileClasses
+    tileClasses,
   };
 }

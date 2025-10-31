@@ -26,15 +26,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onPlayClick }) => {
       <a href="/" className="navbar-brand">
         ⚫⚪ Othello
       </a>
-      
-      <button 
-        className="navbar-toggle" 
-        onClick={toggleMobileMenu}
-        aria-label="Toggle menu"
-      >
+
+      <button className="navbar-toggle" onClick={toggleMobileMenu} aria-label="Toggle menu">
         {mobileMenuOpen ? '✕' : '☰'}
       </button>
-      
+
       <ul className={`navbar-nav ${mobileMenuOpen ? 'open' : ''}`}>
         <li className="nav-item">
           <a className="nav-link primary" onClick={handlePlayClick}>

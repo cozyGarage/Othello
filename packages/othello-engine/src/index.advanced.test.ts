@@ -1,6 +1,8 @@
 import { describe, test, expect } from 'bun:test';
 import {
-  W, B, E,
+  W,
+  B,
+  E,
   createBoard,
   score,
   getValidMoves,
@@ -8,11 +10,10 @@ import {
   getWinner,
   hasAdjacentPiece,
   takeTurn,
-  type Coordinate
+  type Coordinate,
 } from './index';
 
 describe('Advanced Game Logic Tests', () => {
-  
   describe('Valid Moves Detection', () => {
     test('getValidMoves() returns correct valid moves for initial position', () => {
       const board = createBoard([
@@ -23,16 +24,16 @@ describe('Advanced Game Logic Tests', () => {
         [E, E, E, B, W, E, E, E],
         [E, E, E, E, E, E, E, E],
         [E, E, E, E, E, E, E, E],
-        [E, E, E, E, E, E, E, E]
+        [E, E, E, E, E, E, E, E],
       ]);
-      
+
       const validMoves = getValidMoves(board);
       expect(validMoves.length).toBe(4);
-      
+
       // Check that specific valid moves are included
-      const hasMove = (moves: Coordinate[], x: number, y: number): boolean => 
+      const hasMove = (moves: Coordinate[], x: number, y: number): boolean =>
         moves.some(([mx, my]) => mx === x && my === y);
-      
+
       expect(hasMove(validMoves, 2, 3)).toBe(true); // Left of center
       expect(hasMove(validMoves, 3, 2)).toBe(true); // Above center
       expect(hasMove(validMoves, 4, 5)).toBe(true); // Right-below center
@@ -48,9 +49,9 @@ describe('Advanced Game Logic Tests', () => {
         [B, B, B, B, B, B, B, B],
         [B, B, B, B, B, B, B, B],
         [B, B, B, B, B, B, B, B],
-        [E, E, E, E, E, E, E, E]
+        [E, E, E, E, E, E, E, E],
       ]);
-      
+
       const validMoves = getValidMoves(board);
       expect(validMoves.length).toBe(0);
     });
@@ -62,9 +63,9 @@ describe('Advanced Game Logic Tests', () => {
         [B, B, B, B],
         [B, B, B, B],
         [W, W, W, W],
-        [W, W, W, W]
+        [W, W, W, W],
       ]);
-      
+
       expect(isGameOver(board)).toBe(true);
     });
 
@@ -77,9 +78,9 @@ describe('Advanced Game Logic Tests', () => {
         [E, E, E, B, W, E, E, E],
         [E, E, E, E, E, E, E, E],
         [E, E, E, E, E, E, E, E],
-        [E, E, E, E, E, E, E, E]
+        [E, E, E, E, E, E, E, E],
       ]);
-      
+
       expect(isGameOver(board)).toBe(false);
     });
 
@@ -89,9 +90,9 @@ describe('Advanced Game Logic Tests', () => {
         [B, B, B, B],
         [B, B, B, B],
         [B, W, W, W],
-        [W, W, W, W]
+        [W, W, W, W],
       ]);
-      
+
       // Test that game recognizes it's over when no valid moves remain
       // In this configuration, neither player can make a valid move
       const result = isGameOver(board);
@@ -105,9 +106,9 @@ describe('Advanced Game Logic Tests', () => {
         [B, B, B, B],
         [B, B, B, B],
         [W, W, W, E],
-        [E, E, E, E]
+        [E, E, E, E],
       ]);
-      
+
       expect(getWinner(board)).toBe(B);
     });
 
@@ -116,9 +117,9 @@ describe('Advanced Game Logic Tests', () => {
         [W, W, W, W],
         [W, W, W, W],
         [B, B, B, E],
-        [E, E, E, E]
+        [E, E, E, E],
       ]);
-      
+
       expect(getWinner(board)).toBe(W);
     });
 
@@ -127,9 +128,9 @@ describe('Advanced Game Logic Tests', () => {
         [B, B, B, B],
         [W, W, W, W],
         [B, B, B, B],
-        [W, W, W, W]
+        [W, W, W, W],
       ]);
-      
+
       expect(getWinner(board)).toBe(null);
     });
   });
@@ -140,9 +141,9 @@ describe('Advanced Game Logic Tests', () => {
         [E, E, E, E],
         [E, B, E, E],
         [E, E, E, E],
-        [E, E, E, E]
+        [E, E, E, E],
       ]);
-      
+
       // Positions adjacent to [1,1] should return true
       expect(hasAdjacentPiece(board, [0, 0])).toBe(true);
       expect(hasAdjacentPiece(board, [1, 0])).toBe(true);
@@ -159,9 +160,9 @@ describe('Advanced Game Logic Tests', () => {
         [E, E, E, E],
         [E, B, E, E],
         [E, E, E, E],
-        [E, E, E, E]
+        [E, E, E, E],
       ]);
-      
+
       // Position [3,3] should have no adjacent pieces
       expect(hasAdjacentPiece(board, [3, 3])).toBe(false);
     });
@@ -175,12 +176,12 @@ describe('Advanced Game Logic Tests', () => {
         [E, E, W, E, E],
         [B, W, E, W, B],
         [E, E, W, E, E],
-        [E, E, B, E, E]
+        [E, E, B, E, E],
       ]);
-      
+
       board.playerTurn = B;
       takeTurn(board, [2, 2]); // Center position flips in 4 directions
-      
+
       // Should flip pieces in all cardinal directions
       expect(board.tiles[2]![2]).toBe(B);
       expect(board.tiles[2]![1]).toBe(B); // Above
@@ -195,12 +196,12 @@ describe('Advanced Game Logic Tests', () => {
         [E, W, E, E, E],
         [E, E, W, E, E],
         [E, E, E, B, E],
-        [E, E, E, E, E]
+        [E, E, E, E, E],
       ]);
-      
+
       board.playerTurn = B;
       takeTurn(board, [0, 0]);
-      
+
       // Should flip diagonal pieces
       expect(board.tiles[1]![1]).toBe(B);
       expect(board.tiles[2]![2]).toBe(B);
@@ -217,9 +218,9 @@ describe('Advanced Game Logic Tests', () => {
         [B, W, B, W, B, W, B, W],
         [W, B, W, B, W, B, W, B],
         [B, W, B, W, B, W, B, W],
-        [W, B, W, B, W, B, W, B]
+        [W, B, W, B, W, B, W, B],
       ]);
-      
+
       const result = score(board);
       expect(result.black).toBe(32);
       expect(result.white).toBe(32);
@@ -230,9 +231,9 @@ describe('Advanced Game Logic Tests', () => {
         [E, E, E, E],
         [E, E, E, E],
         [E, E, E, E],
-        [E, E, E, E]
+        [E, E, E, E],
       ]);
-      
+
       const result = score(board);
       expect(result.black).toBe(0);
       expect(result.white).toBe(0);
@@ -243,9 +244,9 @@ describe('Advanced Game Logic Tests', () => {
         [B, B, B, B],
         [B, B, B, B],
         [B, B, B, B],
-        [B, B, B, B]
+        [B, B, B, B],
       ]);
-      
+
       const result = score(board);
       expect(result.black).toBe(16);
       expect(result.white).toBe(0);
@@ -258,12 +259,12 @@ describe('Advanced Game Logic Tests', () => {
         [E, W, B, E],
         [E, E, E, E],
         [E, E, E, E],
-        [E, E, E, E]
+        [E, E, E, E],
       ]);
-      
+
       board.playerTurn = B;
       takeTurn(board, [0, 0]);
-      
+
       expect(board.tiles[0]![0]).toBe(B);
       expect(board.tiles[0]![1]).toBe(B);
     });
@@ -274,13 +275,13 @@ describe('Advanced Game Logic Tests', () => {
         [E, W, B, E],
         [E, E, E, E],
         [E, E, E, E],
-        [E, E, E, E]
+        [E, E, E, E],
       ]);
-      
+
       board.playerTurn = B;
       // Place at corner and verify it flips the piece between
       takeTurn(board, [0, 0]);
-      
+
       expect(board.tiles[0]![0]).toBe(B);
       expect(board.tiles[0]![1]).toBe(B);
       expect(board.tiles[0]![2]).toBe(B);
@@ -295,18 +296,18 @@ describe('Advanced Game Logic Tests', () => {
         [E, E, W, B, E, E],
         [E, E, B, W, E, E],
         [E, E, E, E, E, E],
-        [E, E, E, E, E, E]
+        [E, E, E, E, E, E],
       ]);
-      
+
       expect(board.playerTurn).toBe(B);
       takeTurn(board, [1, 2]);
-      
+
       expect(board.playerTurn).toBe(W);
       takeTurn(board, [1, 3]);
-      
+
       expect(board.playerTurn).toBe(B);
       takeTurn(board, [1, 4]);
-      
+
       expect(board.playerTurn).toBe(W);
     });
   });

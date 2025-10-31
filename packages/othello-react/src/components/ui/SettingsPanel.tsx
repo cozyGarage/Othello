@@ -10,10 +10,10 @@ interface SettingsPanelProps {
 
 /**
  * SettingsPanel Component
- * 
+ *
  * Allows users to toggle feature flags at runtime
  * Useful for testing and user preferences
- * 
+ *
  * @param isOpen - Whether the panel is visible
  * @param onClose - Callback to close the panel
  */
@@ -26,7 +26,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose })
     const newValue = !localFeatures[feature];
     toggleFeature(feature, newValue);
     setLocalFeatures({ ...features });
-    
+
     // Sync sound effects manager with feature flag
     if (feature === 'soundEffects') {
       soundEffects.setEnabled(newValue);
@@ -61,9 +61,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose })
             <h2>⚙️ Settings</h2>
             <p className="settings-note">💡 Changes take effect immediately</p>
           </div>
-          <button className="close-button" onClick={onClose} aria-label="Close settings">✕</button>
+          <button className="close-button" onClick={onClose} aria-label="Close settings">
+            ✕
+          </button>
         </div>
-        
+
         <div className="settings-content">
           {(Object.keys(featureLabels) as Array<keyof FeatureFlags>).map((feature) => (
             <div key={feature} className="setting-item">

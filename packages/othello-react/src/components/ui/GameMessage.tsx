@@ -8,10 +8,10 @@ interface GameMessageProps {
 
 /**
  * GameMessage Component
- * 
+ *
  * Displays game status messages (invalid moves, game over, etc.)
  * Appears with fadeIn animation when message is present
- * 
+ *
  * @param message - Message to display (null hides the component)
  */
 export const GameMessage: React.FC<GameMessageProps> = ({ message }) => {
@@ -19,9 +19,5 @@ export const GameMessage: React.FC<GameMessageProps> = ({ message }) => {
     return null;
   }
 
-  return (
-    <div className="message">
-      {message}
-    </div>
-  );
+  return <div className="message">{message}</div>;
 };

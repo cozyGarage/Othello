@@ -74,7 +74,7 @@
 }
 
 .nav-link.primary:hover {
-  background: #5BC45F;
+  background: #5bc45f;
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
@@ -95,11 +95,11 @@
   .navbar {
     padding: 0 var(--spacing-md);
   }
-  
+
   .navbar-toggle {
     display: block;
   }
-  
+
   .navbar-nav {
     position: fixed;
     top: var(--navbar-height);
@@ -117,19 +117,19 @@
     transition: all var(--transition-normal);
     pointer-events: none;
   }
-  
+
   .navbar-nav.open {
     transform: translateY(0);
     opacity: 1;
     pointer-events: all;
   }
-  
+
   .nav-link {
     width: 100%;
     text-align: left;
     padding: var(--spacing-md);
   }
-  
+
   .nav-link.primary {
     margin-top: var(--spacing-sm);
   }

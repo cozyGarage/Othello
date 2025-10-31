@@ -1,6 +1,6 @@
 /**
  * UI Components
- * 
+ *
  * Barrel export for all UI components
  * Makes imports cleaner: `import { PlayerInfo, ScoreBox } from './components/ui'`
  */

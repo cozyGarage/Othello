@@ -8,10 +8,10 @@ interface LoadingScreenProps {
 
 /**
  * LoadingScreen Component
- * 
+ *
  * Displays a loading animation during game initialization
  * Fades in/out smoothly with wooden theme styling
- * 
+ *
  * @param isLoading - Whether to show the loading screen
  */
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {

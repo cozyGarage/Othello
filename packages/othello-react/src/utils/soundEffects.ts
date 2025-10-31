@@ -1,9 +1,9 @@
 /**
  * Sound Effects Manager
- * 
+ *
  * Generates and plays sound effects using Web Audio API
  * No external dependencies required - all sounds generated programmatically
- * 
+ *
  * Sounds:
  * - Piece Flip: Mid-frequency tone with quick decay
  * - Invalid Move: Low buzz sound
