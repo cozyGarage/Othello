@@ -50,6 +50,9 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.engine.on('gameOver', this.handleGameOverEvent);
     this.engine.on('stateChange', this.handleStateChangeEvent);
 
+    // Add keyboard shortcuts for undo/redo
+    document.addEventListener('keydown', this.handleKeyDown);
+
     // Simulate loading for better UX (show loading screen briefly)
     if (hasLoadingScreen()) {
       setTimeout(() => {
@@ -74,6 +77,24 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.engine.off('invalidMove', this.handleInvalidMoveEvent);
     this.engine.off('gameOver', this.handleGameOverEvent);
     this.engine.off('stateChange', this.handleStateChangeEvent);
+    document.removeEventListener('keydown', this.handleKeyDown);
+  }
+
+  handleKeyDown = (event: KeyboardEvent): void => {
+    // Ctrl+Z or Cmd+Z for undo
+    if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+      event.preventDefault();
+      this.handleUndo();
+    }
+    
+    // Ctrl+Y or Cmd+Shift+Z for redo
+    if (
+      ((event.ctrlKey || event.metaKey) && event.key === 'y') ||
+      ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'z')
+    ) {
+      event.preventDefault();
+      this.handleRedo();
+    }
   }
 
   handleMoveEvent = (event: GameEvent): void => {
@@ -163,6 +184,44 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     });
   }
 
+  handleUndo = (): void => {
+    const success = this.engine.undo();
+    
+    if (success) {
+      const state = this.engine.getState();
+      this.setState({
+        board: state.board,
+        moveHistory: state.moveHistory,
+        lastMove: state.moveHistory.length > 0 
+          ? state.moveHistory[state.moveHistory.length - 1]!.coordinate 
+          : null,
+        gameOver: false, // Undoing can bring back the game from game over state
+        message: null
+      });
+    }
+  }
+
+  handleRedo = (): void => {
+    const success = this.engine.redo();
+    
+    if (success) {
+      const state = this.engine.getState();
+      this.setState({
+        board: state.board,
+        moveHistory: state.moveHistory,
+        lastMove: state.moveHistory.length > 0 
+          ? state.moveHistory[state.moveHistory.length - 1]!.coordinate 
+          : null,
+        gameOver: state.isGameOver,
+        message: state.isGameOver 
+          ? (state.winner === B ? 'Game Over! Black wins!' : 
+             state.winner === W ? 'Game Over! White wins!' : 
+             'Game Over! It\'s a tie!') 
+          : null
+      });
+    }
+  }
+
   render() {
     return (
       <div className="OthelloGame">
@@ -175,6 +234,10 @@ class OthelloGame extends Component<{}, OthelloGameState> {
                   board={this.engine.getAnnotatedBoard()} 
                   onPlayerTurn={this.handlePlayerTurn}
                   onRestart={this.handleRestart}
+                  onUndo={this.handleUndo}
+                  onRedo={this.handleRedo}
+                  canUndo={this.engine.canUndo()}
+                  canRedo={this.engine.canRedo()}
                   message={this.state.message}
                   gameOver={this.state.gameOver}
                   lastMove={this.state.lastMove}

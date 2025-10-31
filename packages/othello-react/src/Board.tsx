@@ -8,12 +8,27 @@ interface BoardProps {
   board: BoardType;
   onPlayerTurn: (coord: Coordinate) => void;
   onRestart: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
   message: string | null;
   gameOver: boolean;
   lastMove: Coordinate | null;
 }
 
-const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, onRestart, message, gameOver, lastMove }) => {
+const Board: React.FC<BoardProps> = ({ 
+  board, 
+  onPlayerTurn, 
+  onRestart, 
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
+  message, 
+  gameOver, 
+  lastMove 
+}) => {
   const playerScore = score(board);
   const player = (board.playerTurn === B) ? 'Black' : 'White';
   
@@ -49,8 +64,28 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, onRestart, message, 
         {tiles}
       </div>
       <div className="controls">
+        <div className="control-group">
+          <button 
+            className="control-button undo-button" 
+            onClick={onUndo}
+            disabled={!canUndo}
+            title="Undo (Ctrl+Z)"
+            aria-label="Undo last move"
+          >
+            ↶ Undo
+          </button>
+          <button 
+            className="control-button redo-button" 
+            onClick={onRedo}
+            disabled={!canRedo}
+            title="Redo (Ctrl+Y)"
+            aria-label="Redo move"
+          >
+            ↷ Redo
+          </button>
+        </div>
         <button className="restart-button" onClick={onRestart}>
-          New Game
+          🔄 New Game
         </button>
       </div>
     </div>
