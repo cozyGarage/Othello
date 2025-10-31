@@ -1,9 +1,7 @@
 import { createRoot } from 'react-dom/client';
-import OthelloGame from './OthelloGame';
+import OthelloGameClean from './OthelloGameClean';
 // @ts-expect-error - registerServiceWorker is not typed
 import registerServiceWorker from './registerServiceWorker';
-import './index.css';
-import './styles/animations.css';
 import { features, isDebugMode } from './config/features';
 
 console.log('🎯 index.tsx loaded - App starting...');
@@ -21,8 +19,8 @@ if (!rootElement) {
 console.log('✅ Root element found, creating root and rendering...');
 
 const root = createRoot(rootElement);
-root.render(<OthelloGame />);
+root.render(<OthelloGameClean />);
 
-console.log('✅ OthelloGame render called!');
+console.log('✅ OthelloGameClean render called!');
 
 registerServiceWorker();
