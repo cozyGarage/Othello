@@ -8,6 +8,7 @@
 export { PlayerInfo } from './PlayerInfo';
 export { ScoreBox } from './ScoreBox';
 export { GameMessage } from './GameMessage';
+export { PlayerInfoCard } from './PlayerInfoCard';
 export { SettingsPanel } from './SettingsPanel';
 export { LoadingScreen } from './LoadingScreen';
 export { MoveHistory } from './MoveHistory';

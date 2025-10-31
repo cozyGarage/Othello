@@ -4,7 +4,7 @@
    ======================================== */
 
 /* ========== SETTINGS PANEL ========== */
-.settings-panel-overlay {
+.settings-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
@@ -12,7 +12,19 @@
   align-items: center;
   justify-content: center;
   z-index: var(--z-modal);
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  backdrop-filter: blur(6px);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(6px);
+  }
 }
 
 .settings-panel {
@@ -24,18 +36,19 @@
   width: 90%;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: var(--shadow-lg);
-  animation: slideUp 0.3s ease-out;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7),
+              0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(40px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -53,18 +66,27 @@
 }
 
 .settings-close {
-  background: transparent;
+  background: var(--color-accent-red);
   border: none;
-  color: var(--color-text-secondary);
-  font-size: 28px;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
   cursor: pointer;
-  padding: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
   line-height: 1;
-  transition: color var(--transition-fast);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .settings-close:hover {
-  color: var(--color-text-primary);
+  background: #d32f2f;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.4);
 }
 
 .settings-section {
@@ -86,11 +108,12 @@
   align-items: center;
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
-  transition: background var(--transition-fast);
+  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 .setting-item:hover {
   background: rgba(255, 255, 255, 0.05);
+  transform: translateX(4px);
 }
 
 .setting-label {
@@ -227,6 +250,94 @@
 .score-number {
   font-size: 20px;
   font-weight: bold;
+  font-family: 'Courier New', monospace;
+}
+
+/* ========== PLAYER INFO CARD ========== */
+/* Wrapper for hover trigger */
+.player-info-trigger {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+}
+
+/* Hover card with player details */
+.player-info-card {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: var(--spacing-sm);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-modal);
+  min-width: 200px;
+  animation: slideUp 0.2s ease-out;
+  pointer-events: none;
+}
+
+/* Player avatar circle */
+.player-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--spacing-md);
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.player-avatar.black {
+  background: radial-gradient(circle at 30% 30%, #4a4a4a, #000000);
+}
+
+.player-avatar.white {
+  background: radial-gradient(circle at 30% 30%, #ffffff, #cccccc);
+  color: #000;
+}
+
+.avatar-initial {
+  text-transform: uppercase;
+}
+
+/* Player details section */
+.player-details {
+  text-align: center;
+}
+
+.player-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.player-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.stat-label {
+  color: var(--color-text-secondary);
+}
+
+.stat-value {
+  color: var(--color-text-primary);
+  font-weight: 600;
   font-family: 'Courier New', monospace;
 }
 

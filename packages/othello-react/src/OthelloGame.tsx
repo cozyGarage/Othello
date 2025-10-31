@@ -1,7 +1,7 @@
 import { Component } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
-import BoardClean from './components/layout/BoardClean';
+import Board from './components/layout/Board';
 import { LoadingScreen, SettingsPanel } from './components/ui';
 import { hasLoadingScreen, hasSoundEffects } from './config/features';
 import { soundEffects } from './utils/soundEffects';
@@ -41,7 +41,7 @@ interface OthelloGameState {
  *   - Board Area (left, 80vh)
  *   - Sidebar (right, fixed width)
  */
-class OthelloGameClean extends Component<{}, OthelloGameState> {
+class OthelloGame extends Component<{}, OthelloGameState> {
   private engine: OthelloGameEngine;
 
   constructor(props: {}) {
@@ -250,7 +250,7 @@ class OthelloGameClean extends Component<{}, OthelloGameState> {
             
             <div className="game-container">
               <div className="board-area">
-                <BoardClean 
+                <Board 
                   board={this.engine.getAnnotatedBoard()} 
                   onPlayerTurn={this.handlePlayerTurn}
                   lastMove={this.state.lastMove}
@@ -287,4 +287,4 @@ class OthelloGameClean extends Component<{}, OthelloGameState> {
   }
 }
 
-export default OthelloGameClean;
+export default OthelloGame;

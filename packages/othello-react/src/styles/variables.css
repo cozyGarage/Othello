@@ -52,13 +52,27 @@
   /* Layout */
   --navbar-height: 60px;
   --sidebar-width: 320px;
-  --board-max-size: min(80vh, 600px);
+  --board-max-size: min(85vh, 700px);
   
   /* Z-index layers */
   --z-navbar: 100;
   --z-menu: 200;
   --z-modal: 300;
   --z-loading: 400;
+}
+
+/* Large desktop: Even bigger board */
+@media (min-width: 1400px) {
+  :root {
+    --board-max-size: min(85vh, 750px);
+  }
+}
+
+/* Medium desktop: Standard size */
+@media (max-width: 1200px) {
+  :root {
+    --board-max-size: min(80vh, 650px);
+  }
 }
 
 /* Mobile overrides */
