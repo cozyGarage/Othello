@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import type { TileValue } from '../game-logic';
+import type { TileValue } from 'othello-engine';
 import { hasAnimations, hasGlassGlare } from '../config/features';
 
 interface UseFlipAnimationResult {

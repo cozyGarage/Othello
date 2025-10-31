@@ -1,4 +1,4 @@
-import { createBoard, takeTurn, getValidMoves, isGameOver, getWinner, score, getAnnotatedBoard, B, W, E } from './index';
+import { createBoard, takeTurn, getValidMoves, isGameOver, getWinner, score, getAnnotatedBoard, B, W, E, } from './index';
 export class OthelloGameEngine {
     /**
      * Creates a new Othello game engine
@@ -23,7 +23,7 @@ export class OthelloGameEngine {
             [E, E, E, B, W, E, E, E],
             [E, E, E, E, E, E, E, E],
             [E, E, E, E, E, E, E, E],
-            [E, E, E, E, E, E, E, E]
+            [E, E, E, E, E, E, E, E],
         ];
         this.board = createBoard(startingBoard);
     }
@@ -32,8 +32,8 @@ export class OthelloGameEngine {
      */
     cloneBoard(board) {
         return {
-            tiles: board.tiles.map(row => [...row]),
-            playerTurn: board.playerTurn
+            tiles: board.tiles.map((row) => [...row]),
+            playerTurn: board.playerTurn,
         };
     }
     /**
@@ -42,14 +42,14 @@ export class OthelloGameEngine {
     createSnapshot() {
         return {
             board: this.cloneBoard(this.board),
-            moveHistory: [...this.moveHistory]
+            moveHistory: [...this.moveHistory],
         };
     }
     /**
      * Restore game state from a snapshot
      */
     restoreSnapshot(snapshot) {
-        this.board.tiles = snapshot.board.tiles.map(row => [...row]);
+        this.board.tiles = snapshot.board.tiles.map((row) => [...row]);
         this.board.playerTurn = snapshot.board.playerTurn;
         this.moveHistory = [...snapshot.moveHistory];
     }
@@ -84,7 +84,7 @@ export class OthelloGameEngine {
     emit(eventType, data) {
         const listeners = this.listeners.get(eventType);
         if (listeners) {
-            listeners.forEach(listener => listener({ type: eventType, data }));
+            listeners.forEach((listener) => listener({ type: eventType, data }));
         }
     }
     /**
@@ -106,7 +106,7 @@ export class OthelloGameEngine {
                 player: currentPlayer,
                 coordinate,
                 timestamp: Date.now(),
-                scoreAfter: score(this.board)
+                scoreAfter: score(this.board),
             };
             this.moveHistory.push(move);
             // Emit events
@@ -188,7 +188,7 @@ export class OthelloGameEngine {
             moveHistory: [...this.moveHistory],
             currentPlayer: this.board.playerTurn,
             blackPlayerId: this.blackPlayerId,
-            whitePlayerId: this.whitePlayerId
+            whitePlayerId: this.whitePlayerId,
         };
     }
     /**
@@ -245,7 +245,7 @@ export class OthelloGameEngine {
             [E, E, E, B, W, E, E, E],
             [E, E, E, E, E, E, E, E],
             [E, E, E, E, E, E, E, E],
-            [E, E, E, E, E, E, E, E]
+            [E, E, E, E, E, E, E, E],
         ];
         this.board = createBoard(startingBoard);
         this.moveHistory = [];
@@ -271,7 +271,7 @@ export class OthelloGameEngine {
             board: this.board,
             moveHistory: this.moveHistory,
             blackPlayerId: this.blackPlayerId,
-            whitePlayerId: this.whitePlayerId
+            whitePlayerId: this.whitePlayerId,
         });
     }
     /**
