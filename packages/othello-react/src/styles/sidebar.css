@@ -257,10 +257,55 @@
   }
   
   .sidebar-card {
+    padding: var(--spacing-md);
+  }
+  
+  /* Larger touch targets */
+  .control-btn {
+    padding: var(--spacing-lg);
+    font-size: 16px;
+    min-height: 48px;
+  }
+  
+  /* Bigger score display */
+  .score-value {
+    font-size: 36px;
+  }
+  
+  .turn-piece {
+    width: 28px;
+    height: 28px;
+  }
+  
+  /* Compact move history on mobile */
+  .move-history {
+    max-height: 180px;
+  }
+  
+  .move-item {
+    padding: var(--spacing-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-card-title {
+    font-size: 12px;
+  }
+  
+  .score-display {
     padding: var(--spacing-sm);
   }
   
-  .move-history {
-    max-height: 200px;
+  .score-value {
+    font-size: 32px;
+  }
+  
+  .controls-grid {
+    gap: var(--spacing-md);
+  }
+  
+  .control-btn {
+    padding: var(--spacing-md);
+    font-size: 15px;
   }
 }

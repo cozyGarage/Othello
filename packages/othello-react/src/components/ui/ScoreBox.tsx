@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../styles/game.css';
+import '../../styles/ui.css';
 import '../../styles/animations.css';
 import { useScoreAnimation } from '../../hooks/useScoreAnimation';
 import { hasScoreAnimations } from '../../config/features';

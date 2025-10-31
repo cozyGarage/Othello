@@ -1,0 +1,241 @@
+/* ========================================
+   UI COMPONENTS - Supporting components
+   Settings, Loading, Messages, etc.
+   ======================================== */
+
+/* ========== SETTINGS PANEL ========== */
+.settings-panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.settings-panel {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.settings-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--color-text-primary);
+}
+
+.settings-close {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 28px;
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  line-height: 1;
+  transition: color var(--transition-fast);
+}
+
+.settings-close:hover {
+  color: var(--color-text-primary);
+}
+
+.settings-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.settings-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-md);
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.setting-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.setting-label {
+  font-size: 16px;
+  color: var(--color-text-primary);
+}
+
+.setting-toggle {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background var(--transition-normal);
+}
+
+.setting-toggle.active {
+  background: var(--color-accent-green);
+}
+
+.setting-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform var(--transition-normal);
+}
+
+.setting-toggle.active::after {
+  transform: translateX(24px);
+}
+
+/* ========== LOADING SCREEN ========== */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--color-bg-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-loading);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--color-accent-green);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  margin-top: var(--spacing-lg);
+  color: var(--color-text-secondary);
+  font-size: 16px;
+}
+
+/* ========== GAME MESSAGE ========== */
+.game-message {
+  padding: var(--spacing-md);
+  text-align: center;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  background: rgba(33, 150, 243, 0.1);
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  color: var(--color-accent-blue);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.game-message.error {
+  background: rgba(244, 67, 54, 0.1);
+  border-color: rgba(244, 67, 54, 0.3);
+  color: var(--color-accent-red);
+}
+
+.game-message.success {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: rgba(76, 175, 80, 0.3);
+  color: var(--color-accent-green);
+}
+
+/* ========== PLAYER INFO ========== */
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.player-piece {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+}
+
+.player-piece.black {
+  background: radial-gradient(circle at 30% 30%, #4a4a4a, #000000);
+}
+
+.player-piece.white {
+  background: radial-gradient(circle at 30% 30%, #ffffff, #cccccc);
+}
+
+/* ========== SCORE BOX ========== */
+.score-box {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+}
+
+.score-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.score-number {
+  font-size: 20px;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

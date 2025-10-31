@@ -66,6 +66,19 @@
   :root {
     --navbar-height: 56px;
     --sidebar-width: 100%;
-    --board-max-size: min(70vh, calc(100vw - 32px));
+    --board-max-size: min(65vh, calc(100vw - 24px));
+    --spacing-sm: 6px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+  }
+}
+
+/* Small mobile (iPhone SE, etc) */
+@media (max-width: 375px) {
+  :root {
+    --board-max-size: min(60vh, calc(100vw - 16px));
+    --spacing-sm: 4px;
+    --spacing-md: 8px;
+    --spacing-lg: 12px;
   }
 }

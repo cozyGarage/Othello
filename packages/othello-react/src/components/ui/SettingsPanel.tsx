@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { features, toggleFeature, type FeatureFlags } from '../../config/features';
 import { soundEffects } from '../../utils/soundEffects';
-import '../../styles/game.css';
+import '../../styles/ui.css';
 
 interface SettingsPanelProps {
   isOpen: boolean;

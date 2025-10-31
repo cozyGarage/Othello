@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../styles/game.css';
+import '../../styles/ui.css';
 
 interface PlayerInfoProps {
   player: 'Black' | 'White';
