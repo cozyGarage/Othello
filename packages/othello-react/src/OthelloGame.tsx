@@ -11,6 +11,10 @@ import {
   type Coordinate,
   type GameEvent,
   type Move,
+  type MoveEventData,
+  type InvalidMoveEventData,
+  type GameOverEventData,
+  type StateChangeEventData,
   B,
   W,
 } from 'othello-engine';
@@ -119,7 +123,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
   };
 
   handleMoveEvent = (event: GameEvent): void => {
-    const { move } = event.data;
+    const { move } = event.data as MoveEventData;
 
     if (hasSoundEffects()) {
       soundEffects.playFlip();
@@ -130,7 +134,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
   };
 
   handleInvalidMoveEvent = (event: GameEvent): void => {
-    const { error } = event.data;
+    const { error } = event.data as InvalidMoveEventData;
 
     if (hasSoundEffects()) {
       soundEffects.playInvalidMove();
@@ -141,7 +145,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
   };
 
   handleGameOverEvent = (event: GameEvent): void => {
-    const { winner } = event.data;
+    const { winner } = event.data as GameOverEventData;
     let message: string;
 
     if (winner === B) {
@@ -160,7 +164,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
   };
 
   handleStateChangeEvent = (event: GameEvent): void => {
-    const state = event.data.state;
+    const { state } = event.data as StateChangeEventData;
     this.setState({ board: state.board });
 
     // Check if current player has no valid moves

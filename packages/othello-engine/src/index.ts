@@ -2,7 +2,7 @@
 
 // Re-export the main engine class
 export { OthelloGameEngine } from './OthelloGameEngine';
-export type { Move, GameState, GameEvent, GameEventType } from './OthelloGameEngine';
+export type { Move, GameState, GameEvent, GameEventType, MoveEventData, GameOverEventData, InvalidMoveEventData, StateChangeEventData } from './OthelloGameEngine';
 
 export type TileValue = 'W' | 'B' | 'E' | 'P';
 export type Coordinate = [number, number];

@@ -25,12 +25,55 @@ export interface GameState {
 /**
  * Event types that the engine can emit
  */
+export type Player = 'W' | 'B';
 export type GameEventType = 'move' | 'gameOver' | 'invalidMove' | 'stateChange';
+export interface MoveEventData {
+    move: Move;
+    state: GameState;
+}
+export interface GameOverEventData {
+    winner: Player | null;
+    state: GameState;
+}
+export interface InvalidMoveEventData {
+    coordinate: Coordinate;
+    error: string;
+}
+export interface StateChangeEventData {
+    state: GameState;
+    action?: 'undo' | 'redo';
+}
+export type GameEventData = MoveEventData | GameOverEventData | InvalidMoveEventData | StateChangeEventData;
 export interface GameEvent {
     type: GameEventType;
-    data: any;
+    data: GameEventData;
 }
 type EventListener = (event: GameEvent) => void;
+/**
+ * OthelloGameEngine - A framework-agnostic game engine for Othello/Reversi
+ *
+ * This class provides a complete implementation of Othello game logic with:
+ * - Move validation and execution
+ * - Game state management
+ * - Move history tracking
+ * - Undo/Redo functionality
+ * - Event-driven architecture for UI integration
+ * - Player management
+ * - Game serialization/deserialization
+ *
+ * @example
+ * ```typescript
+ * const engine = new OthelloGameEngine('player1', 'player2');
+ *
+ * // Listen for game events
+ * engine.on('move', (event) => {
+ *   console.log('Move made:', event.data.move);
+ * });
+ *
+ * // Make a move
+ * const success = engine.makeMove([3, 2]);
+ * ```
+ */
 export declare class OthelloGameEngine {
     private board;
     private moveHistory;

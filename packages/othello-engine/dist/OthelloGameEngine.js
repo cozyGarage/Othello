@@ -1,4 +1,29 @@
 import { createBoard, takeTurn, getValidMoves, isGameOver, getWinner, score, getAnnotatedBoard, B, W, E, } from './index';
+/**
+ * OthelloGameEngine - A framework-agnostic game engine for Othello/Reversi
+ *
+ * This class provides a complete implementation of Othello game logic with:
+ * - Move validation and execution
+ * - Game state management
+ * - Move history tracking
+ * - Undo/Redo functionality
+ * - Event-driven architecture for UI integration
+ * - Player management
+ * - Game serialization/deserialization
+ *
+ * @example
+ * ```typescript
+ * const engine = new OthelloGameEngine('player1', 'player2');
+ *
+ * // Listen for game events
+ * engine.on('move', (event) => {
+ *   console.log('Move made:', event.data.move);
+ * });
+ *
+ * // Make a move
+ * const success = engine.makeMove([3, 2]);
+ * ```
+ */
 export class OthelloGameEngine {
     /**
      * Creates a new Othello game engine
