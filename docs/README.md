@@ -5,15 +5,19 @@ This directory contains all project documentation organized for easy navigation 
 ## Structure
 
 ### 📖 User Guide (`user-guide/`)
+
 Documentation for end users of the Othello game application.
 
 ### 🛠️ Developer Guide (`developer-guide/`)
+
 Technical documentation for developers working on the project.
 
 ### 🔌 API Reference (`api/`)
+
 API documentation and technical specifications.
 
 ### 🤝 Contributing (`contributing/`)
+
 - `CONTRIBUTING.md` - Guidelines for contributing to the project
 - `PROJECT_STATUS.md` - Current project status and roadmap
 - `ROADMAP.md` - Future development plans and milestones

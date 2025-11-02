@@ -7,6 +7,7 @@ Welcome to Othello! This guide will help you understand how to play and enjoy th
 Othello (also known as Reversi) is a strategy board game for two players. The game is played on an 8x8 board with 64 discs that are black on one side and white on the other.
 
 ### Objective
+
 The goal is to have more discs of your color than your opponent when the board is full or no more moves are possible.
 
 ### Rules
@@ -55,13 +56,17 @@ The goal is to have more discs of your color than your opponent when the board i
 ## Troubleshooting
 
 ### No Sound
+
 If you don't hear sound effects:
+
 1. Check your browser's audio settings
 2. Ensure your device volume is not muted
 3. Try refreshing the page
 
 ### Game Not Responding
+
 If the game becomes unresponsive:
+
 1. Refresh the page
 2. Clear your browser cache
 3. Try a different browser
