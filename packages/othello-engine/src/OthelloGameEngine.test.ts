@@ -203,3 +203,206 @@ describe('OthelloGameEngine', () => {
     expect(gameOverEngine.getWinner()).toBe('B');
   });
 });
+
+describe('Undo/Redo Functionality', () => {
+  test('canUndo() returns false initially', () => {
+    const engine = new OthelloGameEngine();
+
+    expect(engine.canUndo()).toBe(false);
+  });
+
+  test('canRedo() returns false initially', () => {
+    const engine = new OthelloGameEngine();
+
+    expect(engine.canRedo()).toBe(false);
+  });
+
+  test('canUndo() returns true after making a move', () => {
+    const engine = new OthelloGameEngine();
+
+    engine.makeMove([3, 2]);
+
+    expect(engine.canUndo()).toBe(true);
+  });
+
+  test('undo() returns false when nothing to undo', () => {
+    const engine = new OthelloGameEngine();
+
+    const result = engine.undo();
+
+    expect(result).toBe(false);
+  });
+
+  test('undo() successfully undoes a move', () => {
+    const engine = new OthelloGameEngine();
+
+    // Record initial state
+    const initialState = engine.getState();
+    const initialScore = initialState.score;
+    const initialPlayer = initialState.currentPlayer;
+
+    // Make a move
+    engine.makeMove([3, 2]);
+
+    const afterMoveState = engine.getState();
+    expect(afterMoveState.currentPlayer).toBe('W');
+    expect(afterMoveState.moveHistory).toHaveLength(1);
+
+    // Undo the move
+    const undoResult = engine.undo();
+
+    expect(undoResult).toBe(true);
+
+    // State should be back to initial
+    const afterUndoState = engine.getState();
+    expect(afterUndoState.currentPlayer).toBe(initialPlayer);
+    expect(afterUndoState.score).toEqual(initialScore);
+    expect(afterUndoState.moveHistory).toHaveLength(0);
+  });
+
+  test('canRedo() returns true after undo', () => {
+    const engine = new OthelloGameEngine();
+
+    engine.makeMove([3, 2]);
+    engine.undo();
+
+    expect(engine.canRedo()).toBe(true);
+  });
+
+  test('redo() returns false when nothing to redo', () => {
+    const engine = new OthelloGameEngine();
+
+    const result = engine.redo();
+
+    expect(result).toBe(false);
+  });
+
+  test('redo() successfully redoes an undone move', () => {
+    const engine = new OthelloGameEngine();
+
+    // Make a move
+    engine.makeMove([3, 2]);
+    const afterMoveState = engine.getState();
+    const afterMovePlayer = afterMoveState.currentPlayer;
+
+    // Undo it
+    engine.undo();
+
+    // Redo it
+    const redoResult = engine.redo();
+
+    expect(redoResult).toBe(true);
+
+    // Should be back to after-move state
+    const afterRedoState = engine.getState();
+    expect(afterRedoState.currentPlayer).toBe(afterMovePlayer);
+  });
+
+  test('undo/redo works for multiple moves', () => {
+    const engine = new OthelloGameEngine();
+
+    // Make multiple valid moves
+    engine.makeMove([3, 2]); // Black
+    engine.makeMove([2, 2]); // White
+
+    expect(engine.getState().moveHistory).toHaveLength(2);
+
+    // Undo all moves
+    engine.undo(); // Undo White's move
+    expect(engine.getState().moveHistory).toHaveLength(1);
+    expect(engine.getState().currentPlayer).toBe('W');
+
+    engine.undo(); // Undo Black's move
+    expect(engine.getState().moveHistory).toHaveLength(0);
+    expect(engine.getState().currentPlayer).toBe('B');
+
+    // Redo all moves
+    engine.redo();
+    expect(engine.getState().moveHistory).toHaveLength(1);
+    expect(engine.getState().currentPlayer).toBe('W');
+
+    engine.redo();
+    expect(engine.getState().moveHistory).toHaveLength(2);
+    expect(engine.getState().currentPlayer).toBe('B');
+  });
+
+  test('making a new move clears redo stack', () => {
+    const engine = new OthelloGameEngine();
+
+    // Make moves
+    engine.makeMove([3, 2]);
+    engine.makeMove([2, 2]);
+
+    // Undo one
+    engine.undo();
+    expect(engine.canRedo()).toBe(true);
+
+    // Make a new move
+    engine.makeMove([2, 4]);
+
+    // Redo should no longer be available
+    expect(engine.canRedo()).toBe(false);
+  });
+
+  test('reset() clears undo/redo stacks', () => {
+    const engine = new OthelloGameEngine();
+
+    // Make moves
+    engine.makeMove([3, 2]);
+    engine.makeMove([2, 2]);
+
+    // Undo one
+    engine.undo();
+
+    expect(engine.canUndo()).toBe(true);
+    expect(engine.canRedo()).toBe(true);
+
+    // Reset
+    engine.reset();
+
+    // Both stacks should be empty
+    expect(engine.canUndo()).toBe(false);
+    expect(engine.canRedo()).toBe(false);
+  });
+
+  test('undo emits stateChange event', (done) => {
+    const engine = new OthelloGameEngine();
+
+    engine.makeMove([3, 2]);
+
+    engine.on('stateChange', (event) => {
+      const stateChangeData = event.data as { state: any; action?: string };
+      expect(event.type).toBe('stateChange');
+      expect(stateChangeData.action).toBe('undo');
+      done();
+    });
+
+    engine.undo();
+  });
+
+  test('redo emits stateChange event', (done) => {
+    const engine = new OthelloGameEngine();
+
+    engine.makeMove([3, 2]);
+    engine.undo();
+
+    engine.on('stateChange', (event) => {
+      const stateChangeData = event.data as { state: any; action?: string };
+      expect(event.type).toBe('stateChange');
+      expect(stateChangeData.action).toBe('redo');
+      done();
+    });
+
+    engine.redo();
+  });
+
+  test('invalid move does not add to undo stack', () => {
+    const engine = new OthelloGameEngine();
+
+    // Try invalid move
+    const result = engine.makeMove([0, 0]);
+
+    expect(result).toBe(false);
+    expect(engine.canUndo()).toBe(false);
+  });
+});
