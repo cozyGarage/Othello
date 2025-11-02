@@ -1,39 +1,18 @@
 # Documentation
 
-This directory contains all project documentation organized for easy navigation and maintenance.
+This project uses a single, comprehensive README.md as the main documentation. See the [main README](../README.md) for:
 
-## Structure
-
-### 📖 User Guide (`user-guide/`)
-
-Documentation for end users of the Othello game application.
-
-### 🛠️ Developer Guide (`developer-guide/`)
-
-Technical documentation for developers working on the project.
-
-### 🔌 API Reference (`api/`)
-
-API documentation and technical specifications.
-
-### 🤝 Contributing (`contributing/`)
-
-- `CONTRIBUTING.md` - Guidelines for contributing to the project
-- `PROJECT_STATUS.md` - Current project status and roadmap
-- `ROADMAP.md` - Future development plans and milestones
-- `SESSION_SUMMARY.md` - Summary of development sessions and changes
-- `templates/` - GitHub issue and pull request templates
-  - `ISSUE_TEMPLATE/` - Issue templates for bug reports and feature requests
-  - `PULL_REQUEST_TEMPLATE.md` - Pull request template
-
-## GitHub Integration
-
-The templates in the `contributing/templates/` directory are symlinked to `.github/` for GitHub to recognize them. This allows us to keep all documentation organized in one place while maintaining GitHub's expected file structure.
+- 🎮 **How to Play** - Complete game rules and strategy tips
+- 🚀 **Getting Started** - Installation and development setup
+- 📁 **Project Structure** - Code organization overview
+- 🧪 **Testing** - Test coverage and running tests
+- ✨ **Features** - Full feature list and technical details
 
 ## Contributing
 
-When adding new documentation:
+- **[CONTRIBUTING.md](./contributing/CONTRIBUTING.md)** - Guidelines for contributors
+- **[ROADMAP.md](./contributing/ROADMAP.md)** - Future development plans
 
-1. Place it in the appropriate location in this `docs/` directory
-2. Update this README if adding new categories
-3. Ensure any GitHub templates are properly symlinked if needed
+## GitHub Integration
+
+The templates in `contributing/templates/` are symlinked to `.github/` for GitHub to recognize them.
