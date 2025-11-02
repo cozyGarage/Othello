@@ -6,6 +6,8 @@
 
 _A fully playable implementation of the classic Othello (Reversi) board game built with React, TypeScript, and Bun_
 
+**Latest Update:** November 2, 2025 - Clean architecture with comprehensive test coverage (229 tests) and automated deployment.
+
 ![Deploy Status](https://github.com/cozyGarage/Othello/actions/workflows/deploy.yml/badge.svg)
 ![Tests](https://github.com/cozyGarage/Othello/actions/workflows/test.yml/badge.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue?style=flat-square&logo=typescript)
