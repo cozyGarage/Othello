@@ -5,7 +5,11 @@
 /.pnp
 .pnp.js
 **/node_modules
-packages/*/node_modules
+packages/othello-engine/node_modules
+packages/othello-react/node_modules
+packages/othello-engine/dist
+packages/othello-react/dist
+packages/*/dist
 
 # testing
 /coverage
