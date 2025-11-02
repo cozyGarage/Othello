@@ -1,0 +1,27 @@
+# Code Owners
+# This file defines who owns and is responsible for different parts of the codebase
+# When a pull request changes files in these directories, the listed owners will be
+# automatically requested for review
+
+# Global owners - responsible for overall project health
+* @cozyGarage
+
+# Engine package - core game logic
+/packages/othello-engine/ @cozyGarage
+
+# React package - UI components and user experience
+/packages/othello-react/ @cozyGarage
+
+# CI/CD and deployment
+/.github/ @cozyGarage
+/.husky/ @cozyGarage
+
+# Documentation
+*.md @cozyGarage
+/docs/ @cozyGarage
+
+# Configuration files
+eslint.config.js @cozyGarage
+commitlint.config.js @cozyGarage
+.prettierrc.json @cozyGarage
+bunfig.toml @cozyGarage

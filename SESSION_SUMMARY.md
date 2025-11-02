@@ -9,6 +9,7 @@
 ## 🎯 PROJECT OVERVIEW
 
 This is a chess.com-inspired Othello game built as a TypeScript monorepo with:
+
 - **Engine Package**: `packages/othello-engine` - Core game logic with undo/redo
 - **React Package**: `packages/othello-react` - UI with Vite, animations, sound effects
 - **Tech Stack**: Bun runtime, TypeScript, React, Vite, ESLint, Prettier
@@ -20,6 +21,7 @@ This is a chess.com-inspired Othello game built as a TypeScript monorepo with:
 ## 📋 CURRENT STATE (What We Just Completed)
 
 ### Phase 5: Code Quality & Deployment Setup ✅
+
 1. **ESLint + Prettier Setup** (Complete)
    - ESLint v9.38.0 with flat config (`eslint.config.js`)
    - TypeScript + React plugins configured
@@ -28,7 +30,7 @@ This is a chess.com-inspired Othello game built as a TypeScript monorepo with:
    - All 213 tests passing
 
 2. **Documentation Cleanup** (Complete)
-   - Created comprehensive `PROJECT_STATUS.md` 
+   - Created comprehensive `PROJECT_STATUS.md`
    - Updated `ROADMAP.md` (Phases 0-5 marked complete)
    - Removed redundant docs: `IMPROVEMENTS.md`, `CLEANUP_REPORT.md`, `STATUS.md`, `BUG_REPORT_TEMPLATE.md`
    - Kept: `README.md`, `PROJECT_STATUS.md`, `ROADMAP.md`
@@ -107,15 +109,15 @@ bun run build                  # Builds to packages/othello-react/dist
 
 Located in `packages/othello-react/src/config/features.ts`:
 
-| Feature | Default | Description |
-|---------|---------|-------------|
-| `animations` | ✅ ON | Tile flip animations |
-| `glassGlare` | ✅ ON | Glass sphere visual effect |
-| `soundEffects` | ✅ ON | Audio feedback (Web Audio API) |
-| `moveHistory` | ✅ ON | Move history sidebar |
-| `scoreAnimations` | ❌ OFF | Score delta animations |
-| `loadingScreen` | ❌ OFF | Loading screen |
-| `debug` | ❌ OFF | Debug mode |
+| Feature           | Default | Description                    |
+| ----------------- | ------- | ------------------------------ |
+| `animations`      | ✅ ON   | Tile flip animations           |
+| `glassGlare`      | ✅ ON   | Glass sphere visual effect     |
+| `soundEffects`    | ✅ ON   | Audio feedback (Web Audio API) |
+| `moveHistory`     | ✅ ON   | Move history sidebar           |
+| `scoreAnimations` | ❌ OFF  | Score delta animations         |
+| `loadingScreen`   | ❌ OFF  | Loading screen                 |
+| `debug`           | ❌ OFF  | Debug mode                     |
 
 All togglable via in-game Settings Panel (⚙️ icon).
 
@@ -126,6 +128,7 @@ All togglable via in-game Settings Panel (⚙️ icon).
 **Total Tests**: 213 pass, 0 fail
 
 **Coverage**:
+
 - ✅ Engine core logic (48 tests)
 - ✅ OthelloGameEngine class (29 tests)
 - ✅ Undo/Redo functionality (14 tests)
@@ -134,6 +137,7 @@ All togglable via in-game Settings Panel (⚙️ icon).
 - ✅ UI components (76 tests)
 
 **Test Files**:
+
 - `packages/othello-engine/src/index.test.ts`
 - `packages/othello-engine/src/OthelloGameEngine.test.ts`
 - `packages/othello-engine/src/index.advanced.test.ts`
@@ -145,11 +149,13 @@ All togglable via in-game Settings Panel (⚙️ icon).
 ## 🔧 KNOWN ISSUES & ACCEPTABLE WARNINGS
 
 ### ESLint Warnings (69 total - All Acceptable)
+
 1. **Non-null assertions (`!`)**: Used safely in tests where we know values exist
 2. **Unused variable**: `formatTime` was removed
 3. **Console statements**: Intentional for debugging and service worker
 
 ### No Blocking Issues
+
 - All tests passing ✅
 - Build successful ✅
 - Format validation passing ✅
@@ -160,23 +166,27 @@ All togglable via in-game Settings Panel (⚙️ icon).
 ## 📝 COMPLETED PHASES
 
 ### Phase 0: Project Setup ✅
+
 - Bun runtime & monorepo structure
 - TypeScript configuration
 - Vite build setup
 
 ### Phase 1: Core Game Logic ✅
+
 - Complete Othello rules implementation
 - Valid move detection
 - Board state management
 - Piece flipping logic
 
 ### Phase 2: React Integration ✅
+
 - Component architecture (Board, Tile, Row, Sidebar)
 - Game state management
 - Interactive gameplay
 - Move history tracking
 
 ### Phase 3: Advanced Features ✅
+
 - Feature flag system
 - Undo/Redo functionality
 - Settings panel
@@ -184,6 +194,7 @@ All togglable via in-game Settings Panel (⚙️ icon).
 - Loading screen
 
 ### Phase 4: Visual Polish ✅
+
 - CSS animations (flip, glare, score deltas)
 - Glass sphere effect
 - Responsive layout
@@ -191,6 +202,7 @@ All togglable via in-game Settings Panel (⚙️ icon).
 - Navbar with branding
 
 ### Phase 5: Code Quality & Deployment ✅
+
 - ESLint + Prettier setup
 - Comprehensive testing (213 tests)
 - Documentation consolidation
@@ -202,6 +214,7 @@ All togglable via in-game Settings Panel (⚙️ icon).
 ## 🎯 NEXT PHASE: Phase 6 - Enhanced UX (50% Complete)
 
 **Remaining Tasks** (from `ROADMAP.md`):
+
 1. ⏱️ **Move timer** - Add chess-clock style timers
 2. 🎨 **Theme system** - Multiple color themes
 3. 🔊 **Volume controls** - Audio settings
@@ -215,22 +228,28 @@ All togglable via in-game Settings Panel (⚙️ icon).
 ## 🚨 CRITICAL FIXES APPLIED THIS SESSION
 
 ### 1. Build Script Fix
+
 **Problem**: `bun --cwd` flag not working in CI/CD  
 **Solution**: Changed to `cd` commands
+
 ```json
 // Before: "build": "bun --cwd packages/othello-engine run build && ..."
 // After:  "build": "cd packages/othello-engine && bun run build && cd ../othello-react && bun run build"
 ```
 
 ### 2. TypeScript Errors
+
 **Problem**: Unused `formatTime` function, wrong import path  
-**Solution**: 
+**Solution**:
+
 - Removed unused function from `MoveHistory.tsx`
 - Fixed import in `useFlipAnimation.ts`: `'../game-logic'` → `'othello-engine'`
 
 ### 3. GitHub Pages Deployment Path
+
 **Problem**: `tar: dist: Cannot open: No such file or directory`  
 **Solution**: Updated `.github/workflows/deploy.yml`
+
 ```yaml
 # Before: path: './dist'
 # After:  path: './packages/othello-react/dist'
@@ -303,6 +322,7 @@ WHAT I NEED:
 ## 🎉 SUMMARY
 
 **This session accomplished**:
+
 - ✅ Set up code quality tools (ESLint + Prettier)
 - ✅ Consolidated documentation
 - ✅ Fixed build script for CI/CD
@@ -311,6 +331,7 @@ WHAT I NEED:
 - ✅ Ready for production deployment
 
 **Next session should**:
+
 - Merge `feature/clean-architecture` to `main`
 - Verify GitHub Pages deployment
 - Begin Phase 6 (Enhanced UX) tasks
@@ -318,6 +339,6 @@ WHAT I NEED:
 
 ---
 
-*Generated: October 31, 2025*  
-*Project: Othello Game - Chess.com Inspired*  
-*Developer: cozyGarage*
+_Generated: October 31, 2025_  
+_Project: Othello Game - Chess.com Inspired_  
+_Developer: cozyGarage_
