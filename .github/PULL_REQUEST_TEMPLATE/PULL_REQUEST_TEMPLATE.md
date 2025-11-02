@@ -1,1 +1,1 @@
-../docs/templates/PULL_REQUEST_TEMPLATE.md
+../../docs/contributing/templates/PULL_REQUEST_TEMPLATE.md

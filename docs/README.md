@@ -4,6 +4,16 @@ This directory contains all project documentation organized for easy navigation 
 
 ## Structure
 
+### 📖 User Guide (`user-guide/`)
+Documentation for end users of the Othello game application.
+
+### 🛠️ Developer Guide (`developer-guide/`)
+Technical documentation for developers working on the project.
+
+### 🔌 API Reference (`api/`)
+API documentation and technical specifications.
+
+### 🤝 Contributing (`contributing/`)
 - `CONTRIBUTING.md` - Guidelines for contributing to the project
 - `PROJECT_STATUS.md` - Current project status and roadmap
 - `ROADMAP.md` - Future development plans and milestones
@@ -14,7 +24,7 @@ This directory contains all project documentation organized for easy navigation 
 
 ## GitHub Integration
 
-The templates in the `templates/` directory are symlinked to `.github/` for GitHub to recognize them. This allows us to keep all documentation organized in one place while maintaining GitHub's expected file structure.
+The templates in the `contributing/templates/` directory are symlinked to `.github/` for GitHub to recognize them. This allows us to keep all documentation organized in one place while maintaining GitHub's expected file structure.
 
 ## Contributing
 
