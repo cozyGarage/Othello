@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test, beforeEach } from 'bun:test';
 import {
   features,
   isFeatureEnabled,
@@ -106,6 +106,12 @@ describe('Feature Flags', () => {
 });
 
 describe('Sound Effects', () => {
+  beforeEach(() => {
+    // Reset sound effects state before each test
+    soundEffects.setVolume(100);
+    soundEffects.setEnabled(true);
+  });
+
   describe('Sound Effects API', () => {
     test('should have sound effect methods', () => {
       expect(typeof soundEffects.playFlip).toBe('function');
@@ -113,6 +119,8 @@ describe('Sound Effects', () => {
       expect(typeof soundEffects.playGameOver).toBe('function');
       expect(typeof soundEffects.resume).toBe('function');
       expect(typeof soundEffects.setEnabled).toBe('function');
+      expect(typeof soundEffects.setVolume).toBe('function');
+      expect(typeof soundEffects.getVolume).toBe('function');
     });
 
     test('sound effects should not throw errors when called', () => {
@@ -120,6 +128,29 @@ describe('Sound Effects', () => {
       expect(() => soundEffects.playInvalidMove()).not.toThrow();
       expect(() => soundEffects.playGameOver()).not.toThrow();
       expect(() => soundEffects.setEnabled(false)).not.toThrow();
+      expect(() => soundEffects.setVolume(50)).not.toThrow();
+    });
+  });
+
+  describe('Volume Control', () => {
+    test('should set and get volume correctly', () => {
+      soundEffects.setVolume(75);
+      expect(soundEffects.getVolume()).toBe(75);
+    });
+
+    test('should clamp volume to valid range (0-100)', () => {
+      soundEffects.setVolume(-10);
+      expect(soundEffects.getVolume()).toBe(0);
+
+      soundEffects.setVolume(150);
+      expect(soundEffects.getVolume()).toBe(100);
+
+      soundEffects.setVolume(50);
+      expect(soundEffects.getVolume()).toBe(50);
+    });
+
+    test('should default to volume 100', () => {
+      expect(soundEffects.getVolume()).toBe(100);
     });
   });
 });
