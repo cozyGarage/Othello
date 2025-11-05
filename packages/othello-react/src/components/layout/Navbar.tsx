@@ -23,7 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onPlayClick }) => {
 
   return (
     <nav className="navbar">
-      <a href="/" className="navbar-brand">
+      <a href="/othello" className="navbar-brand">
         ⚫⚪ Othello
       </a>
 
