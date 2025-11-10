@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
 import { features, toggleFeature, type FeatureFlags } from '../../config/features';
 import { soundEffects } from '../../utils/soundEffects';
+import type { BotDifficulty } from 'othello-engine';
 import '../../styles/ui.css';
 
 interface SettingsPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  aiEnabled: boolean;
+  aiDifficulty: BotDifficulty;
+  aiPlayer: 'W' | 'B';
+  onAiToggle: (enabled: boolean) => void;
+  onAiDifficultyChange: (difficulty: BotDifficulty) => void;
+  onAiPlayerChange: (player: 'W' | 'B') => void;
 }
 
 /**
@@ -16,8 +23,23 @@ interface SettingsPanelProps {
  *
  * @param isOpen - Whether the panel is visible
  * @param onClose - Callback to close the panel
+ * @param aiEnabled - Whether AI opponent is enabled
+ * @param aiDifficulty - Current AI difficulty level
+ * @param aiPlayer - Which player the AI controls
+ * @param onAiToggle - Callback when AI is toggled
+ * @param onAiDifficultyChange - Callback when difficulty changes
+ * @param onAiPlayerChange - Callback when AI player changes
  */
-export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
+export const SettingsPanel: React.FC<SettingsPanelProps> = ({ 
+  isOpen, 
+  onClose,
+  aiEnabled,
+  aiDifficulty,
+  aiPlayer,
+  onAiToggle,
+  onAiDifficultyChange,
+  onAiPlayerChange,
+}) => {
   const [localFeatures, setLocalFeatures] = useState<FeatureFlags>({ ...features });
 
   if (!isOpen) return null;
@@ -67,19 +89,80 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose })
         </div>
 
         <div className="settings-content">
-          {(Object.keys(featureLabels) as Array<keyof FeatureFlags>).map((feature) => (
-            <div key={feature} className="setting-item">
+          {/* AI Settings Section */}
+          <div className="settings-section">
+            <h3 className="section-title">🤖 AI Opponent</h3>
+            
+            <div className="setting-item">
               <label className="setting-label">
                 <input
                   type="checkbox"
-                  checked={localFeatures[feature]}
-                  onChange={() => handleToggle(feature)}
+                  checked={aiEnabled}
+                  onChange={(e) => onAiToggle(e.target.checked)}
                 />
-                <span className="setting-name">{featureLabels[feature]}</span>
+                <span className="setting-name">Play vs AI</span>
               </label>
-              <p className="setting-description">{featureDescriptions[feature]}</p>
+              <p className="setting-description">Enable computer opponent</p>
             </div>
-          ))}
+
+            {aiEnabled && (
+              <>
+                <div className="setting-item">
+                  <label className="setting-label">
+                    <span className="setting-name">AI Difficulty</span>
+                  </label>
+                  <select
+                    value={aiDifficulty}
+                    onChange={(e) => onAiDifficultyChange(e.target.value as BotDifficulty)}
+                    className="difficulty-select"
+                  >
+                    <option value="easy">Easy (Random)</option>
+                    <option value="medium">Medium (Greedy)</option>
+                    <option value="hard">Hard (Minimax)</option>
+                  </select>
+                  <p className="setting-description">
+                    {aiDifficulty === 'easy' && 'AI makes random valid moves'}
+                    {aiDifficulty === 'medium' && 'AI maximizes immediate score'}
+                    {aiDifficulty === 'hard' && 'AI uses strategic lookahead'}
+                  </p>
+                </div>
+
+                <div className="setting-item">
+                  <label className="setting-label">
+                    <span className="setting-name">AI Plays As</span>
+                  </label>
+                  <select
+                    value={aiPlayer}
+                    onChange={(e) => onAiPlayerChange(e.target.value as 'W' | 'B')}
+                    className="difficulty-select"
+                  >
+                    <option value="B">Black (goes first)</option>
+                    <option value="W">White (goes second)</option>
+                  </select>
+                  <p className="setting-description">Choose which color the AI controls</p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Feature Flags Section */}
+          <div className="settings-section">
+            <h3 className="section-title">🎨 Features</h3>
+            
+            {(Object.keys(featureLabels) as Array<keyof FeatureFlags>).map((feature) => (
+              <div key={feature} className="setting-item">
+                <label className="setting-label">
+                  <input
+                    type="checkbox"
+                    checked={localFeatures[feature]}
+                    onChange={() => handleToggle(feature)}
+                  />
+                  <span className="setting-name">{featureLabels[feature]}</span>
+                </label>
+                <p className="setting-description">{featureDescriptions[feature]}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

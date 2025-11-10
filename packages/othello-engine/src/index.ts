@@ -13,6 +13,10 @@ export type {
   StateChangeEventData,
 } from './OthelloGameEngine';
 
+// Re-export the AI bot
+export { OthelloBot } from './OthelloBot';
+export type { BotDifficulty } from './OthelloBot';
+
 export type TileValue = 'W' | 'B' | 'E' | 'P';
 export type Coordinate = [number, number];
 
@@ -46,15 +50,26 @@ export const createBoard = (tiles: TileValue[][]): Board => ({
   tiles,
 });
 
-export const tile = (board: Board, [x, y]: Coordinate): TileValue => board.tiles[y]![x]!;
+export const tile = (board: Board, [x, y]: Coordinate): TileValue => {
+  const row = board.tiles[y];
+  if (!row) {
+    throw new Error('Out of bounds: invalid row index');
+  }
+  const value = row[x];
+  if (value === undefined) {
+    throw new Error('Out of bounds: invalid column index');
+  }
+  return value;
+};
 
 export const score = (board: Board): Score => {
   let blackCount = 0;
   let whiteCount = 0;
 
-  for (let x = 0; x < board.tiles.length; ++x) {
-    for (let y = 0; y < board.tiles.length; ++y) {
-      const tileVal = board.tiles[y]![x];
+  for (let y = 0; y < board.tiles.length; ++y) {
+    const row = board.tiles[y];
+    for (let x = 0; x < row.length; ++x) {
+      const tileVal = row[x];
       if (tileVal === B) {
         blackCount++;
       } else if (tileVal === W) {
@@ -83,7 +98,8 @@ export const hasAdjacentPiece = (board: Board, coord: Coordinate): boolean => {
       if (isOutOfBounds(board, [x, y])) {
         continue;
       }
-      if (board.tiles[y]![x] !== E) {
+      const row = board.tiles[y];
+      if (row && row[x] !== E) {
         return true;
       }
     }
@@ -127,16 +143,17 @@ const DIRECTIONS: Directions = {
 };
 
 const findFlippableDirections = (board: Board, [xCoord, yCoord]: Coordinate): string[] => {
-  const startColor = board.tiles[yCoord]![xCoord]!;
+  const startColor = tile(board, [xCoord, yCoord]);
   const alternateColor = startColor === W ? B : W;
   const flippableDirections: string[] = [];
 
   for (const dirName in DIRECTIONS) {
-    const dirModifier = DIRECTIONS[dirName]!;
+    const dirModifier = DIRECTIONS[dirName];
+    if (!dirModifier) continue;
     let x = xCoord + dirModifier.xMod;
     let y = yCoord + dirModifier.yMod;
 
-    if (!isOutOfBounds(board, [x, y]) && board.tiles[y]![x] === alternateColor) {
+    if (!isOutOfBounds(board, [x, y]) && tile(board, [x, y]) === alternateColor) {
       let isAlternateColor = true;
 
       do {
@@ -146,7 +163,7 @@ const findFlippableDirections = (board: Board, [xCoord, yCoord]: Coordinate): st
         if (isOutOfBounds(board, [x, y])) {
           isAlternateColor = false;
         } else {
-          const nextTile = board.tiles[y]![x];
+          const nextTile = tile(board, [x, y]);
           if (nextTile === E) {
             isAlternateColor = false;
           } else if (nextTile === startColor) {
@@ -162,14 +179,17 @@ const findFlippableDirections = (board: Board, [xCoord, yCoord]: Coordinate): st
 };
 
 const flipTiles = (board: Board, directions: string[], [xCoord, yCoord]: Coordinate): void => {
-  const flipColor = board.tiles[yCoord]![xCoord]!;
+  const flipColor = tile(board, [xCoord, yCoord]);
   for (const dirName of directions) {
-    const dirModifier = DIRECTIONS[dirName]!;
+    const dirModifier = DIRECTIONS[dirName];
+    if (!dirModifier) continue;
     let x = xCoord + dirModifier.xMod;
     let y = yCoord + dirModifier.yMod;
 
-    while (board.tiles[y]![x] !== flipColor) {
-      board.tiles[y]![x] = flipColor;
+    while (tile(board, [x, y]) !== flipColor) {
+      const row = board.tiles[y];
+      if (!row) break;
+      row[x] = flipColor;
       x += dirModifier.xMod;
       y += dirModifier.yMod;
     }
@@ -180,35 +200,47 @@ const alternatePlayer = (player: 'W' | 'B'): 'W' | 'B' => (player === B ? W : B)
 
 export const takeTurn = (board: Board, coord: Coordinate): void => {
   const [x, y] = coord;
-  if (board.tiles[y]![x] !== E) {
+  const row = board.tiles[y];
+  if (!row || row[x] !== E) {
     throw new Error('Error: You cannot place a piece on an occupied square.');
   }
 
   // First place the piece temporarily to check for flippable directions
-  board.tiles[y]![x] = board.playerTurn;
+  row[x] = board.playerTurn;
   const flippableDirections = findFlippableDirections(board, coord);
 
   // A move is only valid if it flips at least one opponent piece
   if (flippableDirections.length === 0) {
-    board.tiles[y]![x] = E; // Revert the placement
+    row[x] = E; // Revert the placement
     throw new Error('Error: This move does not flip any opponent pieces.');
   }
 
   flipTiles(board, flippableDirections, coord);
+
+  // Switch to the next player
   board.playerTurn = alternatePlayer(board.playerTurn);
+
+  // CRITICAL FIX: If the next player has no valid moves, switch back
+  // This handles the "pass" scenario in Othello
+  const nextPlayerHasMoves = getValidMoves(board).length > 0;
+  if (!nextPlayerHasMoves && !isGameOver(board)) {
+    // Next player must pass - switch back to current player
+    board.playerTurn = alternatePlayer(board.playerTurn);
+  }
 };
 
 // Check if a move is valid for the current player
 export const isValidMove = (board: Board, coord: Coordinate): boolean => {
   const [x, y] = coord;
-  if (board.tiles[y]![x] !== E) {
+  const row = board.tiles[y];
+  if (!row || row[x] !== E) {
     return false;
   }
 
   // Temporarily place the piece and check for flippable directions
-  board.tiles[y]![x] = board.playerTurn;
+  row[x] = board.playerTurn;
   const flippableDirections = findFlippableDirections(board, coord);
-  board.tiles[y]![x] = E; // Revert
+  row[x] = E; // Revert
 
   return flippableDirections.length > 0;
 };
@@ -217,7 +249,9 @@ export const isValidMove = (board: Board, coord: Coordinate): boolean => {
 export const getValidMoves = (board: Board): Coordinate[] => {
   const validMoves: Coordinate[] = [];
   for (let y = 0; y < board.tiles.length; y++) {
-    for (let x = 0; x < board.tiles[y]!.length; x++) {
+    const row = board.tiles[y];
+    if (!row) continue;
+    for (let x = 0; x < row.length; x++) {
       if (isValidMove(board, [x, y])) {
         validMoves.push([x, y]);
       }

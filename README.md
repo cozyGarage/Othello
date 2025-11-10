@@ -6,7 +6,7 @@
 
 _A fully playable implementation of the classic Othello (Reversi) board game built with React, TypeScript, and Bun_
 
-**Latest Update:** November 2, 2025 - Clean architecture with comprehensive test coverage (229 tests) and automated deployment.
+**Latest Update:** November 11, 2025 – Added AI opponents (Easy / Medium / Hard), fixed critical pass logic bug, removed non-null assertions for safer runtime, updated feature flag defaults (sound disabled by default), and expanded test coverage.
 
 ![Deploy Status](https://github.com/cozyGarage/Othello/actions/workflows/deploy.yml/badge.svg)
 ![Tests](https://github.com/cozyGarage/Othello/actions/workflows/test.yml/badge.svg)
@@ -14,7 +14,8 @@ _A fully playable implementation of the classic Othello (Reversi) board game bui
 ![React](https://img.shields.io/badge/React-18.2.0-blue?style=flat-square&logo=react)
 ![Bun](https://img.shields.io/badge/Bun-1.3.1-orange?style=flat-square&logo=bun)
 ![Vite](https://img.shields.io/badge/Vite-5.4.21-646CFF?style=flat-square&logo=vite)
-![Tests](https://img.shields.io/badge/Tests-63%20passing-success?style=flat-square)
+![Tests](https://img.shields.io/badge/Engine%20Tests-83%20passing-success?style=flat-square)
+![Tests](https://img.shields.io/badge/React%20Tests-Working%20(Engine%20Validated)-informational?style=flat-square)
 
 </div>
 
@@ -32,6 +33,10 @@ Othello (also known as Reversi) is a classic strategy board game for two players
 - 🎯 **Move Validation** - Automatic validation following official Othello rules
 - 💡 **Visual Hints** - Animated indicators showing all valid moves
 - 🔄 **Auto-Pass** - Automatic turn passing when no valid moves are available
+- 🤖 **AI Opponents** - Three difficulty levels:
+	- Easy: Random valid move
+	- Medium: Greedy (maximize immediate score)
+	- Hard: Minimax with alpha-beta pruning & positional heuristics
 - 🏆 **Winner Detection** - Instant game-over detection with winner announcement
 - 📊 **Live Scoring** - Real-time score tracking for both players
 - 🔄 **Quick Restart** - One-click game restart functionality
@@ -42,9 +47,11 @@ Othello (also known as Reversi) is a classic strategy board game for two players
 - ⚡ **Lightning Fast** - Powered by Bun runtime (10-100x faster than npm)
 - 🔥 **Instant Dev Server** - Vite hot reload in ~128ms
 - 🛡️ **Type-Safe** - Full TypeScript with strict mode enabled
-- ✅ **Well-Tested** - 63 tests including unit and integration tests
+- ✅ **Well-Tested** - 83 core engine tests + UI and feature flag tests
 - 🤖 **CI/CD** - Automated testing and deployment via GitHub Actions
 - 📦 **Modern Tooling** - Bun + Vite + TypeScript + React
+ - 🧠 **Minimax AI** - Depth-limited with alpha-beta pruning for efficient decision making
+ - 🧪 **Pass Scenario Suite** - Comprehensive tests ensuring correct handling when a player must pass
 
 ## 🎮 How to Play
 
@@ -113,35 +120,37 @@ bun run build    # Build for production
 bun run preview  # Preview production build
 ```
 
-## 📁 Project Structure
+## 📁 Project Structure (Monorepo)
 
 ```
-src/
-├── game-logic.ts              # Core game logic (TypeScript)
-├── game-logic.test.ts         # Unit tests
-├── game-logic.advanced.test.ts # Advanced tests
-├── integration.test.ts        # Integration tests
-├── OthelloGame.tsx            # Main game component
-├── Board.tsx                  # Board component
-├── Row.tsx                    # Row component
-├── Tile.tsx                   # Tile component
-└── index.tsx                  # Entry point
+packages/
+	othello-engine/        # Pure game logic, AI bot (OthelloBot), tests
+		src/
+			index.ts           # Public API (game functions, exports)
+			OthelloGameEngine.ts # Event-driven engine with undo/redo
+			OthelloBot.ts      # AI implementation (easy/medium/hard)
+			*.test.ts          # Engine + AI + pass scenario tests
+	othello-react/         # React UI application
+		src/
+			OthelloGame.tsx    # Main game container
+			components/        # Board, Sidebar, SettingsPanel, UI widgets
+			config/features.ts # Feature flags (animations ON, sound OFF by default)
+			styles/            # CSS for layout & animations
+			*.test.ts(x)       # UI & feature tests
 ```
 
 ## 🧪 Testing
 
-**63 tests** covering unit, advanced, and integration scenarios:
+**Coverage Snapshot**
 
-- Game logic validation
-- Move detection and validation
-- Multi-directional flipping
-- Game over detection
-- DOM rendering
+- 83 engine tests (logic, AI, undo/redo, pass scenarios)
+- UI tests (board rendering, settings panel, feature flags)
+- Feature flag tests (runtime toggling, defaults)
 
 ```bash
-bun test                # Run all tests
-bun test --watch        # Watch mode
-bun test game-logic     # Run specific test file
+bun test packages/*                               # Run all tests
+bun test packages/othello-engine/src/OthelloBot.test.ts  # AI tests only
+bun test --watch                                  # Watch mode
 ```
 
 ## 🚀 Deployment
@@ -150,9 +159,80 @@ Automatic deployment to GitHub Pages on push to `main` via GitHub Actions.
 
 **Live:** [https://cozygarage.github.io/Othello/](https://cozygarage.github.io/Othello/)
 
-## � Documentation
+## 🔐 Configuration & Feature Flags
 
-- **[STATUS.md](./STATUS.md)** - Development history and what we've built
+Feature flags live in `packages/othello-react/src/config/features.ts`.
+Default snapshot:
+
+```ts
+export const features = {
+	animations: true,
+	glassGlare: true,
+	soundEffects: false, // disabled by default
+	moveHistory: true,
+	scoreAnimations: false,
+	loadingScreen: false,
+	debug: false,
+};
+```
+
+Toggle at runtime:
+```ts
+import { toggleFeature } from './config/features';
+toggleFeature('soundEffects', true);
+```
+
+## 🧠 AI Overview
+
+`OthelloBot` strategies:
+
+- Easy: Uniform random over valid moves.
+- Medium: Greedy immediate score delta.
+- Hard: Minimax (depth-limited) with alpha-beta pruning; heuristic weights corners > edges > inner tiles.
+
+Safety considerations:
+
+- Depth limit prevents exponential blowup.
+- Pass handling integrated in simulated turns.
+- Evaluation combines material (disc counts) + positional weights.
+
+## 🐛 Critical Rule Fix: Pass Scenarios
+
+Fixed logic where a player without moves now properly passes. If both players have no moves, game ends immediately. Dedicated test suite ensures correctness.
+
+## 🧹 Runtime Safety Improvements
+
+- Removed non-null assertions in engine code.
+- Added bounds checks in `tile()` helper.
+- Defensive listener registration without `!`.
+
+## 🛡 Future Stability & Hardening (Brainstorm)
+
+Potential edge cases & mitigations:
+
+| Edge Case | Risk | Mitigation |
+|-----------|------|------------|
+| Extremely rapid clicks on board | Race conditions updating state | Debounce moves, ignore input during AI turn |
+| AI depth causing long compute on low-end devices | UI freeze | Web Worker / async off-main-thread execution |
+| Corrupted imported game state JSON | Runtime errors | Validate schema before import (zod) |
+| Browser tab sleep/resume mid-AI evaluation | Out-of-sync timer/events | Revalidate board + recompute valid moves on visibilitychange |
+| Sound API not available (e.g., SSR, headless) | Exceptions | Feature flag default off + try/catch around audio init |
+| Undo/Redo stack memory growth | Performance degradation | Cap stack size (e.g., 200 moves) & drop oldest |
+| Mobile viewport resize during move | Misaligned board | Recompute board layout on resize + CSS flex safeguards |
+| Minimax encountering no moves recursively | Infinite loop risk | Explicit pass detection + terminal state check |
+| Invalid coordinates passed from UI | Crash | Guard in `makeMove` and `tile()` (already added) |
+| Network latency (future multiplayer) | Desync | Pending move queue + server ACK model |
+
+Future improvements:
+
+- Switch AI to iterative deepening + time budget.
+- Add Web Worker for hard AI moves.
+- Schema validation for saved/imported states.
+- Error Boundary around React root to catch unexpected failures.
+
+## 📄 Additional Documentation
+
+- **[STATUS.md](./STATUS.md)** - Development history
 - **[IMPROVEMENTS.md](./IMPROVEMENTS.md)** - Future enhancement ideas
 
 ---

@@ -83,8 +83,8 @@ describe('Feature Flags', () => {
       expect(features.glassGlare).toBe(true);
     });
 
-    test('soundEffects should be enabled by default', () => {
-      expect(features.soundEffects).toBe(true);
+    test('soundEffects should be disabled by default', () => {
+      expect(features.soundEffects).toBe(false);
     });
 
     test('moveHistory should be enabled by default', () => {

@@ -49,7 +49,7 @@ export interface FeatureFlags {
 export const features: FeatureFlags = {
   animations: true,
   glassGlare: true,
-  soundEffects: true, // Web Audio API - no dependencies needed
+  soundEffects: false, // Default: disabled to avoid auto-playing sound
   moveHistory: true, // Now implemented - displays move history with timestamps
   scoreAnimations: false, // Disabled by default (can be overwhelming)
   loadingScreen: false, // Disabled by default (optional UX)

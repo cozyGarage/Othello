@@ -210,7 +210,13 @@ export class OthelloGameEngine {
     if (!this.listeners.has(eventType)) {
       this.listeners.set(eventType, []);
     }
-    this.listeners.get(eventType)!.push(listener);
+    // Avoid non-null assertion by ensuring the array exists and then pushing
+    let list = this.listeners.get(eventType);
+    if (!list) {
+      list = [];
+      this.listeners.set(eventType, list);
+    }
+    list.push(listener);
   }
 
   /**
@@ -297,8 +303,10 @@ export class OthelloGameEngine {
     this.redoStack.push(this.createSnapshot());
 
     // Restore previous state
-    const previousState = this.undoStack.pop()!;
-    this.restoreSnapshot(previousState);
+    const previousState = this.undoStack.pop();
+    if (previousState) {
+      this.restoreSnapshot(previousState);
+    }
 
     // Emit state change event
     this.emit('stateChange', { state: this.getState(), action: 'undo' });
@@ -319,8 +327,10 @@ export class OthelloGameEngine {
     this.undoStack.push(this.createSnapshot());
 
     // Restore redo state
-    const redoState = this.redoStack.pop()!;
-    this.restoreSnapshot(redoState);
+    const redoState = this.redoStack.pop();
+    if (redoState) {
+      this.restoreSnapshot(redoState);
+    }
 
     // Emit state change event
     this.emit('stateChange', { state: this.getState(), action: 'redo' });
