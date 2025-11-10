@@ -113,7 +113,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.engine.off('gameOver', this.handleGameOverEvent);
     this.engine.off('stateChange', this.handleStateChangeEvent);
     document.removeEventListener('keydown', this.handleKeyDown);
-    
+
     // Clean up bot timeout
     if (this.botMoveTimeout !== null) {
       clearTimeout(this.botMoveTimeout);
@@ -145,16 +145,16 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     }
 
     const moveHistory = this.engine.getMoveHistory();
-    
+
     // Check if the turn stayed with the same player (opponent had to pass)
     const currentPlayer = state.currentPlayer;
     const previousPlayer = move.player;
-    
+
     if (currentPlayer === previousPlayer) {
       // Opponent had no valid moves and had to pass
       const opponentName = currentPlayer === 'B' ? 'White' : 'Black';
-      this.setState({ 
-        lastMove: move.coordinate, 
+      this.setState({
+        lastMove: move.coordinate,
         moveHistory,
         message: `${opponentName} has no valid moves and must pass!`,
       });
@@ -206,7 +206,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       });
       setTimeout(() => this.setState({ message: null }), 2000);
     }
-    
+
     // Trigger AI move if it's the AI's turn
     this.checkAndMakeAIMove();
   };
@@ -229,7 +229,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       lastMove: null,
       moveHistory: [],
     });
-    
+
     // Check if AI should make the first move
     setTimeout(() => this.checkAndMakeAIMove(), 500);
   };
@@ -239,10 +239,11 @@ class OthelloGame extends Component<{}, OthelloGameState> {
 
     if (success) {
       const state = this.engine.getState();
-      const lastMoveCoord = state.moveHistory.length > 0
-        ? state.moveHistory[state.moveHistory.length - 1]?.coordinate ?? null
-        : null;
-        
+      const lastMoveCoord =
+        state.moveHistory.length > 0
+          ? (state.moveHistory[state.moveHistory.length - 1]?.coordinate ?? null)
+          : null;
+
       this.setState({
         board: state.board,
         moveHistory: state.moveHistory,
@@ -250,7 +251,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
         gameOver: false,
         message: null,
       });
-      
+
       // Check if AI should move after undo
       setTimeout(() => this.checkAndMakeAIMove(), 500);
     }
@@ -261,10 +262,11 @@ class OthelloGame extends Component<{}, OthelloGameState> {
 
     if (success) {
       const state = this.engine.getState();
-      const lastMoveCoord = state.moveHistory.length > 0
-        ? state.moveHistory[state.moveHistory.length - 1]?.coordinate ?? null
-        : null;
-        
+      const lastMoveCoord =
+        state.moveHistory.length > 0
+          ? (state.moveHistory[state.moveHistory.length - 1]?.coordinate ?? null)
+          : null;
+
       this.setState({
         board: state.board,
         moveHistory: state.moveHistory,
@@ -278,7 +280,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
               : "Game Over! It's a tie!"
           : null,
       });
-      
+
       // Check if AI should move after redo
       setTimeout(() => this.checkAndMakeAIMove(), 500);
     }
@@ -291,11 +293,11 @@ class OthelloGame extends Component<{}, OthelloGameState> {
 
   handleAiToggle = (enabled: boolean): void => {
     this.setState({ aiEnabled: enabled });
-    
+
     if (enabled) {
       // Initialize bot with current settings
       this.bot = new OthelloBot(this.state.aiDifficulty, this.state.aiPlayer);
-      
+
       // Check if AI should move immediately
       setTimeout(() => this.checkAndMakeAIMove(), 500);
     } else {
@@ -310,7 +312,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
 
   handleAiDifficultyChange = (difficulty: BotDifficulty): void => {
     this.setState({ aiDifficulty: difficulty });
-    
+
     // Update bot if it exists
     if (this.bot) {
       this.bot.setDifficulty(difficulty);
@@ -319,19 +321,19 @@ class OthelloGame extends Component<{}, OthelloGameState> {
 
   handleAiPlayerChange = (player: 'W' | 'B'): void => {
     this.setState({ aiPlayer: player });
-    
+
     // Update bot if it exists
     if (this.bot) {
       this.bot.setPlayer(player);
     }
-    
+
     // Check if AI should move immediately
     setTimeout(() => this.checkAndMakeAIMove(), 500);
   };
 
   checkAndMakeAIMove = (): void => {
     const { aiEnabled, aiPlayer, gameOver } = this.state;
-    
+
     // Don't make AI move if:
     // - AI is disabled
     // - Game is over
@@ -339,17 +341,17 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     if (!aiEnabled || gameOver || !this.bot) {
       return;
     }
-    
+
     const state = this.engine.getState();
-    
+
     if (state.currentPlayer !== aiPlayer) {
       return;
     }
-    
+
     // Add a small delay for better UX (makes AI feel more natural)
     this.botMoveTimeout = window.setTimeout(() => {
       const move = this.bot?.calculateMove(state.board);
-      
+
       if (move) {
         this.engine.makeMove(move);
       }

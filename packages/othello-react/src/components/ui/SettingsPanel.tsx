@@ -30,8 +30,8 @@ interface SettingsPanelProps {
  * @param onAiDifficultyChange - Callback when difficulty changes
  * @param onAiPlayerChange - Callback when AI player changes
  */
-export const SettingsPanel: React.FC<SettingsPanelProps> = ({ 
-  isOpen, 
+export const SettingsPanel: React.FC<SettingsPanelProps> = ({
+  isOpen,
   onClose,
   aiEnabled,
   aiDifficulty,
@@ -92,7 +92,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           {/* AI Settings Section */}
           <div className="settings-section">
             <h3 className="section-title">🤖 AI Opponent</h3>
-            
+
             <div className="setting-item">
               <label className="setting-label">
                 <input
@@ -148,7 +148,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           {/* Feature Flags Section */}
           <div className="settings-section">
             <h3 className="section-title">🎨 Features</h3>
-            
+
             {(Object.keys(featureLabels) as Array<keyof FeatureFlags>).map((feature) => (
               <div key={feature} className="setting-item">
                 <label className="setting-label">

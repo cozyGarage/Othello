@@ -1,6 +1,8 @@
 // Type definitions for the Othello game
 // Re-export the main engine class
 export { OthelloGameEngine } from './OthelloGameEngine';
+// Re-export the AI bot
+export { OthelloBot } from './OthelloBot';
 // Constants
 export const W = 'W';
 export const B = 'B';
@@ -130,19 +132,28 @@ const flipTiles = (board, directions, [xCoord, yCoord]) => {
 const alternatePlayer = (player) => (player === B ? W : B);
 export const takeTurn = (board, coord) => {
     const [x, y] = coord;
-    if (board.tiles[y][x] !== E) {
+    const row = board.tiles[y];
+    if (!row || row[x] !== E) {
         throw new Error('Error: You cannot place a piece on an occupied square.');
     }
     // First place the piece temporarily to check for flippable directions
-    board.tiles[y][x] = board.playerTurn;
+    row[x] = board.playerTurn;
     const flippableDirections = findFlippableDirections(board, coord);
     // A move is only valid if it flips at least one opponent piece
     if (flippableDirections.length === 0) {
-        board.tiles[y][x] = E; // Revert the placement
+        row[x] = E; // Revert the placement
         throw new Error('Error: This move does not flip any opponent pieces.');
     }
     flipTiles(board, flippableDirections, coord);
+    // Switch to the next player
     board.playerTurn = alternatePlayer(board.playerTurn);
+    // CRITICAL FIX: If the next player has no valid moves, switch back
+    // This handles the "pass" scenario in Othello
+    const nextPlayerHasMoves = getValidMoves(board).length > 0;
+    if (!nextPlayerHasMoves && !isGameOver(board)) {
+        // Next player must pass - switch back to current player
+        board.playerTurn = alternatePlayer(board.playerTurn);
+    }
 };
 // Check if a move is valid for the current player
 export const isValidMove = (board, coord) => {

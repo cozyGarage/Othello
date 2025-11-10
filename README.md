@@ -15,7 +15,7 @@ _A fully playable implementation of the classic Othello (Reversi) board game bui
 ![Bun](https://img.shields.io/badge/Bun-1.3.1-orange?style=flat-square&logo=bun)
 ![Vite](https://img.shields.io/badge/Vite-5.4.21-646CFF?style=flat-square&logo=vite)
 ![Tests](https://img.shields.io/badge/Engine%20Tests-83%20passing-success?style=flat-square)
-![Tests](https://img.shields.io/badge/React%20Tests-Working%20(Engine%20Validated)-informational?style=flat-square)
+![Tests](<https://img.shields.io/badge/React%20Tests-Working%20(Engine%20Validated)-informational?style=flat-square>)
 
 </div>
 
@@ -34,9 +34,9 @@ Othello (also known as Reversi) is a classic strategy board game for two players
 - 💡 **Visual Hints** - Animated indicators showing all valid moves
 - 🔄 **Auto-Pass** - Automatic turn passing when no valid moves are available
 - 🤖 **AI Opponents** - Three difficulty levels:
-	- Easy: Random valid move
-	- Medium: Greedy (maximize immediate score)
-	- Hard: Minimax with alpha-beta pruning & positional heuristics
+  - Easy: Random valid move
+  - Medium: Greedy (maximize immediate score)
+  - Hard: Minimax with alpha-beta pruning & positional heuristics
 - 🏆 **Winner Detection** - Instant game-over detection with winner announcement
 - 📊 **Live Scoring** - Real-time score tracking for both players
 - 🔄 **Quick Restart** - One-click game restart functionality
@@ -50,8 +50,8 @@ Othello (also known as Reversi) is a classic strategy board game for two players
 - ✅ **Well-Tested** - 83 core engine tests + UI and feature flag tests
 - 🤖 **CI/CD** - Automated testing and deployment via GitHub Actions
 - 📦 **Modern Tooling** - Bun + Vite + TypeScript + React
- - 🧠 **Minimax AI** - Depth-limited with alpha-beta pruning for efficient decision making
- - 🧪 **Pass Scenario Suite** - Comprehensive tests ensuring correct handling when a player must pass
+- 🧠 **Minimax AI** - Depth-limited with alpha-beta pruning for efficient decision making
+- 🧪 **Pass Scenario Suite** - Comprehensive tests ensuring correct handling when a player must pass
 
 ## 🎮 How to Play
 
@@ -166,17 +166,18 @@ Default snapshot:
 
 ```ts
 export const features = {
-	animations: true,
-	glassGlare: true,
-	soundEffects: false, // disabled by default
-	moveHistory: true,
-	scoreAnimations: false,
-	loadingScreen: false,
-	debug: false,
+  animations: true,
+  glassGlare: true,
+  soundEffects: false, // disabled by default
+  moveHistory: true,
+  scoreAnimations: false,
+  loadingScreen: false,
+  debug: false,
 };
 ```
 
 Toggle at runtime:
+
 ```ts
 import { toggleFeature } from './config/features';
 toggleFeature('soundEffects', true);
@@ -210,18 +211,18 @@ Fixed logic where a player without moves now properly passes. If both players ha
 
 Potential edge cases & mitigations:
 
-| Edge Case | Risk | Mitigation |
-|-----------|------|------------|
-| Extremely rapid clicks on board | Race conditions updating state | Debounce moves, ignore input during AI turn |
-| AI depth causing long compute on low-end devices | UI freeze | Web Worker / async off-main-thread execution |
-| Corrupted imported game state JSON | Runtime errors | Validate schema before import (zod) |
-| Browser tab sleep/resume mid-AI evaluation | Out-of-sync timer/events | Revalidate board + recompute valid moves on visibilitychange |
-| Sound API not available (e.g., SSR, headless) | Exceptions | Feature flag default off + try/catch around audio init |
-| Undo/Redo stack memory growth | Performance degradation | Cap stack size (e.g., 200 moves) & drop oldest |
-| Mobile viewport resize during move | Misaligned board | Recompute board layout on resize + CSS flex safeguards |
-| Minimax encountering no moves recursively | Infinite loop risk | Explicit pass detection + terminal state check |
-| Invalid coordinates passed from UI | Crash | Guard in `makeMove` and `tile()` (already added) |
-| Network latency (future multiplayer) | Desync | Pending move queue + server ACK model |
+| Edge Case                                        | Risk                           | Mitigation                                                   |
+| ------------------------------------------------ | ------------------------------ | ------------------------------------------------------------ |
+| Extremely rapid clicks on board                  | Race conditions updating state | Debounce moves, ignore input during AI turn                  |
+| AI depth causing long compute on low-end devices | UI freeze                      | Web Worker / async off-main-thread execution                 |
+| Corrupted imported game state JSON               | Runtime errors                 | Validate schema before import (zod)                          |
+| Browser tab sleep/resume mid-AI evaluation       | Out-of-sync timer/events       | Revalidate board + recompute valid moves on visibilitychange |
+| Sound API not available (e.g., SSR, headless)    | Exceptions                     | Feature flag default off + try/catch around audio init       |
+| Undo/Redo stack memory growth                    | Performance degradation        | Cap stack size (e.g., 200 moves) & drop oldest               |
+| Mobile viewport resize during move               | Misaligned board               | Recompute board layout on resize + CSS flex safeguards       |
+| Minimax encountering no moves recursively        | Infinite loop risk             | Explicit pass detection + terminal state check               |
+| Invalid coordinates passed from UI               | Crash                          | Guard in `makeMove` and `tile()` (already added)             |
+| Network latency (future multiplayer)             | Desync                         | Pending move queue + server ACK model                        |
 
 Future improvements:
 

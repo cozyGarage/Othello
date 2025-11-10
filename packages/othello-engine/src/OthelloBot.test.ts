@@ -50,12 +50,10 @@ describe('OthelloBot', () => {
       const move = bot.calculateMove(board);
 
       expect(move).not.toBeNull();
-      
+
       if (move) {
         const validMoves = getValidMoves(board);
-        const isValidMove = validMoves.some(
-          ([x, y]) => x === move[0] && y === move[1]
-        );
+        const isValidMove = validMoves.some(([x, y]) => x === move[0] && y === move[1]);
         expect(isValidMove).toBe(true);
       }
     });
@@ -81,9 +79,9 @@ describe('OthelloBot', () => {
     test('selects different moves over multiple calls (randomness)', () => {
       const bot = new OthelloBot('easy', 'B');
       const board = createStartingBoard();
-      
+
       const moves = new Set<string>();
-      
+
       // Run 20 times to ensure we get some variation
       for (let i = 0; i < 20; i++) {
         const move = bot.calculateMove(board);
@@ -91,7 +89,7 @@ describe('OthelloBot', () => {
           moves.add(`${move[0]},${move[1]}`);
         }
       }
-      
+
       // With 4 valid moves, we should see at least 2 different moves
       expect(moves.size).toBeGreaterThanOrEqual(2);
     });
@@ -104,19 +102,17 @@ describe('OthelloBot', () => {
       const move = bot.calculateMove(board);
 
       expect(move).not.toBeNull();
-      
+
       if (move) {
         const validMoves = getValidMoves(board);
-        const isValidMove = validMoves.some(
-          ([x, y]) => x === move[0] && y === move[1]
-        );
+        const isValidMove = validMoves.some(([x, y]) => x === move[0] && y === move[1]);
         expect(isValidMove).toBe(true);
       }
     });
 
     test('chooses move that maximizes immediate score', () => {
       const bot = new OthelloBot('medium', 'B');
-      
+
       // Create a board where one move is clearly better
       const board = createBoard([
         [E, E, E, E, E, E, E, E],
@@ -128,9 +124,9 @@ describe('OthelloBot', () => {
         [E, E, E, E, E, E, E, E],
         [E, E, E, E, E, E, E, E],
       ]);
-      
+
       const move = bot.calculateMove(board);
-      
+
       // The greedy bot should choose a move that flips multiple pieces
       expect(move).not.toBeNull();
     });
@@ -138,10 +134,10 @@ describe('OthelloBot', () => {
     test('is deterministic - same board produces same move', () => {
       const bot = new OthelloBot('medium', 'B');
       const board = createStartingBoard();
-      
+
       const move1 = bot.calculateMove(board);
       const move2 = bot.calculateMove(board);
-      
+
       expect(move1).toEqual(move2);
     });
   });
@@ -153,12 +149,10 @@ describe('OthelloBot', () => {
       const move = bot.calculateMove(board);
 
       expect(move).not.toBeNull();
-      
+
       if (move) {
         const validMoves = getValidMoves(board);
-        const isValidMove = validMoves.some(
-          ([x, y]) => x === move[0] && y === move[1]
-        );
+        const isValidMove = validMoves.some(([x, y]) => x === move[0] && y === move[1]);
         expect(isValidMove).toBe(true);
       }
     });
@@ -166,16 +160,16 @@ describe('OthelloBot', () => {
     test('is deterministic - same board produces same move', () => {
       const bot = new OthelloBot('hard', 'B');
       const board = createStartingBoard();
-      
+
       const move1 = bot.calculateMove(board);
       const move2 = bot.calculateMove(board);
-      
+
       expect(move1).toEqual(move2);
     });
 
     test('prefers strategic positions', () => {
       const bot = new OthelloBot('hard', 'B');
-      
+
       // Create a board where a corner is available
       const board = createBoard([
         [E, W, W, W, W, W, W, W],
@@ -187,16 +181,14 @@ describe('OthelloBot', () => {
         [W, W, W, W, W, W, B, W],
         [E, E, E, E, E, E, E, E],
       ]);
-      
+
       const move = bot.calculateMove(board);
-      
+
       // Should return a valid strategic move (corner is best, but any valid move is fine)
       expect(move).not.toBeNull();
       if (move) {
         const validMoves = getValidMoves(board);
-        const isValidMove = validMoves.some(
-          ([x, y]) => x === move[0] && y === move[1]
-        );
+        const isValidMove = validMoves.some(([x, y]) => x === move[0] && y === move[1]);
         expect(isValidMove).toBe(true);
       }
     });
@@ -206,7 +198,7 @@ describe('OthelloBot', () => {
     test('hard bot should generally make better moves than easy bot', () => {
       const easyBot = new OthelloBot('easy', 'B');
       const hardBot = new OthelloBot('hard', 'B');
-      
+
       // Create a complex mid-game position
       const board = createBoard([
         [E, E, E, E, E, E, E, E],
@@ -218,14 +210,14 @@ describe('OthelloBot', () => {
         [E, E, E, E, E, E, E, E],
         [E, E, E, E, E, E, E, E],
       ]);
-      
+
       const easyMove = easyBot.calculateMove(board);
       const hardMove = hardBot.calculateMove(board);
-      
+
       // Both should return valid moves
       expect(easyMove).not.toBeNull();
       expect(hardMove).not.toBeNull();
-      
+
       // They might be different (easy is random, hard is strategic)
       // This test mainly ensures both work correctly
     });
@@ -234,7 +226,7 @@ describe('OthelloBot', () => {
   describe('Edge Cases', () => {
     test('handles board with only one valid move', () => {
       const bot = new OthelloBot('medium', 'B');
-      
+
       // Create a board with only one valid move for Black
       const board = createBoard([
         [W, W, W, W, W, W, W, W],
@@ -246,10 +238,10 @@ describe('OthelloBot', () => {
         [W, W, W, W, W, W, W, W],
         [W, W, W, E, W, W, W, W],
       ]);
-      
+
       const move = bot.calculateMove(board);
       expect(move).not.toBeNull();
-      
+
       if (move) {
         // Should be the only valid move
         const validMoves = getValidMoves(board);
@@ -260,7 +252,7 @@ describe('OthelloBot', () => {
 
     test('works correctly for White player', () => {
       const bot = new OthelloBot('medium', 'W');
-      
+
       // Create a board where it's White's turn
       const board = createBoard([
         [E, E, E, E, E, E, E, E],
@@ -272,17 +264,15 @@ describe('OthelloBot', () => {
         [E, E, E, E, E, E, E, E],
         [E, E, E, E, E, E, E, E],
       ]);
-      
+
       board.playerTurn = 'W';
-      
+
       const move = bot.calculateMove(board);
       expect(move).not.toBeNull();
-      
+
       if (move) {
         const validMoves = getValidMoves(board);
-        const isValidMove = validMoves.some(
-          ([x, y]) => x === move[0] && y === move[1]
-        );
+        const isValidMove = validMoves.some(([x, y]) => x === move[0] && y === move[1]);
         expect(isValidMove).toBe(true);
       }
     });
@@ -292,13 +282,13 @@ describe('OthelloBot', () => {
     test('hard difficulty completes in reasonable time', () => {
       const bot = new OthelloBot('hard', 'B');
       const board = createStartingBoard();
-      
+
       const startTime = Date.now();
       const move = bot.calculateMove(board);
       const endTime = Date.now();
-      
+
       expect(move).not.toBeNull();
-      
+
       // Should complete within 2 seconds (generous limit)
       expect(endTime - startTime).toBeLessThan(2000);
     });

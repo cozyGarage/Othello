@@ -1,10 +1,4 @@
-import {
-  Board,
-  Coordinate,
-  getValidMoves,
-  score,
-  E,
-} from './index';
+import { Board, Coordinate, getValidMoves, score, E } from './index';
 
 /**
  * AI difficulty levels
@@ -27,7 +21,7 @@ const POSITION_WEIGHTS = [
 
 /**
  * OthelloBot - AI opponent for Othello game
- * 
+ *
  * Provides three difficulty levels:
  * - Easy: Random valid move selection
  * - Medium: Greedy algorithm (maximizes immediate score)
@@ -82,7 +76,7 @@ export class OthelloBot {
    */
   public calculateMove(board: Board): Coordinate | null {
     const validMoves = getValidMoves(board);
-    
+
     if (validMoves.length === 0) {
       return null;
     }
@@ -120,16 +114,16 @@ export class OthelloBot {
     if (!firstMove) {
       throw new Error('No valid moves available');
     }
-    
+
     let bestMove = firstMove;
     let bestScore = -Infinity;
 
     for (const move of validMoves) {
       const clonedBoard = this.cloneBoard(board);
       this.simulateMove(clonedBoard, move);
-      
+
       const moveScore = this.evaluateScore(clonedBoard);
-      
+
       if (moveScore > bestScore) {
         bestScore = moveScore;
         bestMove = move;
@@ -149,7 +143,7 @@ export class OthelloBot {
     if (!firstMove) {
       throw new Error('No valid moves available');
     }
-    
+
     let bestMove = firstMove;
     let bestScore = -Infinity;
     let alpha = -Infinity;
@@ -158,14 +152,14 @@ export class OthelloBot {
     for (const move of validMoves) {
       const clonedBoard = this.cloneBoard(board);
       this.simulateMove(clonedBoard, move);
-      
+
       const moveScore = this.minimax(clonedBoard, depth - 1, alpha, beta, false);
-      
+
       if (moveScore > bestScore) {
         bestScore = moveScore;
         bestMove = move;
       }
-      
+
       alpha = Math.max(alpha, bestScore);
     }
 
@@ -196,37 +190,37 @@ export class OthelloBot {
 
     if (isMaximizing) {
       let maxEval = -Infinity;
-      
+
       for (const move of validMoves) {
         const clonedBoard = this.cloneBoard(board);
         this.simulateMove(clonedBoard, move);
-        
+
         const evaluation = this.minimax(clonedBoard, depth - 1, alpha, beta, false);
         maxEval = Math.max(maxEval, evaluation);
         alpha = Math.max(alpha, evaluation);
-        
+
         if (beta <= alpha) {
           break; // Beta cutoff
         }
       }
-      
+
       return maxEval;
     } else {
       let minEval = Infinity;
-      
+
       for (const move of validMoves) {
         const clonedBoard = this.cloneBoard(board);
         this.simulateMove(clonedBoard, move);
-        
+
         const evaluation = this.minimax(clonedBoard, depth - 1, alpha, beta, true);
         minEval = Math.min(minEval, evaluation);
         beta = Math.min(beta, evaluation);
-        
+
         if (beta <= alpha) {
           break; // Alpha cutoff
         }
       }
-      
+
       return minEval;
     }
   }
@@ -236,9 +230,7 @@ export class OthelloBot {
    */
   private evaluateScore(board: Board): number {
     const scores = score(board);
-    return this.player === 'B' 
-      ? scores.black - scores.white 
-      : scores.white - scores.black;
+    return this.player === 'B' ? scores.black - scores.white : scores.white - scores.black;
   }
 
   /**
@@ -248,7 +240,7 @@ export class OthelloBot {
   private evaluatePosition(board: Board): number {
     const scores = score(board);
     const validMoves = getValidMoves(board);
-    
+
     // Switch player to check opponent mobility
     const originalPlayer = board.playerTurn;
     board.playerTurn = board.playerTurn === 'B' ? 'W' : 'B';
@@ -263,7 +255,7 @@ export class OthelloBot {
         const tile = row ? row[x] : undefined;
         const weightRow = POSITION_WEIGHTS[y];
         const weight = weightRow ? weightRow[x] : 0;
-        
+
         if (tile === this.player) {
           positionValue += weight ?? 0;
         } else if (tile !== E && tile !== undefined) {
@@ -273,14 +265,14 @@ export class OthelloBot {
     }
 
     // Mobility value (more moves is better)
-    const mobilityValue = board.playerTurn === this.player
-      ? (validMoves.length - opponentMoves.length) * 5
-      : (opponentMoves.length - validMoves.length) * 5;
+    const mobilityValue =
+      board.playerTurn === this.player
+        ? (validMoves.length - opponentMoves.length) * 5
+        : (opponentMoves.length - validMoves.length) * 5;
 
     // Disc count value
-    const discValue = this.player === 'B'
-      ? (scores.black - scores.white)
-      : (scores.white - scores.black);
+    const discValue =
+      this.player === 'B' ? scores.black - scores.white : scores.white - scores.black;
 
     // Weighted combination of all factors
     return positionValue + mobilityValue + discValue;
@@ -291,7 +283,7 @@ export class OthelloBot {
    */
   private cloneBoard(board: Board): Board {
     return {
-      tiles: board.tiles.map(row => [...row]),
+      tiles: board.tiles.map((row) => [...row]),
       playerTurn: board.playerTurn,
     };
   }
@@ -304,14 +296,19 @@ export class OthelloBot {
     const [x, y] = coord;
     const row = board.tiles[y];
     if (!row) return;
-    
+
     row[x] = board.playerTurn;
-    
+
     // Flip pieces in all 8 directions
     const directions = [
-      [-1, -1], [0, -1], [1, -1],
-      [-1, 0],           [1, 0],
-      [-1, 1],  [0, 1],  [1, 1],
+      [-1, -1],
+      [0, -1],
+      [1, -1],
+      [-1, 0],
+      [1, 0],
+      [-1, 1],
+      [0, 1],
+      [1, 1],
     ];
 
     const currentPlayer = board.playerTurn;
@@ -323,28 +320,22 @@ export class OthelloBot {
       let ny = y + dy;
 
       // Collect opponent pieces in this direction
-      while (
-        nx >= 0 && nx < 8 && 
-        ny >= 0 && ny < 8
-      ) {
+      while (nx >= 0 && nx < 8 && ny >= 0 && ny < 8) {
         const targetRow = board.tiles[ny];
         const targetTile = targetRow ? targetRow[nx] : undefined;
-        
+
         if (targetTile !== opponent) break;
-        
+
         toFlip.push([nx, ny]);
         nx += dx;
         ny += dy;
       }
 
       // If we end on our own piece, flip all collected pieces
-      if (
-        nx >= 0 && nx < 8 && 
-        ny >= 0 && ny < 8
-      ) {
+      if (nx >= 0 && nx < 8 && ny >= 0 && ny < 8) {
         const endRow = board.tiles[ny];
         const endTile = endRow ? endRow[nx] : undefined;
-        
+
         if (endTile === currentPlayer && toFlip.length > 0) {
           for (const [fx, fy] of toFlip) {
             const flipRow = board.tiles[fy];
