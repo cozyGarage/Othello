@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { type Move } from 'othello-engine';
+import { type Move, type PlayerTime } from 'othello-engine';
 import { PlayerInfoCard } from '../ui/PlayerInfoCard';
+import { TimeControl } from '../ui/TimeControl';
 import { features } from '../../config/features';
 import '../../styles/sidebar.css';
 
@@ -17,6 +18,7 @@ interface SidebarProps {
   moves: Move[];
   message?: string | null;
   gameOver: boolean;
+  timeRemaining?: PlayerTime | null;
 }
 
 /**
@@ -36,6 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   moves,
   message,
   gameOver,
+  timeRemaining,
 }) => {
   // Store previous scores to calculate deltas
   // useRef persists across renders without triggering re-render
@@ -197,6 +200,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <PlayerInfoCard playerName="Black" playerColor="black">
               <div className="score-label">Black</div>
             </PlayerInfoCard>
+            {/* Time Control for Black */}
+            {timeRemaining && (
+              <TimeControl
+                timeRemaining={timeRemaining.black}
+                playerColor="black"
+                isActive={currentPlayer === 'black' && !gameOver}
+                onTimeOut={() => {}}
+              />
+            )}
           </div>
           <div className="score-separator">-</div>
           <div className="score-item">
@@ -216,6 +228,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <PlayerInfoCard playerName="White" playerColor="white">
               <div className="score-label">White</div>
             </PlayerInfoCard>
+            {/* Time Control for White */}
+            {timeRemaining && (
+              <TimeControl
+                timeRemaining={timeRemaining.white}
+                playerColor="white"
+                isActive={currentPlayer === 'white' && !gameOver}
+                onTimeOut={() => {}}
+              />
+            )}
           </div>
         </div>
       </div>

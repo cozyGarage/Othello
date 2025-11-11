@@ -133,3 +133,69 @@
 .score-float {
   animation: floatUp 1s ease-out forwards;
 }
+
+/* ========== TIME CONTROL ANIMATIONS (Phase 3) ========== */
+
+/**
+ * Time Pulse Animation
+ * Applied to: .time-control.critical (when time < 10 seconds)
+ * 
+ * Design: Subtle pulsing glow effect to draw attention without being distracting
+ * Timing: 1.5s cycle (pulse every 1.5 seconds)
+ * Effect: Scale slightly + add red glow shadow
+ * 
+ * Purpose: Visual alert that player is running critically low on time
+ * Balance: Noticeable but not anxiety-inducing (we're playing Othello, not defusing bombs!)
+ */
+@keyframes timePulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(220, 38, 38, 0);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 12px rgba(220, 38, 38, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+/**
+ * Time Flash Animation
+ * Applied to: .time-control when time increases (increment added)
+ * 
+ * Design: Brief highlight/flash to provide positive visual feedback
+ * Timing: 300ms (quick and snappy)
+ * Effect: Background color flash from transparent → yellow → transparent
+ * 
+ * Purpose: Confirm that time was successfully added after move
+ * UX: Satisfying feedback that pairs with increment sound effect
+ */
+@keyframes timeFlash {
+  0% {
+    background-color: transparent;
+  }
+  30% {
+    background-color: rgba(250, 204, 21, 0.3); /* Yellow flash */
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/**
+ * Time Control CSS Classes (Phase 3)
+ * These classes are dynamically applied by React components
+ */
+
+/* Applied when time < 10 seconds - triggers pulse animation */
+.time-control.pulsing {
+  animation: timePulse 1.5s ease-in-out infinite;
+}
+
+/* Applied when time is added (increment) - triggers flash animation */
+.time-control.flashing {
+  animation: timeFlash 0.3s ease-out;
+}

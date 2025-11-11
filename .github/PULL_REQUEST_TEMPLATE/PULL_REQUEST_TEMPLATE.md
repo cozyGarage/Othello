@@ -1,1 +1,0 @@
-../../docs/contributing/templates/PULL_REQUEST_TEMPLATE.md

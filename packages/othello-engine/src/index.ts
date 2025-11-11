@@ -17,6 +17,10 @@ export type {
 export { OthelloBot } from './OthelloBot';
 export type { BotDifficulty } from './OthelloBot';
 
+// Re-export time control
+export { TimeControlManager } from './TimeControlManager';
+export type { TimeControlConfig, PlayerTime, TimeControlState } from './TimeControlManager';
+
 export type TileValue = 'W' | 'B' | 'E' | 'P';
 export type Coordinate = [number, number];
 

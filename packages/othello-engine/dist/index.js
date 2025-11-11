@@ -3,6 +3,8 @@
 export { OthelloGameEngine } from './OthelloGameEngine';
 // Re-export the AI bot
 export { OthelloBot } from './OthelloBot';
+// Re-export time control
+export { TimeControlManager } from './TimeControlManager';
 // Constants
 export const W = 'W';
 export const B = 'B';
@@ -12,13 +14,24 @@ export const createBoard = (tiles) => ({
     playerTurn: B,
     tiles,
 });
-export const tile = (board, [x, y]) => board.tiles[y][x];
+export const tile = (board, [x, y]) => {
+    const row = board.tiles[y];
+    if (!row) {
+        throw new Error('Out of bounds: invalid row index');
+    }
+    const value = row[x];
+    if (value === undefined) {
+        throw new Error('Out of bounds: invalid column index');
+    }
+    return value;
+};
 export const score = (board) => {
     let blackCount = 0;
     let whiteCount = 0;
-    for (let x = 0; x < board.tiles.length; ++x) {
-        for (let y = 0; y < board.tiles.length; ++y) {
-            const tileVal = board.tiles[y][x];
+    for (let y = 0; y < board.tiles.length; ++y) {
+        const row = board.tiles[y];
+        for (let x = 0; x < row.length; ++x) {
+            const tileVal = row[x];
             if (tileVal === B) {
                 blackCount++;
             }
@@ -44,7 +57,8 @@ export const hasAdjacentPiece = (board, coord) => {
             if (isOutOfBounds(board, [x, y])) {
                 continue;
             }
-            if (board.tiles[y][x] !== E) {
+            const row = board.tiles[y];
+            if (row && row[x] !== E) {
                 return true;
             }
         }
@@ -86,14 +100,16 @@ const DIRECTIONS = {
     },
 };
 const findFlippableDirections = (board, [xCoord, yCoord]) => {
-    const startColor = board.tiles[yCoord][xCoord];
+    const startColor = tile(board, [xCoord, yCoord]);
     const alternateColor = startColor === W ? B : W;
     const flippableDirections = [];
     for (const dirName in DIRECTIONS) {
         const dirModifier = DIRECTIONS[dirName];
+        if (!dirModifier)
+            continue;
         let x = xCoord + dirModifier.xMod;
         let y = yCoord + dirModifier.yMod;
-        if (!isOutOfBounds(board, [x, y]) && board.tiles[y][x] === alternateColor) {
+        if (!isOutOfBounds(board, [x, y]) && tile(board, [x, y]) === alternateColor) {
             let isAlternateColor = true;
             do {
                 x += dirModifier.xMod;
@@ -102,7 +118,7 @@ const findFlippableDirections = (board, [xCoord, yCoord]) => {
                     isAlternateColor = false;
                 }
                 else {
-                    const nextTile = board.tiles[y][x];
+                    const nextTile = tile(board, [x, y]);
                     if (nextTile === E) {
                         isAlternateColor = false;
                     }
@@ -117,13 +133,18 @@ const findFlippableDirections = (board, [xCoord, yCoord]) => {
     return flippableDirections;
 };
 const flipTiles = (board, directions, [xCoord, yCoord]) => {
-    const flipColor = board.tiles[yCoord][xCoord];
+    const flipColor = tile(board, [xCoord, yCoord]);
     for (const dirName of directions) {
         const dirModifier = DIRECTIONS[dirName];
+        if (!dirModifier)
+            continue;
         let x = xCoord + dirModifier.xMod;
         let y = yCoord + dirModifier.yMod;
-        while (board.tiles[y][x] !== flipColor) {
-            board.tiles[y][x] = flipColor;
+        while (tile(board, [x, y]) !== flipColor) {
+            const row = board.tiles[y];
+            if (!row)
+                break;
+            row[x] = flipColor;
             x += dirModifier.xMod;
             y += dirModifier.yMod;
         }
@@ -158,20 +179,24 @@ export const takeTurn = (board, coord) => {
 // Check if a move is valid for the current player
 export const isValidMove = (board, coord) => {
     const [x, y] = coord;
-    if (board.tiles[y][x] !== E) {
+    const row = board.tiles[y];
+    if (!row || row[x] !== E) {
         return false;
     }
     // Temporarily place the piece and check for flippable directions
-    board.tiles[y][x] = board.playerTurn;
+    row[x] = board.playerTurn;
     const flippableDirections = findFlippableDirections(board, coord);
-    board.tiles[y][x] = E; // Revert
+    row[x] = E; // Revert
     return flippableDirections.length > 0;
 };
 // Get all valid moves for the current player
 export const getValidMoves = (board) => {
     const validMoves = [];
     for (let y = 0; y < board.tiles.length; y++) {
-        for (let x = 0; x < board.tiles[y].length; x++) {
+        const row = board.tiles[y];
+        if (!row)
+            continue;
+        for (let x = 0; x < row.length; x++) {
             if (isValidMove(board, [x, y])) {
                 validMoves.push([x, y]);
             }

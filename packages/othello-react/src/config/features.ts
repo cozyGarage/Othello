@@ -51,7 +51,7 @@ export const features: FeatureFlags = {
   glassGlare: true,
   soundEffects: false, // Default: disabled to avoid auto-playing sound
   moveHistory: true, // Now implemented - displays move history with timestamps
-  scoreAnimations: false, // Disabled by default (can be overwhelming)
+  scoreAnimations: true, // Enabled by default - visual feedback for score changes
   loadingScreen: false, // Disabled by default (optional UX)
   debug: false, // Enable for development debugging
 };

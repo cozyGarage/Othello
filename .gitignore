@@ -47,3 +47,4 @@ bun-debug.log*
 *.sln
 *.sw?
 package-lock.json
+chat.json

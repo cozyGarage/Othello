@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { features, toggleFeature, type FeatureFlags } from '../../config/features';
 import { soundEffects } from '../../utils/soundEffects';
+import { TIME_PRESETS } from '../../config/timePresets';
 import type { BotDifficulty } from 'othello-engine';
 import '../../styles/ui.css';
 
@@ -13,6 +14,12 @@ interface SettingsPanelProps {
   onAiToggle: (enabled: boolean) => void;
   onAiDifficultyChange: (difficulty: BotDifficulty) => void;
   onAiPlayerChange: (player: 'W' | 'B') => void;
+  timeControlEnabled?: boolean;
+  selectedTimePreset?: string;
+  onTimeControlToggle?: (enabled: boolean) => void;
+  onTimePresetChange?: (presetId: string) => void;
+  muteTimeSounds?: boolean;
+  onMuteTimeSoundsToggle?: (muted: boolean) => void;
 }
 
 /**
@@ -39,6 +46,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onAiToggle,
   onAiDifficultyChange,
   onAiPlayerChange,
+  timeControlEnabled = false,
+  selectedTimePreset = 'blitz',
+  onTimeControlToggle,
+  onTimePresetChange,
+  muteTimeSounds = false,
+  onMuteTimeSoundsToggle,
 }) => {
   const [localFeatures, setLocalFeatures] = useState<FeatureFlags>({ ...features });
 
@@ -142,6 +155,61 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   <p className="setting-description">Choose which color the AI controls</p>
                 </div>
               </>
+            )}
+          </div>
+
+          {/* Time Control Settings Section */}
+          <div className="settings-section">
+            <h3 className="section-title">⏱️ Time Control</h3>
+
+            <div className="setting-item">
+              <label className="setting-label">
+                <input
+                  type="checkbox"
+                  checked={timeControlEnabled}
+                  onChange={(e) => onTimeControlToggle?.(e.target.checked)}
+                />
+                <span className="setting-name">Enable Time Control</span>
+              </label>
+              <p className="setting-description">Chess-style time limits for competitive play</p>
+            </div>
+
+            {timeControlEnabled && (
+              <div className="setting-item">
+                <label className="setting-label">
+                  <span className="setting-name">Time Preset</span>
+                </label>
+                <select
+                  value={selectedTimePreset}
+                  onChange={(e) => onTimePresetChange?.(e.target.value)}
+                  className="difficulty-select"
+                >
+                  {TIME_PRESETS.map((preset) => (
+                    <option key={preset.id} value={preset.id}>
+                      {preset.name} - {preset.description}
+                    </option>
+                  ))}
+                </select>
+                <p className="setting-description">
+                  Choose from bullet, blitz, rapid, or classical time controls
+                </p>
+              </div>
+            )}
+
+            {timeControlEnabled && (
+              <div className="setting-item">
+                <label className="setting-label">
+                  <input
+                    type="checkbox"
+                    checked={muteTimeSounds}
+                    onChange={(e) => onMuteTimeSoundsToggle?.(e.target.checked)}
+                  />
+                  <span className="setting-name">Mute Time Sounds</span>
+                </label>
+                <p className="setting-description">
+                  Disable time warning, increment, and timeout sounds (game sounds still play)
+                </p>
+              </div>
             )}
           </div>
 

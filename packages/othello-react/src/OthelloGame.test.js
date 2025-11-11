@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from 'bun:test';
-import { OthelloGameEngine } from 'othello-engine';
+import { describe, test, expect, beforeEach } from 'vitest';
+import { OthelloGameEngine } from '../../othello-engine/src/index.ts';
 
 describe('OthelloGame Component Integration', () => {
   let engine;

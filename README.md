@@ -6,7 +6,7 @@
 
 _A fully playable implementation of the classic Othello (Reversi) board game built with React, TypeScript, and Bun_
 
-**Latest Update:** November 11, 2025 – Added AI opponents (Easy / Medium / Hard), fixed critical pass logic bug, removed non-null assertions for safer runtime, updated feature flag defaults (sound disabled by default), and expanded test coverage.
+**Latest Update:** November 11, 2025 – **Phase 3 Complete!** Added time controls with chess-style clocks, sound effects (time warnings, increments, timeouts), animations (pulse/flash), localStorage persistence, and mute options. Includes comprehensive documentation suite for alpha testing and 42 School peer evaluation.
 
 ![Deploy Status](https://github.com/cozyGarage/Othello/actions/workflows/deploy.yml/badge.svg)
 ![Tests](https://github.com/cozyGarage/Othello/actions/workflows/test.yml/badge.svg)
@@ -37,21 +37,33 @@ Othello (also known as Reversi) is a classic strategy board game for two players
   - Easy: Random valid move
   - Medium: Greedy (maximize immediate score)
   - Hard: Minimax with alpha-beta pruning & positional heuristics
+- ⏱️ **Time Controls** - Chess-style time limits with:
+  - 4 presets: Bullet (1+0), Blitz (3+2), Rapid (10+5), Classical (30+20)
+  - Visual urgency indicators (colors + pulse animation)
+  - Audio warnings at 10 seconds
+  - Time increment per move (Fischer increment)
+  - Automatic timeout detection
+  - Optional mute for time sounds
 - 🏆 **Winner Detection** - Instant game-over detection with winner announcement
 - 📊 **Live Scoring** - Real-time score tracking for both players
+- 🔄 **Undo/Redo** - Full move history with keyboard shortcuts
 - 🔄 **Quick Restart** - One-click game restart functionality
 - 📱 **Responsive** - Works seamlessly on desktop and mobile devices
+- 💾 **Persistence** - Remembers your preferences (time settings, AI settings)
 
 ### Technical Features
 
 - ⚡ **Lightning Fast** - Powered by Bun runtime (10-100x faster than npm)
 - 🔥 **Instant Dev Server** - Vite hot reload in ~128ms
 - 🛡️ **Type-Safe** - Full TypeScript with strict mode enabled
-- ✅ **Well-Tested** - 83 core engine tests + UI and feature flag tests
+- ✅ **Well-Tested** - 164/166 tests passing (98.8% pass rate)
 - 🤖 **CI/CD** - Automated testing and deployment via GitHub Actions
 - 📦 **Modern Tooling** - Bun + Vite + TypeScript + React
 - 🧠 **Minimax AI** - Depth-limited with alpha-beta pruning for efficient decision making
-- 🧪 **Pass Scenario Suite** - Comprehensive tests ensuring correct handling when a player must pass
+- 🧪 **Comprehensive Tests** - Engine, UI, integration, and edge case coverage
+- 🎵 **Web Audio API** - Programmatic sound generation (no audio files needed)
+- 🎨 **CSS Animations** - GPU-accelerated for 60fps performance
+- 💾 **localStorage** - Graceful degradation for privacy modes
 
 ## 🎮 How to Play
 

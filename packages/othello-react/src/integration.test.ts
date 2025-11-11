@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeAll } from 'bun:test';
+import { describe, test, expect, beforeAll } from 'vitest';
 import { JSDOM } from 'jsdom';
 
 describe('Integration Tests - React App Rendering', () => {
@@ -36,7 +36,7 @@ describe('Integration Tests - React App Rendering', () => {
 
 describe('Integration Tests - Game Engine Integration', () => {
   test('should create initial board state with engine', async () => {
-    const { OthelloGameEngine, B } = await import('othello-engine');
+    const { OthelloGameEngine, B } = await import('../../othello-engine/src/index.ts');
 
     const engine = new OthelloGameEngine();
     const state = engine.getState();
@@ -49,7 +49,7 @@ describe('Integration Tests - Game Engine Integration', () => {
   });
 
   test('should get valid moves for initial position using engine', async () => {
-    const { OthelloGameEngine } = await import('othello-engine');
+    const { OthelloGameEngine } = await import('../../othello-engine/src/index.ts');
 
     const engine = new OthelloGameEngine();
     const validMoves = engine.getValidMoves();
@@ -58,7 +58,7 @@ describe('Integration Tests - Game Engine Integration', () => {
   });
 
   test('should make a valid move and switch turns using engine', async () => {
-    const { OthelloGameEngine, B, W } = await import('othello-engine');
+    const { OthelloGameEngine, B, W } = await import('../../othello-engine/src/index.ts');
 
     const engine = new OthelloGameEngine();
     const initialState = engine.getState();
@@ -72,7 +72,7 @@ describe('Integration Tests - Game Engine Integration', () => {
   });
 
   test('should play a full game sequence with engine', async () => {
-    const { OthelloGameEngine, B, W } = await import('othello-engine');
+    const { OthelloGameEngine, B, W } = await import('../../othello-engine/src/index.ts');
 
     const engine = new OthelloGameEngine();
 
@@ -121,7 +121,7 @@ describe('Integration Tests - Type Safety', () => {
   });
 
   test('should enforce tile value types', async () => {
-    const { W, B, E, P } = await import('othello-engine');
+    const { W, B, E, P } = await import('../../othello-engine/src/index.ts');
 
     expect(W).toBe('W');
     expect(B).toBe('B');

@@ -11,8 +11,8 @@
  * - Valid move indicators
  */
 
-import { describe, expect, test } from 'bun:test';
-import { B, W, E, P, type Board as BoardType } from 'othello-engine';
+import { describe, expect, test } from 'vitest';
+import { B, W, E, P, type Board as BoardType } from '../../../../othello-engine/src/index.ts';
 
 describe('Board Component Logic', () => {
   describe('Initial Board Detection', () => {

@@ -1,4 +1,5 @@
 import { createBoard, takeTurn, getValidMoves, isGameOver, getWinner, score, getAnnotatedBoard, B, W, E, } from './index';
+import { TimeControlManager, } from './TimeControlManager';
 /**
  * OthelloGameEngine - A framework-agnostic game engine for Othello/Reversi
  *
@@ -30,8 +31,9 @@ export class OthelloGameEngine {
      * @param blackPlayerId - Optional ID for the black player
      * @param whitePlayerId - Optional ID for the white player
      * @param initialBoard - Optional initial board state (for loading saved games)
+     * @param timeControlConfig - Optional time control configuration
      */
-    constructor(blackPlayerId, whitePlayerId, initialBoard) {
+    constructor(blackPlayerId, whitePlayerId, initialBoard, timeControlConfig) {
         this.moveHistory = [];
         this.listeners = new Map();
         // Undo/Redo stacks
@@ -39,6 +41,12 @@ export class OthelloGameEngine {
         this.redoStack = [];
         this.blackPlayerId = blackPlayerId;
         this.whitePlayerId = whitePlayerId;
+        // Store time control config for reset
+        this.timeControlConfig = timeControlConfig;
+        // Initialize time control if configured
+        if (timeControlConfig) {
+            this.timeControl = new TimeControlManager(timeControlConfig);
+        }
         // Initialize with standard Othello starting position
         const startingBoard = initialBoard || [
             [E, E, E, E, E, E, E, E],
@@ -51,6 +59,10 @@ export class OthelloGameEngine {
             [E, E, E, E, E, E, E, E],
         ];
         this.board = createBoard(startingBoard);
+        // Start black's clock if time control is enabled
+        if (this.timeControl) {
+            this.timeControl.startClock('B');
+        }
     }
     /**
      * Create a deep clone of the board for snapshot
@@ -68,6 +80,7 @@ export class OthelloGameEngine {
         return {
             board: this.cloneBoard(this.board),
             moveHistory: [...this.moveHistory],
+            timeControlState: this.timeControl ? this.timeControl.exportState() : undefined,
         };
     }
     /**
@@ -77,6 +90,10 @@ export class OthelloGameEngine {
         this.board.tiles = snapshot.board.tiles.map((row) => [...row]);
         this.board.playerTurn = snapshot.board.playerTurn;
         this.moveHistory = [...snapshot.moveHistory];
+        // Restore time control state if available
+        if (this.timeControl && snapshot.timeControlState) {
+            this.timeControl.importState(snapshot.timeControlState);
+        }
     }
     /**
      * Subscribe to game events
@@ -87,7 +104,13 @@ export class OthelloGameEngine {
         if (!this.listeners.has(eventType)) {
             this.listeners.set(eventType, []);
         }
-        this.listeners.get(eventType).push(listener);
+        // Avoid non-null assertion by ensuring the array exists and then pushing
+        let list = this.listeners.get(eventType);
+        if (!list) {
+            list = [];
+            this.listeners.set(eventType, list);
+        }
+        list.push(listener);
     }
     /**
      * Unsubscribe from game events
@@ -120,12 +143,29 @@ export class OthelloGameEngine {
     makeMove(coordinate) {
         try {
             const currentPlayer = this.board.playerTurn;
+            // Check for timeout if time control is enabled
+            if (this.timeControl) {
+                if (this.timeControl.isTimeOut(currentPlayer)) {
+                    this.emit('invalidMove', {
+                        coordinate,
+                        error: `${currentPlayer === 'B' ? 'Black' : 'White'} ran out of time!`
+                    });
+                    // Emit game over due to timeout
+                    const winner = currentPlayer === 'B' ? W : B;
+                    this.emit('gameOver', { winner, state: this.getState() });
+                    return false;
+                }
+            }
             // Save current state to undo stack BEFORE making the move
             this.undoStack.push(this.createSnapshot());
             // Clear redo stack when a new move is made
             this.redoStack = [];
             // Attempt the move
             takeTurn(this.board, coordinate);
+            // Stop clock for current player and add increment
+            if (this.timeControl) {
+                this.timeControl.stopClock();
+            }
             // Record the move in history
             const move = {
                 player: currentPlayer,
@@ -134,12 +174,21 @@ export class OthelloGameEngine {
                 scoreAfter: score(this.board),
             };
             this.moveHistory.push(move);
+            // Start clock for next player
+            if (this.timeControl) {
+                const nextPlayer = this.board.playerTurn;
+                this.timeControl.startClock(nextPlayer);
+            }
             // Emit events
             this.emit('move', { move, state: this.getState() });
             this.emit('stateChange', { state: this.getState() });
             // Check if game is over
             if (isGameOver(this.board)) {
                 const winner = getWinner(this.board);
+                // Stop time control when game ends
+                if (this.timeControl) {
+                    this.timeControl.stopClock();
+                }
                 this.emit('gameOver', { winner, state: this.getState() });
             }
             return true;
@@ -159,11 +208,21 @@ export class OthelloGameEngine {
         if (this.undoStack.length === 0) {
             return false;
         }
+        // Pause time control during undo
+        if (this.timeControl) {
+            this.timeControl.pause();
+        }
         // Save current state to redo stack
         this.redoStack.push(this.createSnapshot());
         // Restore previous state
         const previousState = this.undoStack.pop();
-        this.restoreSnapshot(previousState);
+        if (previousState) {
+            this.restoreSnapshot(previousState);
+        }
+        // Resume time control for current player
+        if (this.timeControl && !isGameOver(this.board)) {
+            this.timeControl.resume();
+        }
         // Emit state change event
         this.emit('stateChange', { state: this.getState(), action: 'undo' });
         return true;
@@ -176,11 +235,21 @@ export class OthelloGameEngine {
         if (this.redoStack.length === 0) {
             return false;
         }
+        // Pause time control during redo
+        if (this.timeControl) {
+            this.timeControl.pause();
+        }
         // Save current state to undo stack
         this.undoStack.push(this.createSnapshot());
         // Restore redo state
         const redoState = this.redoStack.pop();
-        this.restoreSnapshot(redoState);
+        if (redoState) {
+            this.restoreSnapshot(redoState);
+        }
+        // Resume time control for current player
+        if (this.timeControl && !isGameOver(this.board)) {
+            this.timeControl.resume();
+        }
         // Emit state change event
         this.emit('stateChange', { state: this.getState(), action: 'redo' });
         return true;
@@ -259,6 +328,37 @@ export class OthelloGameEngine {
         return isGameOver(this.board) ? getWinner(this.board) : null;
     }
     /**
+     * Get remaining time for both players
+     * @returns Object with black and white time remaining, or null if time control is disabled
+     */
+    getTimeRemaining() {
+        return this.timeControl ? this.timeControl.getTimeRemaining() : null;
+    }
+    /**
+     * Pause the time control
+     * Useful for game pauses or when switching away from the game
+     */
+    pauseTime() {
+        if (this.timeControl) {
+            this.timeControl.pause();
+        }
+    }
+    /**
+     * Resume the time control after pausing
+     */
+    resumeTime() {
+        if (this.timeControl && !isGameOver(this.board)) {
+            this.timeControl.resume();
+        }
+    }
+    /**
+     * Check if time control is enabled for this game
+     * @returns true if time control is active
+     */
+    hasTimeControl() {
+        return !!this.timeControl;
+    }
+    /**
      * Reset the game to its initial state
      */
     reset() {
@@ -277,6 +377,11 @@ export class OthelloGameEngine {
         // Clear undo/redo stacks
         this.undoStack = [];
         this.redoStack = [];
+        // Reset time control if enabled
+        if (this.timeControlConfig) {
+            this.timeControl = new TimeControlManager(this.timeControlConfig);
+            this.timeControl.startClock('B'); // Start black's clock
+        }
         this.emit('stateChange', { state: this.getState() });
     }
     /**

@@ -490,6 +490,7 @@
 @media (max-width: 768px) {
   .sidebar {
     gap: var(--spacing-sm);
+    height: auto; /* Allow natural height on mobile */
   }
 
   .sidebar-card {
@@ -513,9 +514,16 @@
     height: 28px;
   }
 
-  /* Compact move history on mobile */
+  /* Compact move history on mobile - FIXED */
+  .sidebar-card:last-child {
+    flex: 0 1 auto; /* Don't force flex-grow */
+    min-height: 200px; /* Minimum readable height */
+    max-height: 300px; /* Prevent excessive height */
+  }
+
   .move-history {
-    max-height: 180px;
+    max-height: 240px; /* Limit scrollable area */
+    overflow-y: auto; /* Enable scrolling */
   }
 
   .move-item {

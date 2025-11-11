@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'bun:test';
-import { score, B, W, E, P } from 'othello-engine';
+import { describe, expect, test } from 'vitest';
+import { score, B, W, E, P } from '../../othello-engine/src/index.ts';
 
 describe('UI Components', () => {
   describe('Board Layout', () => {
@@ -108,7 +108,7 @@ describe('UI Components', () => {
   describe('Game Controls', () => {
     test('should have restart functionality', () => {
       // Test that restart returns game to initial state
-      const { OthelloGameEngine } = require('othello-engine');
+      const { OthelloGameEngine } = require('../../othello-engine/src/index.ts');
       const engine = new OthelloGameEngine();
 
       // Make some moves
@@ -198,7 +198,7 @@ describe('Move History Component', () => {
   });
 
   test('move history includes all required data', () => {
-    const { OthelloGameEngine } = require('othello-engine');
+    const { OthelloGameEngine } = require('../../othello-engine/src/index.ts');
     const engine = new OthelloGameEngine();
 
     engine.makeMove([2, 3]);

@@ -1,7 +1,104 @@
 /* ========================================
    UI COMPONENTS - Supporting components
-   Settings, Loading, Messages, etc.
+   Settings, Loading, Messages, Time Controls, etc.
    ======================================== */
+
+/* ========== TIME CONTROL ========== */
+/**
+ * Chess-style time control display
+ * Shows remaining time for each player
+ * Visual feedback for active player and low time warnings
+ */
+.time-control {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.time-control .time-icon {
+  font-size: 18px;
+  opacity: 0.7;
+}
+
+.time-control .time-display {
+  color: var(--color-text-primary);
+  min-width: 60px; /* Prevent layout shift */
+  text-align: center;
+}
+
+/* Active player's clock - pulsing animation */
+.time-control.active {
+  border-color: var(--color-accent-green);
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.3);
+  }
+}
+
+/* Warning states - progressively more urgent */
+.time-control.warning {
+  border-color: rgba(255, 193, 7, 0.6);
+  background: rgba(255, 193, 7, 0.05);
+}
+
+.time-control.warning .time-display {
+  color: #ffc107;
+}
+
+.time-control.low {
+  border-color: rgba(255, 152, 0, 0.7);
+  background: rgba(255, 152, 0, 0.1);
+}
+
+.time-control.low .time-display {
+  color: #ff9800;
+  animation: blink 1s ease-in-out infinite;
+}
+
+.time-control.critical {
+  border-color: rgba(244, 67, 54, 0.8);
+  background: rgba(244, 67, 54, 0.15);
+}
+
+.time-control.critical .time-display {
+  color: #f44336;
+  animation: blink 0.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Color-specific styling (optional) */
+.time-control.black .time-icon {
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.8));
+}
+
+.time-control.white .time-icon {
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
+}
 
 /* ========== SETTINGS PANEL ========== */
 .settings-overlay {

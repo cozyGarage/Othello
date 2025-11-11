@@ -1,4 +1,5 @@
 import { Board, Coordinate, TileValue, Score } from './index';
+import { TimeControlConfig, PlayerTime } from './TimeControlManager';
 /**
  * Represents a single move in the game
  */
@@ -80,6 +81,8 @@ export declare class OthelloGameEngine {
     private listeners;
     private blackPlayerId?;
     private whitePlayerId?;
+    private timeControl?;
+    private timeControlConfig?;
     private undoStack;
     private redoStack;
     /**
@@ -87,8 +90,9 @@ export declare class OthelloGameEngine {
      * @param blackPlayerId - Optional ID for the black player
      * @param whitePlayerId - Optional ID for the white player
      * @param initialBoard - Optional initial board state (for loading saved games)
+     * @param timeControlConfig - Optional time control configuration
      */
-    constructor(blackPlayerId?: string, whitePlayerId?: string, initialBoard?: TileValue[][]);
+    constructor(blackPlayerId?: string, whitePlayerId?: string, initialBoard?: TileValue[][], timeControlConfig?: TimeControlConfig);
     /**
      * Create a deep clone of the board for snapshot
      */
@@ -178,6 +182,25 @@ export declare class OthelloGameEngine {
      * @returns 'W', 'B', or null for a tie
      */
     getWinner(): 'W' | 'B' | null;
+    /**
+     * Get remaining time for both players
+     * @returns Object with black and white time remaining, or null if time control is disabled
+     */
+    getTimeRemaining(): PlayerTime | null;
+    /**
+     * Pause the time control
+     * Useful for game pauses or when switching away from the game
+     */
+    pauseTime(): void;
+    /**
+     * Resume the time control after pausing
+     */
+    resumeTime(): void;
+    /**
+     * Check if time control is enabled for this game
+     * @returns true if time control is active
+     */
+    hasTimeControl(): boolean;
     /**
      * Reset the game to its initial state
      */

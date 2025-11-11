@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach } from 'bun:test';
+import { describe, expect, test, beforeEach } from 'vitest';
 import { soundEffects } from '../utils/soundEffects';
 
 describe('Sound Effects Manager', () => {
@@ -16,6 +16,10 @@ describe('Sound Effects Manager', () => {
       expect(typeof soundEffects.setVolume).toBe('function');
       expect(typeof soundEffects.getVolume).toBe('function');
       expect(typeof soundEffects.resume).toBe('function');
+      // Phase 3: Time control sounds
+      expect(typeof soundEffects.playTimeWarning).toBe('function');
+      expect(typeof soundEffects.playTimeIncrement).toBe('function');
+      expect(typeof soundEffects.playTimeout).toBe('function');
     });
   });
 
@@ -61,6 +65,10 @@ describe('Sound Effects Manager', () => {
       expect(() => soundEffects.playFlip()).not.toThrow();
       expect(() => soundEffects.playInvalidMove()).not.toThrow();
       expect(() => soundEffects.playGameOver()).not.toThrow();
+      // Phase 3: Time control sounds
+      expect(() => soundEffects.playTimeWarning()).not.toThrow();
+      expect(() => soundEffects.playTimeIncrement()).not.toThrow();
+      expect(() => soundEffects.playTimeout()).not.toThrow();
     });
 
     test('should handle rapid successive calls', () => {
@@ -69,6 +77,10 @@ describe('Sound Effects Manager', () => {
         soundEffects.playInvalidMove();
         soundEffects.playGameOver();
         soundEffects.playFlip();
+        // Phase 3: Add time control sounds to rapid test
+        soundEffects.playTimeWarning();
+        soundEffects.playTimeIncrement();
+        soundEffects.playTimeout();
       }).not.toThrow();
     });
   });

@@ -10,8 +10,8 @@
  * - Coordinate notation conversion
  */
 
-import { describe, expect, test } from 'bun:test';
-import { B, W, type Move } from 'othello-engine';
+import { describe, expect, test } from 'vitest';
+import { B, W, type Move } from '../../../../othello-engine/src/index.ts';
 
 describe('Sidebar Component Logic', () => {
   describe('Score Change Detection', () => {

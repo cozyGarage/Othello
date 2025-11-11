@@ -12,3 +12,4 @@ export { PlayerInfoCard } from './PlayerInfoCard';
 export { SettingsPanel } from './SettingsPanel';
 export { LoadingScreen } from './LoadingScreen';
 export { MoveHistory } from './MoveHistory';
+export { TimeControl } from './TimeControl';

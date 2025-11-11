@@ -6,6 +6,10 @@ preload = ["./packages/othello-react/src/setupTests.js"]
 # Install configuration
 peer = true
 
+[workspace]
+# Configure workspace for monorepo
+packages = ["packages/*"]
+
 [run]
 # Bun run configuration
 bun = true

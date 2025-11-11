@@ -2,6 +2,8 @@ export { OthelloGameEngine } from './OthelloGameEngine';
 export type { Move, GameState, GameEvent, GameEventType, MoveEventData, GameOverEventData, InvalidMoveEventData, StateChangeEventData, } from './OthelloGameEngine';
 export { OthelloBot } from './OthelloBot';
 export type { BotDifficulty } from './OthelloBot';
+export { TimeControlManager } from './TimeControlManager';
+export type { TimeControlConfig, PlayerTime, TimeControlState, } from './TimeControlManager';
 export type TileValue = 'W' | 'B' | 'E' | 'P';
 export type Coordinate = [number, number];
 export interface Board {

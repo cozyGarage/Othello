@@ -13,8 +13,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
     "type-check": "tsc --noEmit",
     "predeploy": "bun run build",
     "deploy": "gh-pages -d dist"
@@ -25,10 +26,12 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^4.2.0",
+    "@vitest/ui": "^4.0.8",
     "gh-pages": "^5.0.0",
     "happy-dom": "^12.10.3",
     "jsdom": "^27.0.1",
     "typescript": "^5.9.3",
-    "vite": "~5.4.21"
+    "vite": "~5.4.21",
+    "vitest": "^4.0.8"
   }
 }
