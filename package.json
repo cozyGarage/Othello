@@ -18,12 +18,9 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "type-check": "cd packages/othello-react && bun run type-check && cd ../othello-engine && bun run type-check",
     "validate": "bun run format:check && bun run lint && bun run test",
-    "commitlint": "commitlint --edit $1",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.1.0",
-    "@commitlint/config-conventional": "^20.0.0",
     "@eslint/js": "^9.38.0",
     "@types/bun": "latest",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
