@@ -41,6 +41,17 @@ import './styles/navbar.css';
 import './styles/board.css';
 import './styles/sidebar.css';
 
+/**
+ * Extend the Window interface to expose the game engine for browser console testing.
+ * This is required by the 42 School evaluation criteria for state serialization testing.
+ * @see docs/42_SCHOOL_EVALUATION.md - Section 1.4 "State Serialization"
+ */
+declare global {
+  interface Window {
+    engine?: OthelloGameEngine;
+  }
+}
+
 interface OthelloGameState {
   board: BoardType;
   message: string | null;
@@ -53,6 +64,8 @@ interface OthelloGameState {
   aiEnabled: boolean;
   aiDifficulty: BotDifficulty;
   aiPlayer: 'W' | 'B';
+  // Spectator mode - both players are AI
+  spectatorMode: boolean;
   // Time control
   timeControlEnabled: boolean;
   selectedTimePreset: string;
@@ -74,6 +87,9 @@ interface OthelloGameState {
 class OthelloGame extends Component<{}, OthelloGameState> {
   private engine: OthelloGameEngine;
   private bot: OthelloBot | null = null;
+  // Second bot for spectator mode (AI vs AI)
+  private spectatorBotBlack: OthelloBot | null = null;
+  private spectatorBotWhite: OthelloBot | null = null;
   private botMoveTimeout: number | null = null;
   private timeUpdateInterval: number | null = null;
 
@@ -106,6 +122,8 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       aiEnabled: false,
       aiDifficulty: 'medium',
       aiPlayer: 'W',
+      // Spectator mode - both players are AI
+      spectatorMode: false,
       // Phase 3: Initialize from localStorage (user's saved preferences)
       timeControlEnabled: savedTimeControlEnabled,
       selectedTimePreset: savedTimePreset,
@@ -126,6 +144,11 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.engine.on('invalidMove', this.handleInvalidMoveEvent);
     this.engine.on('gameOver', this.handleGameOverEvent);
     this.engine.on('stateChange', this.handleStateChangeEvent);
+
+    // Expose the engine to the global window object for browser console testing
+    // This is required by 42 School evaluation for state serialization testing:
+    // window.engine.exportState() and window.engine.importState(state)
+    window.engine = this.engine;
 
     // Add keyboard shortcuts for undo/redo
     document.addEventListener('keydown', this.handleKeyDown);
@@ -189,6 +212,9 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.engine.off('gameOver', this.handleGameOverEvent);
     this.engine.off('stateChange', this.handleStateChangeEvent);
     document.removeEventListener('keydown', this.handleKeyDown);
+
+    // Clean up window.engine reference
+    delete window.engine;
 
     // Clean up bot timeout
     if (this.botMoveTimeout !== null) {
@@ -508,6 +534,9 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.engine.on('gameOver', this.handleGameOverEvent);
     this.engine.on('stateChange', this.handleStateChangeEvent);
 
+    // Update window.engine reference for console testing
+    window.engine = this.engine;
+
     // Update time remaining
     const timeRemaining = this.engine.getTimeRemaining();
     this.setState({ timeRemaining });
@@ -535,32 +564,64 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.engine.on('gameOver', this.handleGameOverEvent);
     this.engine.on('stateChange', this.handleStateChangeEvent);
 
+    // Update window.engine reference for console testing
+    window.engine = this.engine;
+
     // Clear time remaining
     this.setState({ timeRemaining: null });
   };
 
   checkAndMakeAIMove = (): void => {
-    const { aiEnabled, aiPlayer, gameOver } = this.state;
+    const { aiEnabled, aiPlayer, spectatorMode, gameOver } = this.state;
 
-    // Don't make AI move if:
-    // - AI is disabled
-    // - Game is over
-    // - It's not the AI's turn
-    // - Bot is not initialized
-    if (!aiEnabled || gameOver || !this.bot) {
+    // Don't make AI move if game is over
+    if (gameOver) {
       return;
     }
 
     const state = this.engine.getState();
+    const currentPlayer = state.currentPlayer;
 
-    // Critical: Only make AI move if it's actually the AI's turn
-    if (state.currentPlayer !== aiPlayer) {
+    // Spectator mode: both players are AI
+    if (spectatorMode) {
+      const bot = currentPlayer === 'B' ? this.spectatorBotBlack : this.spectatorBotWhite;
+
+      if (!bot) {
+        return;
+      }
+
+      // Add a small delay for better UX
+      this.botMoveTimeout = window.setTimeout(() => {
+        if (!this.state.spectatorMode || this.state.gameOver) {
+          return;
+        }
+
+        const currentState = this.engine.getState();
+        const currentBot =
+          currentState.currentPlayer === 'B' ? this.spectatorBotBlack : this.spectatorBotWhite;
+
+        if (!currentBot) return;
+
+        const move = currentBot.calculateMove(currentState.board);
+        if (move) {
+          this.engine.makeMove(move);
+        }
+      }, 800);
       return;
     }
 
-    // Add a small delay for better UX (makes AI feel more natural)
+    // Single AI mode
+    if (!aiEnabled || !this.bot) {
+      return;
+    }
+
+    // Only make AI move if it's the AI's turn
+    if (currentPlayer !== aiPlayer) {
+      return;
+    }
+
+    // Add a small delay for better UX
     this.botMoveTimeout = window.setTimeout(() => {
-      // Double-check AI is still enabled and it's still AI's turn
       if (!this.state.aiEnabled || !this.bot) {
         return;
       }
@@ -571,11 +632,36 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       }
 
       const move = this.bot.calculateMove(currentState.board);
-
       if (move) {
         this.engine.makeMove(move);
       }
-    }, 800); // 800ms delay makes it feel like the AI is "thinking"
+    }, 800);
+  };
+
+  handleSpectatorToggle = (enabled: boolean): void => {
+    this.setState({ spectatorMode: enabled });
+
+    if (enabled) {
+      // Disable regular AI when entering spectator mode
+      this.setState({ aiEnabled: false });
+      this.bot = null;
+
+      // Initialize bots for both players
+      this.spectatorBotBlack = new OthelloBot(this.state.aiDifficulty, 'B');
+      this.spectatorBotWhite = new OthelloBot(this.state.aiDifficulty, 'W');
+
+      // Start the AI vs AI game
+      setTimeout(() => this.checkAndMakeAIMove(), 500);
+    } else {
+      // Clean up spectator bots
+      this.spectatorBotBlack = null;
+      this.spectatorBotWhite = null;
+
+      if (this.botMoveTimeout !== null) {
+        clearTimeout(this.botMoveTimeout);
+        this.botMoveTimeout = null;
+      }
+    }
   };
 
   render() {
@@ -630,6 +716,8 @@ class OthelloGame extends Component<{}, OthelloGameState> {
               onAiToggle={this.handleAiToggle}
               onAiDifficultyChange={this.handleAiDifficultyChange}
               onAiPlayerChange={this.handleAiPlayerChange}
+              spectatorMode={this.state.spectatorMode}
+              onSpectatorToggle={this.handleSpectatorToggle}
               timeControlEnabled={this.state.timeControlEnabled}
               selectedTimePreset={this.state.selectedTimePreset}
               onTimeControlToggle={this.handleTimeControlToggle}

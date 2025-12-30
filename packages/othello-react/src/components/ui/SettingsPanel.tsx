@@ -14,6 +14,10 @@ interface SettingsPanelProps {
   onAiToggle: (enabled: boolean) => void;
   onAiDifficultyChange: (difficulty: BotDifficulty) => void;
   onAiPlayerChange: (player: 'W' | 'B') => void;
+  // Spectator mode - watch AI vs AI
+  spectatorMode?: boolean;
+  onSpectatorToggle?: (enabled: boolean) => void;
+  // Time control
   timeControlEnabled?: boolean;
   selectedTimePreset?: string;
   onTimeControlToggle?: (enabled: boolean) => void;
@@ -52,6 +56,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onTimePresetChange,
   muteTimeSounds = false,
   onMuteTimeSoundsToggle,
+  spectatorMode = false,
+  onSpectatorToggle,
 }) => {
   const [localFeatures, setLocalFeatures] = useState<FeatureFlags>({ ...features });
 
@@ -66,6 +72,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     if (feature === 'soundEffects') {
       soundEffects.setEnabled(newValue);
     }
+
+    // Apply theme change to document when darkMode is toggled
+    if (feature === 'darkMode') {
+      if (newValue) {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    }
   };
 
   const featureLabels: Record<keyof FeatureFlags, string> = {
@@ -76,6 +91,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     scoreAnimations: 'Score Animations',
     loadingScreen: 'Loading Screen',
     debug: 'Debug Mode',
+    darkMode: 'Dark Mode',
   };
 
   const featureDescriptions: Record<keyof FeatureFlags, string> = {
@@ -86,6 +102,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     scoreAnimations: 'Animated score changes',
     loadingScreen: 'Show loading screen on startup',
     debug: 'Enable console logging',
+    darkMode: 'Toggle between dark and light theme',
   };
 
   return (
@@ -112,10 +129,25 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   type="checkbox"
                   checked={aiEnabled}
                   onChange={(e) => onAiToggle(e.target.checked)}
+                  disabled={spectatorMode}
                 />
                 <span className="setting-name">Play vs AI</span>
               </label>
               <p className="setting-description">Enable computer opponent</p>
+            </div>
+
+            <div className="setting-item">
+              <label className="setting-label">
+                <input
+                  type="checkbox"
+                  checked={spectatorMode}
+                  onChange={(e) => onSpectatorToggle?.(e.target.checked)}
+                />
+                <span className="setting-name">🎬 Watch AI vs AI</span>
+              </label>
+              <p className="setting-description">
+                Spectator mode - watch two AIs play against each other
+              </p>
             </div>
 
             {aiEnabled && (

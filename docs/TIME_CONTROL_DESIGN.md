@@ -189,10 +189,10 @@ class OthelloGameEngine {
 ```
 ┌─────────────────────────┐
 │  Player Info Card       │
-│  ┌──────────┐          │
-│  │ Black    │   ⏱️ 3:45│  <- Time integrated
-│  │ Score: 8 │          │
-│  └──────────┘          │
+│  ┌──────────┐           │
+│  │ Black    │ ⏱️ 3:45   │  <- Time integrated
+│  │ Score: 8 │           │
+│  └──────────┘           │
 └─────────────────────────┘
 ```
 

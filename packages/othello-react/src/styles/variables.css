@@ -4,7 +4,7 @@
    ======================================== */
 
 :root {
-  /* Colors - Dark Theme */
+  /* Colors - Dark Theme (Default) */
   --color-bg-primary: #1a1a1a;
   --color-bg-secondary: #2a2a2a;
   --color-bg-tertiary: #3a3a3a;
@@ -59,6 +59,30 @@
   --z-menu: 200;
   --z-modal: 300;
   --z-loading: 400;
+}
+
+/* Light Mode Theme */
+[data-theme='light'] {
+  --color-bg-primary: #f5f5f5;
+  --color-bg-secondary: #e8e8e8;
+  --color-bg-tertiary: #d4d4d4;
+
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: rgba(0, 0, 0, 0.7);
+  --color-text-muted: rgba(0, 0, 0, 0.5);
+
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-border-hover: rgba(0, 0, 0, 0.2);
+
+  /* Board Colors - slightly more vibrant for light mode */
+  --color-board-dark: #2c5f2d;
+  --color-board-light: #7cbc5c;
+  --color-board-bg: linear-gradient(135deg, #e8e8e8 0%, #f5f5f5 100%);
+
+  /* Shadows - lighter for light mode */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 /* Large desktop: Even bigger board */

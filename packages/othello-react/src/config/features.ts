@@ -40,6 +40,9 @@ export interface FeatureFlags {
 
   /** Enable/disable debug mode (console logs, performance metrics) */
   debug: boolean;
+
+  /** Enable dark mode (true = dark, false = light) */
+  darkMode: boolean;
 }
 
 /**
@@ -54,6 +57,7 @@ export const features: FeatureFlags = {
   scoreAnimations: true, // Enabled by default - visual feedback for score changes
   loadingScreen: false, // Disabled by default (optional UX)
   debug: false, // Enable for development debugging
+  darkMode: true, // Dark mode enabled by default
 };
 
 /**
@@ -89,3 +93,4 @@ export const hasMoveHistory = () => isFeatureEnabled('moveHistory');
 export const hasScoreAnimations = () => isFeatureEnabled('scoreAnimations');
 export const hasLoadingScreen = () => isFeatureEnabled('loadingScreen');
 export const isDebugMode = () => isFeatureEnabled('debug');
+export const hasDarkMode = () => isFeatureEnabled('darkMode');

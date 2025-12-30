@@ -19,6 +19,7 @@ describe('SettingsPanel Feature Integration', () => {
       scoreAnimations: true,
       loadingScreen: false,
       debug: false,
+      darkMode: true,
     };
 
     Object.keys(defaultFeatures).forEach((key) => {
@@ -28,9 +29,9 @@ describe('SettingsPanel Feature Integration', () => {
   });
 
   describe('Feature Flag Definitions', () => {
-    test('should have exactly 7 feature flags', () => {
+    test('should have exactly 8 feature flags', () => {
       const featureKeys = Object.keys(features);
-      expect(featureKeys.length).toBe(7);
+      expect(featureKeys.length).toBe(8);
     });
 
     test('should include all expected features', () => {
@@ -41,6 +42,7 @@ describe('SettingsPanel Feature Integration', () => {
       expect('scoreAnimations' in features).toBe(true);
       expect('loadingScreen' in features).toBe(true);
       expect('debug' in features).toBe(true);
+      expect('darkMode' in features).toBe(true);
     });
   });
 
@@ -53,6 +55,7 @@ describe('SettingsPanel Feature Integration', () => {
       scoreAnimations: 'Score Animations',
       loadingScreen: 'Loading Screen',
       debug: 'Debug Mode',
+      darkMode: 'Dark Mode',
     };
 
     test('should map each feature to correct label', () => {
@@ -81,6 +84,7 @@ describe('SettingsPanel Feature Integration', () => {
       scoreAnimations: 'Animated score changes',
       loadingScreen: 'Show loading screen on startup',
       debug: 'Enable console logging',
+      darkMode: 'Toggle between dark and light theme',
     };
 
     test('should map each feature to correct description', () => {
