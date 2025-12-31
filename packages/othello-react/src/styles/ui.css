@@ -30,7 +30,8 @@
 
 .time-control .time-display {
   color: var(--color-text-primary);
-  min-width: 60px; /* Prevent layout shift */
+  min-width: 60px;
+  /* Prevent layout shift */
   text-align: center;
 }
 
@@ -42,10 +43,12 @@
 }
 
 @keyframes pulseGreen {
+
   0%,
   100% {
     box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
   }
+
   50% {
     box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.3);
   }
@@ -82,10 +85,12 @@
 }
 
 @keyframes blink {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.4;
   }
@@ -119,6 +124,7 @@
     opacity: 0;
     backdrop-filter: blur(0);
   }
+
   to {
     opacity: 1;
     backdrop-filter: blur(6px);
@@ -135,11 +141,13 @@
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 0; /* Remove padding - header and content manage their own */
+  padding: 0;
+  /* Remove padding - header and content manage their own */
   max-width: 500px;
   width: 90%;
   max-height: 80vh;
-  overflow-y: auto; /* Scroll container for sticky to work */
+  overflow-y: auto;
+  /* Scroll container for sticky to work */
   box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.7),
     0 10px 30px rgba(0, 0, 0, 0.5);
@@ -178,6 +186,7 @@
     opacity: 0;
     transform: translateY(40px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -199,21 +208,28 @@
  * - z-index ensures it stays above scrolling content
  */
 .settings-header {
-  position: sticky; /* THE MAGIC: Sticks to top while scrolling */
-  top: 0; /* Stick to top edge */
-  z-index: 10; /* Above scrolling content */
-  background: var(--color-bg-secondary); /* Solid background (not transparent) */
+  position: sticky;
+  /* THE MAGIC: Sticks to top while scrolling */
+  top: 0;
+  /* Stick to top edge */
+  z-index: 10;
+  /* Above scrolling content */
+  background: var(--color-bg-secondary);
+  /* Solid background (not transparent) */
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md); /* Add padding back */
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md);
+  /* Add padding back */
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
   gap: var(--spacing-md);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0; /* Round top corners */
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  /* Round top corners */
 }
 
 .settings-header-content {
-  flex: 1; /* Take up remaining space */
+  flex: 1;
+  /* Take up remaining space */
 }
 
 .settings-header h2 {
@@ -229,7 +245,8 @@
  * Color: Gold/yellow for visibility without being intrusive
  */
 .settings-note {
-  color: rgba(255, 215, 0, 0.8); /* Gold color for tips */
+  color: rgba(255, 215, 0, 0.8);
+  /* Gold color for tips */
   font-size: 13px;
   margin: 0;
   text-align: left;
@@ -251,7 +268,8 @@
  * - Mimics physical mechanism (like closing a valve)
  */
 .close-button {
-  background: transparent; /* No background = cleaner look */
+  background: transparent;
+  /* No background = cleaner look */
   border: none;
   color: var(--color-text-primary);
   font-size: 32px;
@@ -267,8 +285,10 @@
 }
 
 .close-button:hover {
-  background: rgba(255, 255, 255, 0.1); /* Subtle highlight on hover */
-  transform: rotate(90deg); /* THE MAGIC: Rotate on hover */
+  background: rgba(255, 255, 255, 0.1);
+  /* Subtle highlight on hover */
+  transform: rotate(90deg);
+  /* THE MAGIC: Rotate on hover */
 }
 
 /**
@@ -280,7 +300,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xl);
-  padding: var(--spacing-md) var(--spacing-xl) var(--spacing-xl); /* Padding inside scrollable area */
+  padding: var(--spacing-md) var(--spacing-xl) var(--spacing-xl);
+  /* Padding inside scrollable area */
 }
 
 /**
@@ -348,7 +369,8 @@
  * 4. Scales better on mobile
  */
 .setting-item {
-  background: rgba(255, 255, 255, 0.05); /* Subtle card background */
+  background: rgba(255, 255, 255, 0.05);
+  /* Subtle card background */
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -356,7 +378,8 @@
 }
 
 .setting-item:hover {
-  background: rgba(255, 255, 255, 0.08); /* Slightly brighter on hover */
+  background: rgba(255, 255, 255, 0.08);
+  /* Slightly brighter on hover */
   border-color: rgba(255, 255, 255, 0.2);
 }
 
@@ -374,14 +397,16 @@
   font-size: 18px;
   font-weight: bold;
   color: var(--color-text-primary);
-  margin-bottom: 8px; /* Space before description */
+  margin-bottom: 8px;
+  /* Space before description */
 }
 
 .setting-label input[type='checkbox'] {
   width: 24px;
   height: 24px;
   cursor: pointer;
-  accent-color: #a88f67; /* Othello board color theme */
+  accent-color: #a88f67;
+  /* Othello board color theme */
 }
 
 .setting-name {
@@ -395,16 +420,19 @@
  * Indented to align with setting name (not checkbox)
  */
 .setting-description {
-  color: rgba(255, 255, 255, 0.6); /* Muted color = secondary info */
+  color: rgba(255, 255, 255, 0.6);
+  /* Muted color = secondary info */
   font-size: 14px;
   margin: 0;
-  margin-left: 36px; /* Indent to align with setting name */
+  margin-left: 36px;
+  /* Indent to align with setting name */
   line-height: 1.5;
 }
 
 /* Light theme: dark text for setting description */
 [data-theme='light'] .setting-description {
-  color: rgba(0, 0, 0, 0.6); /* Dark text on light background */
+  color: rgba(0, 0, 0, 0.6);
+  /* Dark text on light background */
 }
 
 /* Light theme: readable text in setting items */
@@ -428,7 +456,8 @@
 }
 
 [data-theme='light'] .settings-note {
-  color: rgba(180, 130, 0, 0.9); /* Darker gold for light bg */
+  color: rgba(180, 130, 0, 0.9);
+  /* Darker gold for light bg */
 }
 
 [data-theme='light'] .close-button:hover {
@@ -682,6 +711,8 @@
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease;
+  margin-top: -5px;
+  /* Center thumb on 8px track */
 }
 
 .volume-slider::-webkit-slider-thumb:hover {
@@ -700,13 +731,11 @@
 
 .volume-slider::-webkit-slider-runnable-track {
   height: 8px;
-  background: linear-gradient(
-    to right,
-    var(--color-accent-green) 0%,
-    var(--color-accent-green) var(--volume-percent, 100%),
-    rgba(255, 255, 255, 0.1) var(--volume-percent, 100%),
-    rgba(255, 255, 255, 0.1) 100%
-  );
+  background: linear-gradient(to right,
+      var(--color-accent-green) 0%,
+      var(--color-accent-green) var(--volume-percent, 100%),
+      rgba(255, 255, 255, 0.1) var(--volume-percent, 100%),
+      rgba(255, 255, 255, 0.1) 100%);
   border-radius: 4px;
 }
 
@@ -815,6 +844,7 @@
     opacity: 0;
     transform: translateX(20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -1059,13 +1089,20 @@
 /* ========== POSITION ANALYSIS ========== */
 /**
  * AI-powered position analysis and move hints
+ * Now uses absolute positioning to overlay sidebar instead of pushing content
  */
 .position-analysis {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+  z-index: 50;
+  box-shadow: var(--shadow-lg);
+  animation: slideIn 0.2s ease-out;
 }
 
 .analysis-header {
@@ -1155,18 +1192,23 @@
 .quality-best {
   color: #4caf50;
 }
+
 .quality-corner {
   color: #ffeb3b;
 }
+
 .quality-edge {
   color: #03a9f4;
 }
+
 .quality-good {
   color: #8bc34a;
 }
+
 .quality-risky {
   color: #ff5722;
 }
+
 .quality-neutral {
   color: var(--color-text-secondary);
 }
@@ -1188,9 +1230,11 @@
 .legend-best {
   color: #4caf50;
 }
+
 .legend-corner {
   color: #ffeb3b;
 }
+
 .legend-edge {
   color: #03a9f4;
 }
@@ -1299,9 +1343,11 @@
 .record-item.wins .record-value {
   color: #4caf50;
 }
+
 .record-item.losses .record-value {
   color: #f44336;
 }
+
 .record-item.draws .record-value {
   color: #9e9e9e;
 }
@@ -1441,14 +1487,17 @@
   background: rgba(76, 175, 80, 0.3);
   color: #4caf50;
 }
+
 .result-badge.loss {
   background: rgba(244, 67, 54, 0.3);
   color: #f44336;
 }
+
 .result-badge.draw {
   background: rgba(158, 158, 158, 0.3);
   color: #9e9e9e;
 }
+
 .result-badge.spectator {
   background: rgba(156, 39, 176, 0.3);
   color: #ba68c8;
@@ -1730,6 +1779,7 @@
     opacity: 0;
     transform: scale(0.9) translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);

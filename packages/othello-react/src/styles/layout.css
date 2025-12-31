@@ -50,7 +50,8 @@ body {
 .game-container {
   display: flex;
   justify-content: center;
-  align-items: stretch; /* Both children same height */
+  align-items: stretch;
+  /* Both children same height */
   gap: var(--spacing-lg);
   width: 100%;
 }
@@ -65,6 +66,8 @@ body {
 
 /* ========== SIDEBAR AREA ========== */
 .sidebar-area {
+  position: relative;
+  /* Positioning context for overlay elements */
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
@@ -130,7 +133,8 @@ body {
 }
 
 .action-bar-btn .btn-text {
-  display: inline; /* Will be hidden on mobile */
+  display: inline;
+  /* Will be hidden on mobile */
 }
 
 /* Light theme action bar */
@@ -187,7 +191,8 @@ body {
   .sidebar-area {
     width: 100%;
     flex: 1 1 auto;
-    max-height: none; /* Allow natural height on mobile */
+    max-height: none;
+    /* Allow natural height on mobile */
   }
 
   /* Action bar: icons only on mobile */
@@ -205,7 +210,8 @@ body {
   }
 
   .action-bar-btn .btn-text {
-    display: none; /* Hide text, show only icon */
+    display: none;
+    /* Hide text, show only icon */
   }
 
   .action-bar-btn .btn-icon {
