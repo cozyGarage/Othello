@@ -31,6 +31,9 @@ interface SettingsPanelProps {
   // Sound volume
   soundVolume?: number;
   onSoundVolumeChange?: (volume: number) => void;
+  // Hints per game
+  hintsPerGame?: number;
+  onHintsPerGameChange?: (count: number) => void;
 }
 
 /**
@@ -70,6 +73,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onCustomTimeChange,
   soundVolume = 100,
   onSoundVolumeChange,
+  hintsPerGame = 3,
+  onHintsPerGameChange,
 }) => {
   const [localFeatures, setLocalFeatures] = useState<FeatureFlags>({ ...features });
   const [localCustomMinutes, setLocalCustomMinutes] = useState(customInitialMinutes);
@@ -341,6 +346,35 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <span className="volume-icon">🔊</span>
               </div>
               <p className="setting-description">Adjust the volume for all game sounds</p>
+            </div>
+          </div>
+
+          {/* Hints Settings Section */}
+          <div className="settings-section">
+            <h3 className="section-title">💡 Hints</h3>
+
+            <div className="setting-item">
+              <label className="setting-label">
+                <span className="setting-name">Hints Per Game</span>
+                <span className="volume-value">{hintsPerGame}</span>
+              </label>
+              <div className="volume-slider-container">
+                <span className="volume-icon">0</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="10"
+                  step="1"
+                  value={hintsPerGame}
+                  onChange={(e) => onHintsPerGameChange?.(parseInt(e.target.value, 10))}
+                  className="volume-slider"
+                  style={{ '--volume-percent': `${hintsPerGame * 10}%` } as React.CSSProperties}
+                />
+                <span className="volume-icon">10</span>
+              </div>
+              <p className="setting-description">
+                Number of AI hints available per game (0 = unlimited)
+              </p>
             </div>
           </div>
 

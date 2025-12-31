@@ -11,25 +11,22 @@ interface SidebarProps {
   whiteScore: number;
   onUndo: () => void;
   onRedo: () => void;
-  onNewGame: () => void;
-  onOpenMenu: () => void;
   canUndo: boolean;
   canRedo: boolean;
   moves: Move[];
   message?: string | null;
   gameOver: boolean;
   timeRemaining?: PlayerTime | null;
-  // Phase 4: Level 2 Bonus features
-  onReplayToggle?: () => void;
-  onHintsToggle?: () => void;
-  onStatsToggle?: () => void;
-  replayEnabled?: boolean;
+  // Hints feature
+  onHintRequest?: () => void;
+  hintsRemaining?: number;
   hintsEnabled?: boolean;
 }
 
 /**
  * Sidebar Component
- * Contains turn indicator, score, controls, and move history
+ * Contains turn indicator, score, and move history
+ * Controls moved to action bar below game
  */
 export const Sidebar: React.FC<SidebarProps> = ({
   currentPlayer,
@@ -37,20 +34,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   whiteScore,
   onUndo,
   onRedo,
-  onNewGame,
-  onOpenMenu,
   canUndo,
   canRedo,
   moves,
   message,
   gameOver,
   timeRemaining,
-  // Phase 4: Level 2 Bonus features
-  onReplayToggle,
-  onHintsToggle,
-  onStatsToggle,
-  replayEnabled,
-  hintsEnabled,
+  // Hints feature
+  onHintRequest,
+  hintsRemaining = 0,
+  hintsEnabled = false,
 }) => {
   // Store previous scores to calculate deltas
   // useRef persists across renders without triggering re-render
@@ -165,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div className="sidebar">
-      {/* Turn Indicator with Undo/Redo */}
+      {/* Turn Indicator with Undo/Redo/Hint */}
       <div className="sidebar-card">
         <div className="turn-controls">
           <div className="turn-player">
@@ -187,6 +180,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             title="Redo (Ctrl+Y)"
           >
             ↷
+          </button>
+          {/* Hint button - shows remaining hints */}
+          <button
+            className={`control-btn-compact hint-btn ${hintsEnabled ? 'active' : ''}`}
+            onClick={onHintRequest}
+            disabled={gameOver || hintsRemaining <= 0}
+            title={`Get hint (${hintsRemaining} remaining)`}
+          >
+            💡
+            {hintsRemaining > 0 && <span className="hint-badge">{hintsRemaining}</span>}
           </button>
         </div>
       </div>
@@ -256,45 +259,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Game Message */}
       {message && <div className={`game-message ${gameOver ? 'success' : ''}`}>{message}</div>}
 
-      {/* Control Buttons */}
-      <div className="sidebar-card">
-        <div className="controls-grid">
-          <button className="control-btn primary full-width" onClick={onNewGame}>
-            <span>🔄</span> New Game
-          </button>
-          <button className="control-btn full-width" onClick={onOpenMenu}>
-            <span>⚙️</span> Settings
-          </button>
-        </div>
-      </div>
-
-      {/* Phase 4: Level 2 Bonus Feature Buttons */}
-      <div className="sidebar-card">
-        <div className="bonus-controls">
-          <button
-            className={`bonus-btn ${hintsEnabled ? 'active' : ''}`}
-            onClick={onHintsToggle}
-            title="Toggle move hints (AI analysis)"
-          >
-            💡 Hints
-          </button>
-          <button
-            className={`bonus-btn ${replayEnabled ? 'active' : ''}`}
-            onClick={onReplayToggle}
-            disabled={moves.length === 0}
-            title="Review game moves"
-          >
-            📽️ Replay
-          </button>
-          <button className="bonus-btn" onClick={onStatsToggle} title="View game statistics">
-            📊 Stats
-          </button>
-        </div>
-      </div>
-
-      {/* Move History - Only show if feature enabled */}
+      {/* Move History - fills remaining space in sidebar */}
       {features.moveHistory && (
-        <div className="sidebar-card">
+        <div className="sidebar-card move-history-card">
           <h3 className="sidebar-card-title">Move History</h3>
           <div className="move-history">
             {moves.length === 0 ? (

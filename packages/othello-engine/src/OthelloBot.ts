@@ -4,7 +4,7 @@ import { Board, Coordinate, getValidMoves, score, E } from './index';
  * AI difficulty levels for the Othello bot
  * - easy: Random valid move selection
  * - medium: Greedy algorithm (maximizes immediate flips)
- * - hard: Minimax with alpha-beta pruning and position evaluation
+ * - hard: Minimax with alpha-beta pruning, move ordering, and transposition table
  */
 export type BotDifficulty = 'easy' | 'medium' | 'hard';
 
@@ -33,6 +33,78 @@ const POSITION_WEIGHTS = [
 ];
 
 /**
+ * Corner coordinates for quick lookup
+ */
+const CORNERS: Coordinate[] = [
+  [0, 0],
+  [0, 7],
+  [7, 0],
+  [7, 7],
+];
+
+/**
+ * X-squares (diagonal to corners) - very dangerous positions
+ */
+const X_SQUARES: Coordinate[] = [
+  [1, 1],
+  [1, 6],
+  [6, 1],
+  [6, 6],
+];
+
+/**
+ * C-squares (adjacent to corners on edges) - dangerous positions
+ */
+const C_SQUARES: Coordinate[] = [
+  [0, 1],
+  [1, 0],
+  [0, 6],
+  [1, 7],
+  [6, 0],
+  [7, 1],
+  [6, 7],
+  [7, 6],
+];
+
+/**
+ * Edge positions (excluding corners and C-squares)
+ */
+const EDGE_POSITIONS: Coordinate[] = [
+  [0, 2],
+  [0, 3],
+  [0, 4],
+  [0, 5],
+  [7, 2],
+  [7, 3],
+  [7, 4],
+  [7, 5],
+  [2, 0],
+  [3, 0],
+  [4, 0],
+  [5, 0],
+  [2, 7],
+  [3, 7],
+  [4, 7],
+  [5, 7],
+];
+
+/**
+ * Transposition table entry for caching evaluated positions
+ */
+interface TranspositionEntry {
+  depth: number;
+  score: number;
+  flag: 'exact' | 'lower' | 'upper';
+  bestMove?: Coordinate;
+}
+
+/**
+ * Maximum transposition table size (entries)
+ * ~10MB assuming ~100 bytes per entry
+ */
+const MAX_TT_SIZE = 100000;
+
+/**
  * OthelloBot - AI opponent for Othello game
  *
  * Provides three difficulty levels with different strategies:
@@ -47,8 +119,10 @@ const POSITION_WEIGHTS = [
  * - Deterministic (same board → same move)
  * - Challenging for casual players
  *
- * **Hard**: Minimax with alpha-beta pruning
- * - Looks ahead 4 moves (depth 4)
+ * **Hard**: Minimax with alpha-beta pruning + optimizations
+ * - Move ordering (corners first, X-squares last)
+ * - Transposition table (caches evaluated positions)
+ * - Looks ahead 5 moves (depth 5)
  * - Position-based evaluation (corners valuable)
  * - Considers mobility (number of available moves)
  * - Should defeat most human players
@@ -68,6 +142,8 @@ const POSITION_WEIGHTS = [
 export class OthelloBot {
   private difficulty: BotDifficulty;
   private player: 'W' | 'B';
+  private transpositionTable: Map<string, TranspositionEntry>;
+  private nodesSearched: number = 0;
 
   /**
    * Creates a new AI bot
@@ -84,6 +160,7 @@ export class OthelloBot {
   constructor(difficulty: BotDifficulty = 'medium', player: 'W' | 'B' = 'W') {
     this.difficulty = difficulty;
     this.player = player;
+    this.transpositionTable = new Map();
   }
 
   /**
@@ -123,12 +200,39 @@ export class OthelloBot {
   }
 
   /**
+   * Gets the number of nodes searched in the last calculation
+   * Useful for performance analysis
+   *
+   * @returns Number of positions evaluated
+   */
+  public getNodesSearched(): number {
+    return this.nodesSearched;
+  }
+
+  /**
+   * Clears the transposition table
+   * Call this when starting a new game
+   */
+  public clearTranspositionTable(): void {
+    this.transpositionTable.clear();
+  }
+
+  /**
+   * Gets the current transposition table size
+   *
+   * @returns Number of cached positions
+   */
+  public getTranspositionTableSize(): number {
+    return this.transpositionTable.size;
+  }
+
+  /**
    * Calculates the best move for the current board state
    *
    * Uses the appropriate algorithm based on difficulty:
    * - Easy: Random selection
    * - Medium: Greedy (maximize immediate flips)
-   * - Hard: Minimax with alpha-beta pruning (depth 4)
+   * - Hard: Minimax with alpha-beta pruning, move ordering, and transposition table
    *
    * @param board - Current game board state
    * @returns Best move coordinate [x, y], or null if no valid moves exist
@@ -147,6 +251,7 @@ export class OthelloBot {
    * ```
    */
   public calculateMove(board: Board): Coordinate | null {
+    this.nodesSearched = 0;
     const validMoves = getValidMoves(board);
 
     if (validMoves.length === 0) {
@@ -229,17 +334,20 @@ export class OthelloBot {
   /**
    * Hard difficulty: Minimax algorithm with alpha-beta pruning
    *
-   * Looks ahead 4 moves and uses position-based evaluation.
-   * Considers both strategic position values and mobility (available moves).
+   * Looks ahead 5 moves and uses position-based evaluation.
+   * Includes move ordering and transposition table for efficiency.
    *
    * Strategy:
-   * 1. Search game tree to depth 4
-   * 2. Evaluate positions using:
+   * 1. Order moves by strategic value (corners first, X-squares last)
+   * 2. Check transposition table for cached evaluations
+   * 3. Search game tree to depth 5
+   * 4. Evaluate positions using:
    *    - Position weights (corners valuable, C/X squares dangerous)
    *    - Mobility (more available moves is better)
    *    - Disc count
-   * 3. Use alpha-beta pruning to skip unnecessary branches
-   * 4. Choose move leading to best evaluated position
+   * 5. Use alpha-beta pruning to skip unnecessary branches
+   * 6. Cache results in transposition table
+   * 7. Choose move leading to best evaluated position
    *
    * @param board - Current game board
    * @param validMoves - Array of valid move coordinates
@@ -248,22 +356,25 @@ export class OthelloBot {
    * @private
    */
   private getMinimaxMove(board: Board, validMoves: Coordinate[]): Coordinate {
-    const depth = 4; // Look ahead 4 moves
+    const depth = 5; // Look ahead 5 moves (increased from 4)
     const firstMove = validMoves[0];
     if (!firstMove) {
       throw new Error('No valid moves available');
     }
 
-    let bestMove = firstMove;
+    // Order moves for better pruning
+    const orderedMoves = this.orderMoves(validMoves, board);
+
+    let bestMove = orderedMoves[0] || firstMove;
     let bestScore = -Infinity;
     let alpha = -Infinity;
     const beta = Infinity;
 
-    for (const move of validMoves) {
+    for (const move of orderedMoves) {
       const clonedBoard = this.cloneBoard(board);
       this.simulateMove(clonedBoard, move);
 
-      const moveScore = this.minimax(clonedBoard, depth - 1, alpha, beta, false);
+      const moveScore = this.minimaxWithTT(clonedBoard, depth - 1, alpha, beta, false);
 
       if (moveScore > bestScore) {
         bestScore = moveScore;
@@ -277,72 +388,286 @@ export class OthelloBot {
   }
 
   /**
-   * Minimax algorithm with alpha-beta pruning
+   * Orders moves by strategic priority for better alpha-beta pruning
    *
-   * Recursively explores the game tree to find the best move.
-   * Uses alpha-beta pruning to eliminate branches that cannot
-   * affect the final decision, significantly improving performance.
+   * Move ordering is critical for alpha-beta efficiency:
+   * - Best moves first = more pruning = faster search
+   * - Can improve search speed by 10-100x
+   *
+   * Priority order:
+   * 1. Corners (highest value, always good)
+   * 2. Edges (stable positions)
+   * 3. Interior moves (neutral)
+   * 4. C-squares (dangerous, but sometimes necessary)
+   * 5. X-squares (most dangerous, avoid if possible)
+   *
+   * @param moves - Unordered array of valid moves
+   * @param board - Current board state for context
+   * @returns Moves sorted by strategic priority
+   * @private
+   */
+  private orderMoves(moves: Coordinate[], board: Board): Coordinate[] {
+    const scored = moves.map((move) => ({
+      move,
+      score: this.getMoveOrderScore(move, board),
+    }));
+
+    // Sort descending by score (best moves first)
+    scored.sort((a, b) => b.score - a.score);
+
+    return scored.map((s) => s.move);
+  }
+
+  /**
+   * Calculates a priority score for move ordering
+   *
+   * Higher scores = searched first = better pruning if good move
+   *
+   * @param move - Move to score
+   * @param board - Current board state
+   * @returns Priority score (higher = search first)
+   * @private
+   */
+  private getMoveOrderScore(move: Coordinate, board: Board): number {
+    const [x, y] = move;
+
+    // Corners are always excellent - highest priority
+    if (this.isCorner(move)) {
+      return 1000;
+    }
+
+    // X-squares are very dangerous - lowest priority unless corner is taken
+    if (this.isXSquare(move)) {
+      // Check if adjacent corner is already taken by us
+      const adjacentCorner = this.getAdjacentCorner(move);
+      if (adjacentCorner) {
+        const [cx, cy] = adjacentCorner;
+        const cornerTile = board.tiles[cy]?.[cx];
+        if (cornerTile === this.player) {
+          return 100; // Safe if we own the corner
+        }
+      }
+      return -100; // Very dangerous otherwise
+    }
+
+    // C-squares are dangerous - low priority unless corner is taken
+    if (this.isCSquare(move)) {
+      const adjacentCorner = this.getAdjacentCornerForC(move);
+      if (adjacentCorner) {
+        const [cx, cy] = adjacentCorner;
+        const cornerTile = board.tiles[cy]?.[cx];
+        if (cornerTile === this.player) {
+          return 50; // Safe if we own the corner
+        }
+      }
+      return -50; // Dangerous otherwise
+    }
+
+    // Edges are good - medium-high priority
+    if (this.isEdge(move)) {
+      return 30;
+    }
+
+    // Use position weight for interior moves
+    const weight = POSITION_WEIGHTS[y]?.[x] ?? 0;
+    return weight;
+  }
+
+  /**
+   * Checks if a move is a corner position
+   * @private
+   */
+  private isCorner(move: Coordinate): boolean {
+    return CORNERS.some(([cx, cy]) => move[0] === cx && move[1] === cy);
+  }
+
+  /**
+   * Checks if a move is an X-square (diagonal to corner)
+   * @private
+   */
+  private isXSquare(move: Coordinate): boolean {
+    return X_SQUARES.some(([xx, xy]) => move[0] === xx && move[1] === xy);
+  }
+
+  /**
+   * Checks if a move is a C-square (adjacent to corner on edge)
+   * @private
+   */
+  private isCSquare(move: Coordinate): boolean {
+    return C_SQUARES.some(([cx, cy]) => move[0] === cx && move[1] === cy);
+  }
+
+  /**
+   * Checks if a move is on an edge (excluding corners and C-squares)
+   * @private
+   */
+  private isEdge(move: Coordinate): boolean {
+    return EDGE_POSITIONS.some(([ex, ey]) => move[0] === ex && move[1] === ey);
+  }
+
+  /**
+   * Gets the corner adjacent to an X-square
+   * @private
+   */
+  private getAdjacentCorner(xSquare: Coordinate): Coordinate | null {
+    const [x, y] = xSquare;
+    if (x === 1 && y === 1) return [0, 0];
+    if (x === 1 && y === 6) return [0, 7];
+    if (x === 6 && y === 1) return [7, 0];
+    if (x === 6 && y === 6) return [7, 7];
+    return null;
+  }
+
+  /**
+   * Gets the corner adjacent to a C-square
+   * @private
+   */
+  private getAdjacentCornerForC(cSquare: Coordinate): Coordinate | null {
+    const [x, y] = cSquare;
+    if ((x === 0 && y === 1) || (x === 1 && y === 0)) return [0, 0];
+    if ((x === 0 && y === 6) || (x === 1 && y === 7)) return [0, 7];
+    if ((x === 6 && y === 0) || (x === 7 && y === 1)) return [7, 0];
+    if ((x === 6 && y === 7) || (x === 7 && y === 6)) return [7, 7];
+    return null;
+  }
+
+  /**
+   * Generates a hash key for the board state
+   *
+   * Used for transposition table lookup.
+   * Format: string of 64 characters (E/B/W) + player turn
+   *
+   * @param board - Board to hash
+   * @returns Unique string key for this position
+   * @private
+   */
+  private getBoardHash(board: Board): string {
+    let hash = '';
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 8; x++) {
+        const tile = board.tiles[y]?.[x] ?? E;
+        hash += tile;
+      }
+    }
+    return hash + board.playerTurn;
+  }
+
+  /**
+   * Minimax with transposition table lookup
+   *
+   * Enhanced minimax that:
+   * 1. Checks transposition table before searching
+   * 2. Stores results after searching
+   * 3. Uses move ordering for better pruning
    *
    * @param board - Current board state
-   * @param depth - Remaining search depth (decreases with recursion)
-   * @param alpha - Best score for maximizing player (pruning lower bound)
-   * @param beta - Best score for minimizing player (pruning upper bound)
-   * @param isMaximizing - true if maximizing player's turn, false for minimizing
-   * @returns Evaluated score for this board position
+   * @param depth - Remaining search depth
+   * @param alpha - Alpha bound for pruning
+   * @param beta - Beta bound for pruning
+   * @param isMaximizing - Whether current player is maximizing
+   * @returns Evaluated score for this position
    * @private
-   *
-   * Time complexity: O(b^d) where b is branching factor (~10) and d is depth (4)
-   * Alpha-beta pruning can reduce this to O(b^(d/2)) in best case
    */
-  private minimax(
+  private minimaxWithTT(
     board: Board,
     depth: number,
     alpha: number,
     beta: number,
     isMaximizing: boolean
   ): number {
+    this.nodesSearched++;
+    const hash = this.getBoardHash(board);
+
+    // Check transposition table
+    const ttEntry = this.transpositionTable.get(hash);
+    if (ttEntry && ttEntry.depth >= depth) {
+      if (ttEntry.flag === 'exact') {
+        return ttEntry.score;
+      } else if (ttEntry.flag === 'lower') {
+        alpha = Math.max(alpha, ttEntry.score);
+      } else if (ttEntry.flag === 'upper') {
+        beta = Math.min(beta, ttEntry.score);
+      }
+      if (alpha >= beta) {
+        return ttEntry.score;
+      }
+    }
+
     const validMoves = getValidMoves(board);
 
     // Terminal conditions
     if (depth === 0 || validMoves.length === 0) {
-      return this.evaluatePosition(board);
+      const evaluation = this.evaluatePosition(board);
+      return evaluation;
     }
 
-    if (isMaximizing) {
-      let maxEval = -Infinity;
+    // Order moves for better pruning
+    const orderedMoves = this.orderMoves(validMoves, board);
 
-      for (const move of validMoves) {
+    const originalAlpha = alpha;
+    let bestScore: number;
+    let bestMove: Coordinate | undefined;
+
+    if (isMaximizing) {
+      bestScore = -Infinity;
+
+      for (const move of orderedMoves) {
         const clonedBoard = this.cloneBoard(board);
         this.simulateMove(clonedBoard, move);
 
-        const evaluation = this.minimax(clonedBoard, depth - 1, alpha, beta, false);
-        maxEval = Math.max(maxEval, evaluation);
+        const evaluation = this.minimaxWithTT(clonedBoard, depth - 1, alpha, beta, false);
+
+        if (evaluation > bestScore) {
+          bestScore = evaluation;
+          bestMove = move;
+        }
         alpha = Math.max(alpha, evaluation);
 
         if (beta <= alpha) {
           break; // Beta cutoff
         }
       }
-
-      return maxEval;
     } else {
-      let minEval = Infinity;
+      bestScore = Infinity;
 
-      for (const move of validMoves) {
+      for (const move of orderedMoves) {
         const clonedBoard = this.cloneBoard(board);
         this.simulateMove(clonedBoard, move);
 
-        const evaluation = this.minimax(clonedBoard, depth - 1, alpha, beta, true);
-        minEval = Math.min(minEval, evaluation);
+        const evaluation = this.minimaxWithTT(clonedBoard, depth - 1, alpha, beta, true);
+
+        if (evaluation < bestScore) {
+          bestScore = evaluation;
+          bestMove = move;
+        }
         beta = Math.min(beta, evaluation);
 
         if (beta <= alpha) {
           break; // Alpha cutoff
         }
       }
-
-      return minEval;
     }
+
+    // Store in transposition table (with size limit)
+    if (this.transpositionTable.size < MAX_TT_SIZE) {
+      let flag: 'exact' | 'lower' | 'upper';
+      if (bestScore <= originalAlpha) {
+        flag = 'upper';
+      } else if (bestScore >= beta) {
+        flag = 'lower';
+      } else {
+        flag = 'exact';
+      }
+
+      this.transpositionTable.set(hash, {
+        depth,
+        score: bestScore,
+        flag,
+        bestMove,
+      });
+    }
+
+    return bestScore;
   }
 
   /**

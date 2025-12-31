@@ -8,6 +8,7 @@ import {
   GameReplay,
   PositionAnalysis,
   GameStatistics,
+  GameResultModal,
 } from './components/ui';
 import { hasLoadingScreen, hasSoundEffects } from './config/features';
 import { soundEffects } from './utils/soundEffects';
@@ -28,6 +29,8 @@ import {
   saveTimeState,
   clearSavedTimeState,
 } from './utils/timePreferences';
+// Hints preferences
+import { getHintsPerGame, setHintsPerGame } from './utils/hintPreferences';
 // Phase 4: Import game statistics
 import { saveGameRecord } from './utils/gameStatistics';
 import {
@@ -102,6 +105,15 @@ interface OthelloGameState {
   // Track game start time for statistics
   gameStartTime: number;
   moveTimestamps: number[];
+  // Hints per game limit
+  hintsPerGame: number;
+  hintsRemaining: number;
+  // Game result modal
+  resultModalOpen: boolean;
+  gameWinner: 'B' | 'W' | null;
+  endedByTimeout: boolean;
+  // History replay - moves from saved game record
+  historyReplayMoves: Move[] | null;
 }
 
 /**
@@ -177,6 +189,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     }
 
     const initialState = this.engine.getState();
+    const savedHintsPerGame = getHintsPerGame();
     this.state = {
       board: initialState.board,
       message: null,
@@ -209,6 +222,15 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       statsOpen: false,
       gameStartTime: Date.now(),
       moveTimestamps: [],
+      // Hints per game
+      hintsPerGame: savedHintsPerGame,
+      hintsRemaining: savedHintsPerGame === 0 ? 999 : savedHintsPerGame,
+      // Game result modal
+      resultModalOpen: false,
+      gameWinner: null,
+      endedByTimeout: false,
+      // History replay
+      historyReplayMoves: null,
     };
 
     // Phase 3: Load and apply mute time sounds preference
@@ -354,7 +376,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     // S for settings (without modifiers)
     if (event.key === 's' && !event.ctrlKey && !event.metaKey && !event.altKey) {
       event.preventDefault();
-      this.setState({ settingsOpen: true });
+      this.handleOpenSettings();
       return;
     }
 
@@ -362,7 +384,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     if (event.key === 'Escape') {
       if (this.state.settingsOpen) {
         event.preventDefault();
-        this.setState({ settingsOpen: false });
+        this.handleCloseSettings();
       }
       return;
     }
@@ -435,7 +457,6 @@ class OthelloGame extends Component<{}, OthelloGameState> {
 
   handleGameOverEvent = (event: GameEvent): void => {
     const { winner } = event.data as GameOverEventData;
-    let message: string;
 
     // Phase 3.5: Clear saved time state when game ends
     clearSavedTimeState();
@@ -445,26 +466,6 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     const isTimeout =
       timeRemaining &&
       ((winner === W && timeRemaining.black <= 0) || (winner === B && timeRemaining.white <= 0));
-
-    if (isTimeout) {
-      // Game ended due to time running out
-      if (winner === B) {
-        message = 'Game Over! White ran out of time. Black wins!';
-      } else if (winner === W) {
-        message = 'Game Over! Black ran out of time. White wins!';
-      } else {
-        message = "Game Over! It's a tie!";
-      }
-    } else {
-      // Normal game over
-      if (winner === B) {
-        message = 'Game Over! Black wins!';
-      } else if (winner === W) {
-        message = 'Game Over! White wins!';
-      } else {
-        message = "Game Over! It's a tie!";
-      }
-    }
 
     // Phase 4: Save game statistics
     this.saveGameStatistics(winner, isTimeout ?? false);
@@ -478,7 +479,14 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       }
     }
 
-    this.setState({ gameOver: true, message });
+    // Show result modal instead of just a message
+    this.setState({
+      gameOver: true,
+      message: null,
+      resultModalOpen: true,
+      gameWinner: winner,
+      endedByTimeout: isTimeout ?? false,
+    });
   };
 
   handleStateChangeEvent = (event: GameEvent): void => {
@@ -537,6 +545,12 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       humanPlayer = aiPlayer === 'B' ? 'W' : 'B';
     }
 
+    // Save moves for replay functionality
+    const movesForReplay = state.moveHistory.map((move) => ({
+      player: move.player,
+      coordinate: move.coordinate as [number, number],
+    }));
+
     saveGameRecord({
       winner,
       humanPlayer,
@@ -548,6 +562,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       gameDuration,
       timeControlEnabled: this.state.timeControlEnabled,
       endedByTimeout,
+      moves: movesForReplay,
     });
   };
 
@@ -573,6 +588,15 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       replayOpen: false,
       replayBoard: null,
       hintMove: null,
+      hintsEnabled: false,
+      // Reset hints for new game
+      hintsRemaining: this.state.hintsPerGame === 0 ? 999 : this.state.hintsPerGame,
+      // Close result modal
+      resultModalOpen: false,
+      gameWinner: null,
+      endedByTimeout: false,
+      // Clear history replay
+      historyReplayMoves: null,
     });
 
     // Check if AI should make the first move
@@ -916,28 +940,111 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.setState((prev) => ({
       replayOpen: !prev.replayOpen,
       replayBoard: null, // Reset to actual board when closing
+      resultModalOpen: false, // Close result modal when opening replay
+      historyReplayMoves: null, // Clear history replay when toggling current game replay
     }));
+  };
+
+  // Replay a game from history (with stored moves)
+  handleReplayFromHistory = (
+    moves: Array<{ player: 'B' | 'W'; coordinate: [number, number] }>
+  ): void => {
+    // Convert stored moves to the Move type expected by GameReplay
+    // GameReplay only needs player and coordinate - it recalculates board state
+    const replayMoves: Move[] = moves.map((m) => ({
+      player: m.player,
+      coordinate: m.coordinate,
+      // Add placeholder values for required fields (GameReplay doesn't use these)
+      timestamp: 0,
+      scoreAfter: { black: 0, white: 0 },
+    }));
+
+    this.setState({
+      historyReplayMoves: replayMoves,
+      replayOpen: true,
+      replayBoard: null,
+      statsOpen: false, // Close stats when opening replay
+    });
   };
 
   handleReplayMoveChange = (_moveIndex: number, board: TileValue[][]): void => {
     this.setState({ replayBoard: board });
   };
 
-  // Phase 4: Hints handlers
-  handleHintsToggle = (): void => {
+  // Phase 4: Hints handlers - request a hint (uses one hint from allowance)
+  handleHintRequest = (): void => {
+    if (this.state.hintsRemaining <= 0 || this.state.gameOver) return;
+
     this.setState((prev) => ({
-      hintsEnabled: !prev.hintsEnabled,
-      hintMove: null,
+      hintsEnabled: true,
+      hintsRemaining: prev.hintsRemaining - 1,
     }));
+
+    // Auto-disable hint after 5 seconds
+    setTimeout(() => {
+      this.setState({ hintsEnabled: false, hintMove: null });
+    }, 5000);
   };
 
   handleHintMoveChange = (move: Coordinate | null): void => {
     this.setState({ hintMove: move });
   };
 
+  // Hints per game setting change
+  handleHintsPerGameChange = (count: number): void => {
+    setHintsPerGame(count);
+    this.setState({
+      hintsPerGame: count,
+      hintsRemaining: count === 0 ? 999 : count,
+    });
+  };
+
   // Phase 4: Statistics handlers
   handleStatsToggle = (): void => {
     this.setState((prev) => ({ statsOpen: !prev.statsOpen }));
+  };
+
+  // Settings panel handlers - pause game while settings open
+  handleOpenSettings = (): void => {
+    // Pause time control if active
+    if (this.engine.hasTimeControl() && !this.state.gameOver) {
+      this.engine.pauseTime();
+    }
+
+    // Cancel any pending AI move
+    if (this.botMoveTimeout !== null) {
+      clearTimeout(this.botMoveTimeout);
+      this.botMoveTimeout = null;
+    }
+
+    this.setState({ settingsOpen: true });
+  };
+
+  handleCloseSettings = (): void => {
+    // Resume time control if it was active
+    if (this.engine.hasTimeControl() && !this.state.gameOver) {
+      this.engine.resumeTime();
+    }
+
+    this.setState({ settingsOpen: false });
+
+    // Resume AI move check after settings closed (if AI's turn)
+    if (!this.state.gameOver) {
+      setTimeout(() => this.checkAndMakeAIMove(), 300);
+    }
+  };
+
+  // Result modal handlers
+  handleResultModalClose = (): void => {
+    this.setState({ resultModalOpen: false });
+  };
+
+  handleResultPlayAgain = (): void => {
+    this.handleRestart();
+  };
+
+  handleResultReplay = (): void => {
+    this.setState({ resultModalOpen: false, replayOpen: true });
   };
 
   render() {
@@ -957,67 +1064,75 @@ class OthelloGame extends Component<{}, OthelloGameState> {
 
         {!this.state.isLoading && (
           <>
-            <Navbar onPlayClick={this.handleRestart} />
+            <Navbar onPlayClick={this.handleRestart} onStatsClick={this.handleStatsToggle} />
 
-            <div className="game-container">
-              <div className="board-area">
-                <Board
-                  board={displayBoard}
-                  onPlayerTurn={this.handlePlayerTurn}
-                  lastMove={this.state.lastMove}
-                  gameOver={this.state.gameOver}
-                  hintMove={this.state.hintMove}
-                />
+            <div className="game-wrapper">
+              <div className="game-container">
+                <div className="board-area">
+                  <Board
+                    board={displayBoard}
+                    onPlayerTurn={this.handlePlayerTurn}
+                    lastMove={this.state.lastMove}
+                    gameOver={this.state.gameOver}
+                    hintMove={this.state.hintMove}
+                  />
+                </div>
+
+                <div className="sidebar-area">
+                  {/* Position Analysis (hints) - shown when hint is active */}
+                  {this.state.hintsEnabled && !this.state.gameOver && (
+                    <PositionAnalysis
+                      board={this.engine.getAnnotatedBoard()}
+                      enabled={this.state.hintsEnabled}
+                      onHintMove={this.handleHintMoveChange}
+                      showPanel={true}
+                    />
+                  )}
+
+                  <Sidebar
+                    currentPlayer={currentPlayer}
+                    blackScore={blackScore}
+                    whiteScore={whiteScore}
+                    onUndo={this.handleUndo}
+                    onRedo={this.handleRedo}
+                    canUndo={this.engine.canUndo()}
+                    canRedo={this.engine.canRedo()}
+                    moves={this.state.moveHistory}
+                    message={this.state.message}
+                    gameOver={this.state.gameOver}
+                    timeRemaining={this.state.timeRemaining}
+                    // Hints feature
+                    onHintRequest={this.handleHintRequest}
+                    hintsRemaining={this.state.hintsRemaining}
+                    hintsEnabled={this.state.hintsEnabled}
+                  />
+                </div>
               </div>
 
-              <div className="sidebar-area">
-                {/* Phase 4: Position Analysis (hints) */}
-                {this.state.hintsEnabled && !this.state.gameOver && (
-                  <PositionAnalysis
-                    board={this.engine.getAnnotatedBoard()}
-                    enabled={this.state.hintsEnabled}
-                    onHintMove={this.handleHintMoveChange}
-                    showPanel={true}
-                  />
-                )}
-
-                {/* Phase 4: Game Replay (after game over or when toggled) */}
-                {this.state.replayOpen && this.state.moveHistory.length > 0 && (
-                  <GameReplay
-                    moves={this.state.moveHistory}
-                    isVisible={this.state.replayOpen}
-                    onMoveChange={this.handleReplayMoveChange}
-                    onClose={() => this.setState({ replayOpen: false, replayBoard: null })}
-                  />
-                )}
-
-                <Sidebar
-                  currentPlayer={currentPlayer}
-                  blackScore={blackScore}
-                  whiteScore={whiteScore}
-                  onUndo={this.handleUndo}
-                  onRedo={this.handleRedo}
-                  onNewGame={this.handleRestart}
-                  onOpenMenu={() => this.setState({ settingsOpen: true })}
-                  canUndo={this.engine.canUndo()}
-                  canRedo={this.engine.canRedo()}
-                  moves={this.state.moveHistory}
-                  message={this.state.message}
-                  gameOver={this.state.gameOver}
-                  timeRemaining={this.state.timeRemaining}
-                  // Phase 4: Level 2 bonus buttons
-                  onReplayToggle={this.handleReplayToggle}
-                  onHintsToggle={this.handleHintsToggle}
-                  onStatsToggle={this.handleStatsToggle}
-                  replayEnabled={this.state.replayOpen}
-                  hintsEnabled={this.state.hintsEnabled}
-                />
+              {/* Action Bar - New Game, Settings, Stats */}
+              <div className="action-bar">
+                <button className="action-bar-btn primary" onClick={this.handleRestart}>
+                  <span className="btn-icon">🔄</span>
+                  <span className="btn-text">New Game</span>
+                </button>
+                <button className="action-bar-btn" onClick={this.handleOpenSettings}>
+                  <span className="btn-icon">⚙️</span>
+                  <span className="btn-text">Settings</span>
+                </button>
+                <button className="action-bar-btn" onClick={this.handleStatsToggle}>
+                  <span className="btn-icon">📊</span>
+                  <span className="btn-text">Stats</span>
+                </button>
+                <button className="action-bar-btn" onClick={this.handleReplayToggle}>
+                  <span className="btn-icon">📽️</span>
+                  <span className="btn-text">Replay</span>
+                </button>
               </div>
             </div>
 
             <SettingsPanel
               isOpen={this.state.settingsOpen}
-              onClose={() => this.setState({ settingsOpen: false })}
+              onClose={this.handleCloseSettings}
               aiEnabled={this.state.aiEnabled}
               aiDifficulty={this.state.aiDifficulty}
               aiPlayer={this.state.aiPlayer}
@@ -1037,12 +1152,46 @@ class OthelloGame extends Component<{}, OthelloGameState> {
               onCustomTimeChange={this.handleCustomTimeChange}
               soundVolume={this.state.soundVolume}
               onSoundVolumeChange={this.handleVolumeChange}
+              hintsPerGame={this.state.hintsPerGame}
+              onHintsPerGameChange={this.handleHintsPerGameChange}
             />
 
-            {/* Phase 4: Game Statistics Modal */}
+            {/* Game Statistics Modal (accessed from navbar) */}
             <GameStatistics
               isVisible={this.state.statsOpen}
               onClose={() => this.setState({ statsOpen: false })}
+              currentGameMoves={this.state.moveHistory}
+              onOpenCurrentReplay={this.handleReplayToggle}
+              onReplayGame={this.handleReplayFromHistory}
+            />
+
+            {/* Game Replay (when opened from Stats, result modal, or history) */}
+            {this.state.replayOpen &&
+              (this.state.moveHistory.length > 0 || this.state.historyReplayMoves) && (
+                <GameReplay
+                  moves={this.state.historyReplayMoves || this.state.moveHistory}
+                  isVisible={this.state.replayOpen}
+                  onMoveChange={this.handleReplayMoveChange}
+                  onClose={() =>
+                    this.setState({
+                      replayOpen: false,
+                      replayBoard: null,
+                      historyReplayMoves: null,
+                    })
+                  }
+                />
+              )}
+
+            {/* Game Result Modal */}
+            <GameResultModal
+              isOpen={this.state.resultModalOpen}
+              winner={this.state.gameWinner}
+              blackScore={blackScore}
+              whiteScore={whiteScore}
+              endedByTimeout={this.state.endedByTimeout}
+              onPlayAgain={this.handleResultPlayAgain}
+              onReplay={this.handleResultReplay}
+              onClose={this.handleResultModalClose}
             />
           </>
         )}

@@ -38,6 +38,8 @@ export interface GameRecord {
   timeControlEnabled: boolean;
   /** Whether the game ended by timeout */
   endedByTimeout: boolean;
+  /** Move history for replay (optional for backward compatibility) */
+  moves?: Array<{ player: 'B' | 'W'; coordinate: [number, number] }>;
 }
 
 /**

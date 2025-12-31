@@ -16,3 +16,4 @@ export { TimeControl } from './TimeControl';
 export { GameReplay } from './GameReplay';
 export { PositionAnalysis } from './PositionAnalysis';
 export { GameStatistics } from './GameStatistics';
+export { GameResultModal } from './GameResultModal';

@@ -1,13 +1,14 @@
 /* ========================================
-   SIDEBAR - Turn, Score, Controls, History
+   SIDEBAR - Turn, Score, History
+   Height matches board via parent flex
    ======================================== */
 
 .sidebar {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  height: var(--board-max-size);
-  justify-content: space-between;
+  height: 100%; /* Fill parent height (matches board) */
+  min-height: 0; /* Allow shrinking for flex children */
 }
 
 /* ========== SIDEBAR CARD (reusable) ========== */
@@ -19,6 +20,33 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Japanese Wooden Card Style - Light Theme */
+[data-theme='light'] .sidebar-card {
+  background:
+    /* Subtle wood grain */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 15px,
+      var(--color-wood-grain) 15px,
+      var(--color-wood-grain) 16px,
+      transparent 16px,
+      transparent 45px
+    ),
+    /* Base wood gradient */
+      linear-gradient(180deg, var(--color-wood-light) 0%, var(--color-wood-base) 100%);
+  border: 1px solid var(--color-wood-dark);
+  box-shadow:
+    inset 0 1px 3px rgba(255, 255, 255, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Keep text readable on wood background */
+[data-theme='light'] .sidebar-card-title {
+  color: #4a3520;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
 .sidebar-card-title {
   font-size: 14px;
   font-weight: 600;
@@ -26,6 +54,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: var(--spacing-md);
+  text-align: center;
 }
 
 /* ========== TURN INDICATOR ========== */
@@ -41,15 +70,21 @@
 .turn-player {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  font-size: 18px;
+  gap: var(--spacing-xs);
+  font-size: 14px;
   font-weight: 600;
-  flex: 1;
+  /* Fixed width to prevent layout shift when switching between "Black" and "White" */
+  min-width: 70px;
+}
+
+.turn-player span {
+  /* Fixed width for text to prevent layout jumping */
+  min-width: 40px;
 }
 
 .turn-piece {
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   box-shadow: var(--shadow-sm);
 }
@@ -66,13 +101,13 @@
 .control-btn-compact {
   background: var(--color-bg-tertiary);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: 20px;
+  border-radius: 6px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-width: 48px;
-  min-height: 48px;
+  min-width: 36px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -104,18 +139,91 @@
   box-shadow: none;
 }
 
+/* Wooden button style for light theme */
+[data-theme='light'] .control-btn-compact {
+  background: linear-gradient(180deg, var(--color-wood-light) 0%, var(--color-wood-base) 100%);
+  border: 1px solid var(--color-wood-dark);
+  color: #4a3520;
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='light'] .control-btn-compact:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--color-wood-base) 0%, var(--color-wood-dark) 100%);
+  transform: translateY(-1px);
+}
+
+[data-theme='light'] .control-btn-compact:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Turn controls wood styling */
+[data-theme='light'] .turn-controls {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 12px,
+      var(--color-wood-grain) 12px,
+      var(--color-wood-grain) 13px,
+      transparent 13px,
+      transparent 35px
+    ),
+    linear-gradient(180deg, var(--color-wood-light) 0%, var(--color-wood-base) 100%);
+  border: 1px solid var(--color-wood-dark);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 1px 3px rgba(255, 255, 255, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme='light'] .turn-player {
+  color: #4a3520;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+/* Hint button with badge */
+.hint-btn {
+  position: relative;
+}
+
+.hint-btn.active {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: var(--color-accent-green);
+  color: var(--color-accent-green);
+}
+
+.hint-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--color-accent-green);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
 /* ========== SCORE DISPLAY ========== */
 .score-display {
   display: flex;
   justify-content: space-around;
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm);
 }
 
 .score-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   position: relative;
 }
 
@@ -134,7 +242,7 @@
  * These trigger the brightness/glow animations below
  */
 .score-value {
-  font-size: 32px;
+  font-size: 24px;
   font-weight: bold;
   font-family: 'Courier New', monospace;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -159,19 +267,7 @@
   animation: scoreIncrease 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes scoreIncrease {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.3); /* Big pop! */
-    color: #ffd700; /* Flash gold */
-    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); /* Glow effect */
-  }
-  100% {
-    transform: scale(1); /* Back to normal */
-  }
-}
+/* scoreIncrease animation defined in animations.css */
 
 /**
  * Score Decrease Animation
@@ -220,10 +316,10 @@
   left: 50%;
   bottom: 100%;
   transform: translateX(-50%);
-  font-size: 18px;
+  font-size: 14px;
   font-weight: bold;
   font-family: 'Courier New', monospace;
-  animation: floatUp 1s ease-out forwards;
+  animation: floatUpDelta 1s ease-out forwards;
   pointer-events: none;
 }
 
@@ -244,12 +340,12 @@
 }
 
 /**
- * Float Up Animation
+ * Float Up Animation for Score Delta
  * 
  * Floats delta number upward and fades out
  * Like points ascending to scoreboard in video games
  */
-@keyframes floatUp {
+@keyframes floatUpDelta {
   0% {
     opacity: 0;
     transform: translateX(-50%) translateY(0);
@@ -380,14 +476,16 @@
 }
 
 /* ========== MOVE HISTORY ========== */
-.sidebar-card:last-child {
-  flex: 1;
+/* Move History Card - fills ALL remaining space in sidebar */
+.move-history-card {
+  flex: 1 1 0; /* Grow to fill, shrink if needed, base 0 */
+  min-height: 120px; /* Minimum readable height */
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  overflow: hidden;
 }
 
-.sidebar-card:last-child .sidebar-card-title {
+.move-history-card .sidebar-card-title {
   flex-shrink: 0;
 }
 
@@ -434,10 +532,10 @@
   font-size: 14px;
   font-family: 'Courier New', monospace;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: slideIn 0.3s ease-out;
+  animation: slideInFromLeft 0.3s ease-out;
 }
 
-@keyframes slideIn {
+@keyframes slideInFromLeft {
   from {
     opacity: 0;
     transform: translateX(-10px);
@@ -520,16 +618,7 @@
   color: var(--color-accent-green);
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* fadeIn animation defined in animations.css */
 
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
@@ -539,62 +628,135 @@
   }
 
   .sidebar-card {
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
   }
 
-  /* Larger touch targets */
-  .control-btn {
-    padding: var(--spacing-lg);
-    font-size: 16px;
-    min-height: 48px;
+  .sidebar-card-title {
+    font-size: 11px;
+    margin-bottom: var(--spacing-sm);
   }
 
-  /* Bigger score display */
-  .score-value {
-    font-size: 36px;
+  /* Slightly larger buttons on touch devices */
+  .control-btn-compact {
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 18px;
+  }
+
+  .turn-controls {
+    padding: var(--spacing-sm);
+  }
+
+  .turn-player {
+    font-size: 13px;
   }
 
   .turn-piece {
-    width: 28px;
-    height: 28px;
+    width: 20px;
+    height: 20px;
   }
 
-  /* Compact move history on mobile - FIXED */
-  .sidebar-card:last-child {
-    flex: 0 1 auto; /* Don't force flex-grow */
-    min-height: 200px; /* Minimum readable height */
-    max-height: 300px; /* Prevent excessive height */
+  .score-value {
+    font-size: 26px;
+  }
+
+  /* Compact move history on mobile */
+  .move-history-card {
+    flex: 0 1 auto;
+    min-height: 120px;
+    max-height: 200px;
   }
 
   .move-history {
-    max-height: 240px; /* Limit scrollable area */
-    overflow-y: auto; /* Enable scrolling */
+    max-height: 160px;
+    overflow-y: auto;
   }
 
   .move-item {
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
+    font-size: 12px;
   }
 }
 
 @media (max-width: 480px) {
   .sidebar-card-title {
-    font-size: 12px;
+    font-size: 10px;
   }
 
   .score-display {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-xs);
   }
 
   .score-value {
-    font-size: 32px;
+    font-size: 22px;
   }
 
-  .controls-grid {
-    gap: var(--spacing-md);
+  .turn-player {
+    font-size: 12px;
+    min-width: 60px;
   }
 
-  .control-btn {
-    padding: var(--spacing-md);
-    font-size: 15px;
+  .turn-piece {
+    width: 16px;
+    height: 16px;
+  }
+
+  .control-btn-compact {
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 16px;
+  }
+
+  .move-history-card {
+    min-height: 100px;
+    max-height: 160px;
+  }
+
+  .move-item {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 375px) {
+  .sidebar-card {
+    padding: var(--spacing-xs);
+  }
+
+  .score-value {
+    font-size: 20px;
+  }
+
+  .turn-controls {
+    padding: var(--spacing-xs);
+    gap: var(--spacing-xs);
+  }
+
+  .control-btn-compact {
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 14px;
+    padding: 4px;
+  }
+
+  .move-history-card {
+    min-height: 80px;
+    max-height: 140px;
+  }
+}
+
+@media (max-width: 320px) {
+  .score-value {
+    font-size: 18px;
+  }
+
+  .turn-player {
+    font-size: 11px;
+    min-width: 50px;
+  }
+
+  .control-btn-compact {
+    min-width: 28px;
+    min-height: 28px;
+    font-size: 12px;
   }
 }

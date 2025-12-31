@@ -34,8 +34,54 @@
   aspect-ratio: 1; /* Always square */
   background: var(--color-board-bg); /* Gradient background */
   border-radius: var(--radius-lg);
-  padding: var(--spacing-lg); /* Space between board edge and grid */
+  padding: var(--board-padding, var(--spacing-lg)); /* Dynamic padding */
   box-shadow: var(--shadow-lg); /* Elevated appearance */
+  /* Ensure board doesn't overflow on small screens */
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Japanese Wooden Board Frame - Light Theme */
+[data-theme='light'] .Board {
+  --color-board-bg: linear-gradient(
+    135deg,
+    var(--color-wood-light) 0%,
+    var(--color-wood-base) 50%,
+    var(--color-wood-dark) 100%
+  );
+  background:
+    /* Wood grain pattern - horizontal lines */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 20px,
+      var(--color-wood-grain) 20px,
+      var(--color-wood-grain) 21px,
+      transparent 21px,
+      transparent 60px
+    ),
+    /* Wood grain pattern - subtle vertical accents */
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 40px,
+        var(--color-wood-grain-dark) 40px,
+        var(--color-wood-grain-dark) 41px
+      ),
+    /* Base wood color gradient */
+      linear-gradient(
+        135deg,
+        var(--color-wood-light) 0%,
+        var(--color-wood-base) 30%,
+        var(--color-wood-base) 70%,
+        var(--color-wood-dark) 100%
+      );
+  box-shadow:
+    /* Inner glow for polish effect */
+    inset 0 2px 8px rgba(255, 255, 255, 0.3),
+    /* Depth shadow */ 0 8px 32px rgba(0, 0, 0, 0.25),
+    /* Outer bevel */ 0 2px 4px rgba(0, 0, 0, 0.15);
+  border: 2px solid var(--color-wood-dark);
 }
 
 /* 8x8 Grid Container */
@@ -45,7 +91,7 @@
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
-  gap: 2px;
+  gap: var(--board-grid-gap, 2px); /* Dynamic gap for small screens */
   background: rgba(0, 0, 0, 0.3);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -229,7 +275,7 @@
  */
 .Tile.last-move {
   box-shadow: inset 0 0 0 3px var(--color-accent-blue);
-  animation: pulse 0.5s ease-out;
+  animation: pulseLastMove 0.5s ease-out;
   position: relative;
   z-index: 10; /* Ensure glare renders above adjacent tiles */
 }
@@ -241,7 +287,7 @@
  */
 .Tile.last-move-no-glare {
   box-shadow: inset 0 0 0 3px var(--color-accent-blue);
-  animation: pulse 0.5s ease-out;
+  animation: pulseLastMove 0.5s ease-out;
   position: relative;
 }
 
@@ -306,8 +352,8 @@
   z-index: 15;
 }
 
-/* Pulse animation for blue border */
-@keyframes pulse {
+/* Pulse animation for blue last-move border */
+@keyframes pulseLastMove {
   0%,
   100% {
     box-shadow: inset 0 0 0 3px var(--color-accent-blue);
@@ -322,28 +368,9 @@
  * 
  * Key insight: Most of the time (90%) the effect is invisible
  * This creates anticipation and makes each sweep feel special
+ * 
+ * NOTE: glassGlare keyframes defined in animations.css
  */
-@keyframes glassGlare {
-  0% {
-    left: -50%;
-    opacity: 0;
-  }
-  1% {
-    opacity: 1; /* Quick fade in */
-  }
-  10% {
-    left: 100%; /* Sweep complete (sweeps in 0.5s) */
-    opacity: 1;
-  }
-  11% {
-    opacity: 0; /* Quick fade out */
-    left: 100%;
-  }
-  100% {
-    left: 100%; /* Stay off-screen right */
-    opacity: 0;
-  }
-}
 
 /* Static glare fade-in */
 @keyframes glareEffect {
@@ -547,17 +574,9 @@
  * 
  * User sees: Black piece → rotating → White piece
  * Reality: Black SVG → invisible → White SVG (color swapped mid-rotation)
+ * 
+ * NOTE: Flip animation classes defined in animations.css
  */
-
-/* ========== FLIP ANIMATION ========== */
-/* Flip animation classes - animations defined in animations.css */
-.Tile.tile-flip .tile-inner {
-  animation: flipAnimation 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.Tile.tile-flip svg {
-  animation: flipPieceVisibility 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {

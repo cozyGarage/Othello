@@ -475,10 +475,10 @@ Save user preferences automatically:
 
 ### Level 2 Bonuses (+15 points)
 
-- [ ] **Game replay system** (step through moves at any speed)
-- [ ] **Position analysis** (show best move hints)
+- [x] **Game replay system** (step through moves at any speed)
+- [x] **Position analysis** (show best move hints)
 - [x] **Custom time controls** (user-defined time/increment)
-- [ ] **Game statistics** (win/loss record, average move time)
+- [x] **Game statistics** (win/loss record, average move time)
 
 ### Level 3 Bonuses (+20 points)
 

@@ -402,6 +402,58 @@ export const takeTurn = (board: Board, coord: Coordinate): void => {
 };
 
 /**
+ * Creates a deep copy of the board
+ *
+ * @param board - Board to clone
+ * @returns New board with same state
+ * @internal
+ */
+const cloneBoard = (board: Board): Board => ({
+  playerTurn: board.playerTurn,
+  tiles: board.tiles.map((row) => [...row]),
+});
+
+/**
+ * Result of a move operation
+ */
+export interface MoveResult {
+  /** New board state after the move */
+  board: Board;
+  /** Whether the move was successful */
+  success: boolean;
+}
+
+/**
+ * Executes a move and returns a new board (immutable version)
+ *
+ * Unlike `takeTurn`, this function does not mutate the input board.
+ * Instead, it creates a copy and applies the move.
+ *
+ * @param board - Original game board (not modified)
+ * @param coord - [x, y] coordinate to place piece
+ * @returns MoveResult with new board and success status, or null if invalid move
+ *
+ * @example
+ * ```typescript
+ * const result = move(board, [2, 3]);
+ * if (result) {
+ *   console.log('New board:', result.board);
+ * } else {
+ *   console.log('Invalid move');
+ * }
+ * ```
+ */
+export const move = (board: Board, coord: Coordinate): MoveResult | null => {
+  const newBoard = cloneBoard(board);
+  try {
+    takeTurn(newBoard, coord);
+    return { board: newBoard, success: true };
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Checks if a move is valid for the current player
  *
  * A move is valid if:

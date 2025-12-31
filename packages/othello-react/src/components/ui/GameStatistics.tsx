@@ -16,29 +16,44 @@ interface GameStatisticsProps {
   isVisible: boolean;
   /** Callback to close the panel */
   onClose?: () => void;
+  /** Callback to start replay of a game from history */
+  onReplayGame?: (moves: Array<{ player: 'B' | 'W'; coordinate: [number, number] }>) => void;
+  /** Current game's moves for replay */
+  currentGameMoves?: unknown[];
+  /** Callback to open current game replay */
+  onOpenCurrentReplay?: () => void;
 }
 
+/** Available tabs in the Stats panel */
+type StatsTab = 'overview' | 'history' | 'replays';
+
 /**
- * GameStatistics - Display comprehensive game statistics
+ * GameStatistics - Comprehensive stats panel accessible from navbar
  *
  * Shows:
- * - Win/loss/draw record with win rate
- * - Performance breakdown by AI difficulty
- * - Average move time and game duration
- * - Recent game history
- * - Winning streaks
+ * - Overview: Win/loss/draw record, win rate, streaks
+ * - History: List of all played games with scores
+ * - Replays: Current game replay + placeholder for famous games
  *
  * @example
  * ```tsx
  * <GameStatistics
  *   isVisible={showStats}
  *   onClose={() => setShowStats(false)}
+ *   onOpenCurrentReplay={() => setReplayOpen(true)}
  * />
  * ```
  */
-export const GameStatistics: React.FC<GameStatisticsProps> = ({ isVisible, onClose }) => {
+export const GameStatistics: React.FC<GameStatisticsProps> = ({
+  isVisible,
+  onClose,
+  onReplayGame,
+  currentGameMoves = [],
+  onOpenCurrentReplay,
+}) => {
   const [stats, setStats] = useState<AggregatedStats | null>(null);
   const [showConfirmClear, setShowConfirmClear] = useState(false);
+  const [activeTab, setActiveTab] = useState<StatsTab>('overview');
 
   /**
    * Load statistics on mount and when visibility changes
@@ -96,15 +111,37 @@ export const GameStatistics: React.FC<GameStatisticsProps> = ({ isVisible, onClo
 
   return (
     <div className="game-statistics-overlay" onClick={onClose}>
-      <div className="game-statistics" onClick={(e) => e.stopPropagation()}>
+      <div className="game-statistics stats-panel-large" onClick={(e) => e.stopPropagation()}>
         <div className="stats-header">
-          <h3>📊 Game Statistics</h3>
+          <h3>📊 Stats & Replays</h3>
           <button className="stats-close" onClick={onClose} aria-label="Close statistics">
             ×
           </button>
         </div>
 
-        {stats && (
+        {/* Tab Navigation */}
+        <div className="stats-tabs">
+          <button
+            className={`stats-tab ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            Overview
+          </button>
+          <button
+            className={`stats-tab ${activeTab === 'history' ? 'active' : ''}`}
+            onClick={() => setActiveTab('history')}
+          >
+            Game History
+          </button>
+          <button
+            className={`stats-tab ${activeTab === 'replays' ? 'active' : ''}`}
+            onClick={() => setActiveTab('replays')}
+          >
+            Replays
+          </button>
+        </div>
+
+        {stats && activeTab === 'overview' && (
           <>
             {/* Overall Record */}
             <div className="stats-section">
@@ -248,6 +285,100 @@ export const GameStatistics: React.FC<GameStatisticsProps> = ({ isVisible, onClo
             {/* Total Games */}
             <div className="stats-footer">Total games recorded: {stats.totalGames}</div>
           </>
+        )}
+
+        {/* History Tab - All Games with Replay option */}
+        {stats && activeTab === 'history' && (
+          <div className="stats-section">
+            <h4>All Games Played</h4>
+            {stats.recentGames.length === 0 ? (
+              <div className="no-games">
+                No games recorded yet. Play some games to see your history!
+              </div>
+            ) : (
+              <div className="all-games-list">
+                {stats.recentGames.map((game) => (
+                  <div key={game.id} className="game-history-item">
+                    <div className="game-info-row">
+                      {renderResultBadge(game)}
+                      <span className="game-score">
+                        ⚫{game.finalScore.black} - ⚪{game.finalScore.white}
+                      </span>
+                      {game.aiDifficulty && (
+                        <span className="game-difficulty">vs {game.aiDifficulty} AI</span>
+                      )}
+                      {game.endedByTimeout && <span className="timeout-badge">⏰</span>}
+                    </div>
+                    <div className="game-meta-row">
+                      <span className="game-date">{formatDate(game.timestamp)}</span>
+                      <span className="game-moves">{game.totalMoves} moves</span>
+                      {game.gameDuration > 0 && (
+                        <span className="game-duration">{formatDuration(game.gameDuration)}</span>
+                      )}
+                      {/* Replay button - only show if game has moves saved */}
+                      {game.moves && game.moves.length > 0 && onReplayGame && (
+                        <button
+                          className="history-replay-btn"
+                          onClick={() => onReplayGame(game.moves!)}
+                          title="Replay this game"
+                        >
+                          ▶️ Replay
+                        </button>
+                      )}
+                      {(!game.moves || game.moves.length === 0) && (
+                        <span
+                          className="no-replay-available"
+                          title="Moves not recorded for older games"
+                        >
+                          📝 No replay
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Replays Tab */}
+        {activeTab === 'replays' && (
+          <div className="stats-section">
+            {/* Current Game Replay */}
+            <div className="replay-section">
+              <h4>📽️ Current Game</h4>
+              {currentGameMoves.length > 0 ? (
+                <div className="replay-card">
+                  <p>Review your current game move by move</p>
+                  <button className="replay-btn" onClick={onOpenCurrentReplay}>
+                    ▶️ Open Replay
+                  </button>
+                </div>
+              ) : (
+                <div className="no-games">No moves in current game yet</div>
+              )}
+            </div>
+
+            {/* Famous Games Placeholder */}
+            <div className="replay-section">
+              <h4>🏆 Famous Games</h4>
+              <div className="coming-soon-card">
+                <span className="coming-soon-icon">🎮</span>
+                <p>Classic Othello games from tournaments and championships</p>
+                <span className="coming-soon-badge">Coming Soon</span>
+              </div>
+            </div>
+
+            {/* Tournament Replays Placeholder */}
+            <div className="replay-section">
+              <h4>🎯 Tournament Replays</h4>
+              <div className="coming-soon-card">
+                <span className="coming-soon-icon">🏅</span>
+                <p>Watch and learn from professional tournament matches</p>
+                <span className="coming-soon-badge">Coming Soon</span>
+              </div>
+            </div>
+          </div>
         )}
 
         {!stats && <div className="stats-loading">Loading statistics...</div>}

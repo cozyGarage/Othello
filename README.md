@@ -6,16 +6,16 @@
 
 _A fully playable implementation of the classic Othello (Reversi) board game built with React, TypeScript, and Bun_
 
-**Latest Update:** November 11, 2025 – **Phase 3 Complete!** Added time controls with chess-style clocks, sound effects (time warnings, increments, timeouts), animations (pulse/flash), localStorage persistence, and mute options. Includes comprehensive documentation suite for alpha testing and 42 School peer evaluation.
+**Latest Update:** December 31, 2025 – **Responsive Layout Overhaul!** Dynamic board sizing for all screen sizes (320px-1400px+), action bar below game area, comprehensive CSS variable system, and merged testing documentation. Includes time controls, sound effects, animations, and localStorage persistence.
 
 ![Deploy Status](https://github.com/cozyGarage/Othello/actions/workflows/deploy.yml/badge.svg)
 ![Tests](https://github.com/cozyGarage/Othello/actions/workflows/test.yml/badge.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue?style=flat-square&logo=typescript)
 ![React](https://img.shields.io/badge/React-18.2.0-blue?style=flat-square&logo=react)
-![Bun](https://img.shields.io/badge/Bun-1.3.1-orange?style=flat-square&logo=bun)
+![Bun](https://img.shields.io/badge/Bun-1.3.4-orange?style=flat-square&logo=bun)
 ![Vite](https://img.shields.io/badge/Vite-5.4.21-646CFF?style=flat-square&logo=vite)
-![Tests](https://img.shields.io/badge/Engine%20Tests-83%20passing-success?style=flat-square)
-![Tests](<https://img.shields.io/badge/React%20Tests-Working%20(Engine%20Validated)-informational?style=flat-square>)
+![Tests](https://img.shields.io/badge/Engine%20Tests-122%20passing-success?style=flat-square)
+![Tests](https://img.shields.io/badge/React%20Tests-145%20passing-success?style=flat-square)
 
 </div>
 
@@ -56,7 +56,7 @@ Othello (also known as Reversi) is a classic strategy board game for two players
 - ⚡ **Lightning Fast** - Powered by Bun runtime (10-100x faster than npm)
 - 🔥 **Instant Dev Server** - Vite hot reload in ~128ms
 - 🛡️ **Type-Safe** - Full TypeScript with strict mode enabled
-- ✅ **Well-Tested** - 164/166 tests passing (98.8% pass rate)
+- ✅ **Well-Tested** - 267+ tests passing across engine and UI
 - 🤖 **CI/CD** - Automated testing and deployment via GitHub Actions
 - 📦 **Modern Tooling** - Bun + Vite + TypeScript + React
 - 🧠 **Minimax AI** - Depth-limited with alpha-beta pruning for efficient decision making
@@ -153,17 +153,19 @@ packages/
 
 ## 🧪 Testing
 
-**Coverage Snapshot**
+**Hybrid Testing Strategy** - Engine uses Bun Test, React uses Vitest
 
-- 83 engine tests (logic, AI, undo/redo, pass scenarios)
-- UI tests (board rendering, settings panel, feature flags)
-- Feature flag tests (runtime toggling, defaults)
+- 122 engine tests (logic, AI, undo/redo, time control, pass scenarios)
+- 145+ React tests (board, sidebar, settings, integration, features)
 
 ```bash
-bun test packages/*                               # Run all tests
-bun test packages/othello-engine/src/OthelloBot.test.ts  # AI tests only
+bun test                                          # Run all tests
+bun run test:engine                               # Engine tests only
+bun run test:react                                # React tests only
 bun test --watch                                  # Watch mode
 ```
+
+See [docs/TESTING.md](./docs/TESTING.md) for comprehensive testing guide.
 
 ## 🚀 Deployment
 

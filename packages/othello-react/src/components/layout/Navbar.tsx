@@ -3,13 +3,15 @@ import '../../styles/navbar.css';
 
 interface NavbarProps {
   onPlayClick?: () => void;
+  onStatsClick?: () => void;
 }
 
 /**
  * Navbar Component
  * Chess.com inspired top navigation bar
+ * Action buttons (New Game, Settings) moved to action bar below game
  */
-export const Navbar: React.FC<NavbarProps> = ({ onPlayClick }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onPlayClick, onStatsClick }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => {
@@ -21,11 +23,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onPlayClick }) => {
     onPlayClick?.();
   };
 
+  const handleStatsClick = () => {
+    setMobileMenuOpen(false);
+    onStatsClick?.();
+  };
+
   return (
     <nav className="navbar">
-      <a href="/othello" className="navbar-brand">
+      <a href="/Othello/" className="navbar-brand">
         ⚫⚪ Othello
       </a>
+
+      {/* Mobile action buttons removed - now in action bar below game */}
 
       <button className="navbar-toggle" onClick={toggleMobileMenu} aria-label="Toggle menu">
         {mobileMenuOpen ? '✕' : '☰'}
@@ -43,8 +52,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onPlayClick }) => {
           </a>
         </li>
         <li className="nav-item">
-          <a className="nav-link" href="#stats">
-            Stats
+          <a className="nav-link" onClick={handleStatsClick}>
+            📊 Stats
           </a>
         </li>
         <li className="nav-item">
