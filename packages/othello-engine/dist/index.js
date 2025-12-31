@@ -12,6 +12,8 @@ export { OthelloGameEngine } from './OthelloGameEngine';
 export { OthelloBot } from './OthelloBot';
 // Re-export time control
 export { TimeControlManager } from './TimeControlManager';
+// Re-export opening book
+export { lookupOpeningBook, getOpeningName, buildSequenceKey, moveToNotation, notationToMove, OPENING_BOOK, } from './openingBook';
 // Constants
 /** White player/disc constant */
 export const W = 'W';

@@ -60,5 +60,5 @@ chat.json
 # Playwright artifacts
 .playwright-mcp/
 
-# Egaroucid
+# Egaroucid (external repo - too large to commit)
 Egaroucid/

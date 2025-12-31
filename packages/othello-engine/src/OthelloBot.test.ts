@@ -49,6 +49,7 @@ describe('OthelloBot', () => {
 
     test('clearTranspositionTable clears the cache', () => {
       const bot = new OthelloBot('hard', 'B');
+      bot.setUseOpeningBook(false); // Disable book to test actual search
       const board = createStartingBoard();
       bot.calculateMove(board);
       expect(bot.getTranspositionTableSize()).toBeGreaterThan(0);
@@ -58,6 +59,7 @@ describe('OthelloBot', () => {
 
     test('getNodesSearched returns search count', () => {
       const bot = new OthelloBot('hard', 'B');
+      bot.setUseOpeningBook(false); // Disable book to test actual search
       const board = createStartingBoard();
       bot.calculateMove(board);
       expect(bot.getNodesSearched()).toBeGreaterThan(0);
@@ -279,6 +281,7 @@ describe('OthelloBot', () => {
   describe('Transposition Table', () => {
     test('caches positions during search', () => {
       const bot = new OthelloBot('hard', 'B');
+      bot.setUseOpeningBook(false); // Disable book to test actual search
       const board = createStartingBoard();
 
       bot.clearTranspositionTable();
@@ -310,6 +313,7 @@ describe('OthelloBot', () => {
 
     test('clears cache between games', () => {
       const bot = new OthelloBot('hard', 'B');
+      bot.setUseOpeningBook(false); // Disable book to test actual search
       const board = createStartingBoard();
 
       bot.calculateMove(board);
@@ -351,6 +355,7 @@ describe('OthelloBot', () => {
     test('hard bot searches more nodes than medium bot', () => {
       const mediumBot = new OthelloBot('medium', 'B');
       const hardBot = new OthelloBot('hard', 'B');
+      hardBot.setUseOpeningBook(false); // Disable book to test actual search
       const board = createStartingBoard();
 
       mediumBot.calculateMove(board);

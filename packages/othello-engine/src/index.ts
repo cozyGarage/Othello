@@ -28,6 +28,17 @@ export type { BotDifficulty } from './OthelloBot';
 export { TimeControlManager } from './TimeControlManager';
 export type { TimeControlConfig, PlayerTime, TimeControlState } from './TimeControlManager';
 
+// Re-export opening book
+export {
+  lookupOpeningBook,
+  getOpeningName,
+  buildSequenceKey,
+  moveToNotation,
+  notationToMove,
+  OPENING_BOOK,
+} from './openingBook';
+export type { OpeningBook, OpeningMove } from './openingBook';
+
 /**
  * Tile value types
  * - 'W': White disc
