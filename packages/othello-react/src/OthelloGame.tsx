@@ -60,6 +60,8 @@ import './styles/navbar.css';
 import './styles/board.css';
 import './styles/sidebar.css';
 import './styles/ui.css';
+// Import EvaluationGraph component
+import EvaluationGraph from './components/ui/EvaluationGraph';
 
 /**
  * Extend the Window interface to expose the game engine for browser console testing.
@@ -114,6 +116,9 @@ interface OthelloGameState {
   endedByTimeout: boolean;
   // History replay - moves from saved game record
   historyReplayMoves: Move[] | null;
+  // Evaluation graph
+  evaluationHistory: Array<{ move: number; evaluation: number }>;
+  graphVisible: boolean;
 }
 
 /**
@@ -231,6 +236,9 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       endedByTimeout: false,
       // History replay
       historyReplayMoves: null,
+      // Evaluation graph - start with initial position evaluation
+      evaluationHistory: [{ move: 0, evaluation: 0 }],
+      graphVisible: true,
     };
 
     // Phase 3: Load and apply mute time sounds preference
@@ -432,15 +440,27 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     if (currentPlayer === previousPlayer) {
       // Opponent had no valid moves and had to pass
       const opponentName = currentPlayer === 'B' ? 'White' : 'Black';
-      this.setState({
+      // Track evaluation after move
+      const evaluation = this.engine.evaluatePosition();
+      const newEvalPoint = { move: moveHistory.length, evaluation };
+      this.setState((prev) => ({
         lastMove: move.coordinate,
         moveHistory,
         moveTimestamps,
         message: `${opponentName} has no valid moves and must pass!`,
-      });
+        evaluationHistory: [...prev.evaluationHistory, newEvalPoint],
+      }));
       setTimeout(() => this.setState({ message: null }), 2500);
     } else {
-      this.setState({ lastMove: move.coordinate, moveHistory, moveTimestamps });
+      // Track evaluation after move
+      const evaluation = this.engine.evaluatePosition();
+      const newEvalPoint = { move: moveHistory.length, evaluation };
+      this.setState((prev) => ({
+        lastMove: move.coordinate,
+        moveHistory,
+        moveTimestamps,
+        evaluationHistory: [...prev.evaluationHistory, newEvalPoint],
+      }));
     }
   };
 
@@ -999,6 +1019,30 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     });
   };
 
+  // Evaluation Graph handlers
+  handleGraphToggle = (): void => {
+    this.setState((prev) => ({ graphVisible: !prev.graphVisible }));
+  };
+
+  handleGraphMoveClick = (moveNumber: number): void => {
+    // Navigate to the specified move in history using undo
+    const currentMoveCount = this.state.moveHistory.length;
+    const undoCount = currentMoveCount - moveNumber;
+
+    if (undoCount > 0) {
+      // Undo moves to get to the target position
+      for (let i = 0; i < undoCount; i++) {
+        this.engine.undo();
+      }
+      // Update state
+      const state = this.engine.getState();
+      this.setState({
+        moveHistory: state.moveHistory,
+        lastMove: state.moveHistory[state.moveHistory.length - 1]?.coordinate || null,
+      });
+    }
+  };
+
   // Phase 4: Statistics handlers
   handleStatsToggle = (): void => {
     this.setState((prev) => ({ statsOpen: !prev.statsOpen }));
@@ -1105,6 +1149,15 @@ class OthelloGame extends Component<{}, OthelloGameState> {
                     onHintRequest={this.handleHintRequest}
                     hintsRemaining={this.state.hintsRemaining}
                     hintsEnabled={this.state.hintsEnabled}
+                  />
+
+                  {/* Evaluation Graph - Egaroucid-style */}
+                  <EvaluationGraph
+                    history={this.state.evaluationHistory}
+                    currentMove={this.state.moveHistory.length}
+                    onMoveClick={this.handleGraphMoveClick}
+                    isVisible={this.state.graphVisible}
+                    onToggle={this.handleGraphToggle}
                   />
                 </div>
               </div>

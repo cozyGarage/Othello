@@ -183,6 +183,19 @@ export declare class OthelloGameEngine {
      */
     getWinner(): 'W' | 'B' | null;
     /**
+     * Evaluate the current board position for the Egaroucid-style graph
+     * Returns a value from -64 to +64 representing disc advantage
+     * Positive = Black advantage, Negative = White advantage
+     *
+     * Uses a weighted evaluation combining:
+     * - Position value (corner control, edge stability)
+     * - Mobility (available moves)
+     * - Disc count
+     *
+     * @returns Evaluation score normalized to approximate disc difference
+     */
+    evaluatePosition(): number;
+    /**
      * Get remaining time for both players
      * @returns Object with black and white time remaining, or null if time control is disabled
      */
@@ -201,6 +214,13 @@ export declare class OthelloGameEngine {
      * @returns true if time control is active
      */
     hasTimeControl(): boolean;
+    /**
+     * Restore time state (for page refresh recovery)
+     * @param blackTime - Time remaining for black in milliseconds
+     * @param whiteTime - Time remaining for white in milliseconds
+     * @param currentPlayer - Current player whose clock should be running
+     */
+    restoreTimeState(blackTime: number, whiteTime: number, currentPlayer: 'B' | 'W'): void;
     /**
      * Reset the game to its initial state
      */
