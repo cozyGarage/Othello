@@ -10,12 +10,14 @@ import '../../styles/board.css';
  * @property onPlayerTurn - Callback when player clicks a valid tile
  * @property lastMove - Coordinates of the most recent move (for highlighting)
  * @property gameOver - Whether the game has ended (disables clicks)
+ * @property hintMove - Coordinates of the suggested best move (for highlighting)
  */
 interface BoardProps {
   board: BoardType;
   onPlayerTurn: (coord: Coordinate) => void;
   lastMove: Coordinate | null;
   gameOver: boolean;
+  hintMove?: Coordinate | null;
 }
 
 /**
@@ -36,7 +38,7 @@ interface BoardProps {
  * - Board renders row-first, then column (visual top-to-bottom, left-to-right)
  * - Click handler converts [row, col] → [col, row] for engine
  */
-const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, lastMove, gameOver }) => {
+const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, lastMove, gameOver, hintMove }) => {
   /**
    * FLIP ANIMATION STATE MANAGEMENT
    *
@@ -223,6 +225,10 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, lastMove, gameOver }
       const isDark = (row + col) % 2 === 0;
       const isFlipping = flippingTiles.has(`${row}-${col}`);
 
+      // Phase 4: Check if this is the AI-suggested hint move
+      // Note: Coordinate from engine is [x, y] = [col, row]
+      const isHint = hintMove && hintMove[1] === row && hintMove[0] === col;
+
       // Check if this is an initial piece (one of the starting 4)
       const isInitialPiece =
         isInitialBoard(board) &&
@@ -239,6 +245,7 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, lastMove, gameOver }
         'Tile',
         isDark ? 'dark' : 'light',
         isValid ? 'valid-move' : '',
+        isHint ? 'hint-move' : '', // Phase 4: Highlight AI suggested best move
         isLast && features.glassGlare ? 'last-move' : isLast ? 'last-move-no-glare' : '', // Glass glare feature toggle
         isFlipping && features.animations ? 'tile-flip' : '', // Flip animation feature toggle
         isInitialPiece ? 'initial-piece' : '', // Mark all 4 initial pieces

@@ -13,3 +13,6 @@ export { SettingsPanel } from './SettingsPanel';
 export { LoadingScreen } from './LoadingScreen';
 export { MoveHistory } from './MoveHistory';
 export { TimeControl } from './TimeControl';
+export { GameReplay } from './GameReplay';
+export { PositionAnalysis } from './PositionAnalysis';
+export { GameStatistics } from './GameStatistics';

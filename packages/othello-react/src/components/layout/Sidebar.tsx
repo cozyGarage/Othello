@@ -19,6 +19,12 @@ interface SidebarProps {
   message?: string | null;
   gameOver: boolean;
   timeRemaining?: PlayerTime | null;
+  // Phase 4: Level 2 Bonus features
+  onReplayToggle?: () => void;
+  onHintsToggle?: () => void;
+  onStatsToggle?: () => void;
+  replayEnabled?: boolean;
+  hintsEnabled?: boolean;
 }
 
 /**
@@ -39,6 +45,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   message,
   gameOver,
   timeRemaining,
+  // Phase 4: Level 2 Bonus features
+  onReplayToggle,
+  onHintsToggle,
+  onStatsToggle,
+  replayEnabled,
+  hintsEnabled,
 }) => {
   // Store previous scores to calculate deltas
   // useRef persists across renders without triggering re-render
@@ -252,6 +264,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
           <button className="control-btn full-width" onClick={onOpenMenu}>
             <span>⚙️</span> Settings
+          </button>
+        </div>
+      </div>
+
+      {/* Phase 4: Level 2 Bonus Feature Buttons */}
+      <div className="sidebar-card">
+        <div className="bonus-controls">
+          <button
+            className={`bonus-btn ${hintsEnabled ? 'active' : ''}`}
+            onClick={onHintsToggle}
+            title="Toggle move hints (AI analysis)"
+          >
+            💡 Hints
+          </button>
+          <button
+            className={`bonus-btn ${replayEnabled ? 'active' : ''}`}
+            onClick={onReplayToggle}
+            disabled={moves.length === 0}
+            title="Review game moves"
+          >
+            📽️ Replay
+          </button>
+          <button className="bonus-btn" onClick={onStatsToggle} title="View game statistics">
+            📊 Stats
           </button>
         </div>
       </div>

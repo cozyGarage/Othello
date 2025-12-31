@@ -53,6 +53,15 @@ export const TIME_PRESETS: TimePreset[] = [
       increment: 0,
     },
   },
+  {
+    id: 'custom',
+    name: 'Custom',
+    description: 'Custom time control',
+    config: {
+      initialTime: 300000, // 5 minutes default
+      increment: 0,
+    },
+  },
 ];
 
 /**

@@ -468,16 +468,16 @@ Save user preferences automatically:
 
 ### Level 1 Bonuses (+10 points)
 
-- [ ] **Mobile responsiveness** (touch controls, portrait/landscape)
-- [ ] **Keyboard shortcuts** (arrow keys, undo/redo hotkeys)
-- [ ] **Dark mode** (theme toggle)
-- [ ] **Spectator mode** (watch AI vs AI)
+- [x] **Mobile responsiveness** (touch controls, portrait/landscape)
+- [x] **Keyboard shortcuts** (arrow keys, undo/redo hotkeys)
+- [x] **Dark mode** (theme toggle)
+- [x] **Spectator mode** (watch AI vs AI)
 
 ### Level 2 Bonuses (+15 points)
 
 - [ ] **Game replay system** (step through moves at any speed)
 - [ ] **Position analysis** (show best move hints)
-- [ ] **Custom time controls** (user-defined time/increment)
+- [x] **Custom time controls** (user-defined time/increment)
 - [ ] **Game statistics** (win/loss record, average move time)
 
 ### Level 3 Bonuses (+20 points)
@@ -722,6 +722,7 @@ To pass this project, you must:
 - 100-110: Pass (all mandatory features)
 - 110-125: Excellent (some bonuses)
 - 125+: Outstanding (significant bonuses)
+- 150+: Exceptional (all bonuses, flawless execution)
 
 ---
 

@@ -429,14 +429,14 @@ const STORAGE_KEYS = {
 - [x] Flash effect when time added
 - [x] Smooth color transitions for urgency states
 
-### Persistence & Settings (3/6)
+### Persistence & Settings (6/6) ✅
 
 - [x] Save time control preferences
 - [x] Remember last selected preset
 - [x] Enable/disable time warnings (via mute)
-- [ ] Restore time state on page refresh (deliberate skip)
-- [ ] Custom time controls (user input) (future)
-- [ ] Sound volume controls (future)
+- [x] Restore time state on page refresh
+- [x] Custom time controls (user input)
+- [x] Sound volume controls
 
 ### Multiplayer Considerations (0/7) - FUTURE
 
@@ -494,7 +494,7 @@ User specifically requested:
 
 ### Phase 5: Advanced Features (NOT STARTED)
 
-- Custom time controls (user input)
+- ~~Custom time controls (user input)~~ ✅ DONE
 - Tournament mode
 - Opening book database
 - Position editor

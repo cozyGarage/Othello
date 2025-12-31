@@ -2,7 +2,13 @@ import { Component } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import Board from './components/layout/Board';
-import { LoadingScreen, SettingsPanel } from './components/ui';
+import {
+  LoadingScreen,
+  SettingsPanel,
+  GameReplay,
+  PositionAnalysis,
+  GameStatistics,
+} from './components/ui';
 import { hasLoadingScreen, hasSoundEffects } from './config/features';
 import { soundEffects } from './utils/soundEffects';
 import { getDefaultPreset, getPresetById } from './config/timePresets';
@@ -14,7 +20,16 @@ import {
   setSelectedTimePreset,
   getMuteTimeSounds,
   setMuteTimeSounds,
+  getSoundVolume,
+  setSoundVolume,
+  getCustomTimeConfig,
+  setCustomTimeConfig,
+  getSavedTimeState,
+  saveTimeState,
+  clearSavedTimeState,
 } from './utils/timePreferences';
+// Phase 4: Import game statistics
+import { saveGameRecord } from './utils/gameStatistics';
 import {
   OthelloGameEngine,
   OthelloBot,
@@ -29,6 +44,7 @@ import {
   type BotDifficulty,
   type PlayerTime,
   type TimeControlConfig,
+  type TileValue,
   B,
   W,
 } from 'othello-engine';
@@ -40,6 +56,7 @@ import './styles/animations.css';
 import './styles/navbar.css';
 import './styles/board.css';
 import './styles/sidebar.css';
+import './styles/ui.css';
 
 /**
  * Extend the Window interface to expose the game engine for browser console testing.
@@ -73,6 +90,18 @@ interface OthelloGameState {
   // Phase 3: Time warning tracking (prevent repeated warnings)
   blackTimeWarningPlayed: boolean;
   whiteTimeWarningPlayed: boolean;
+  // Phase 3.5: Custom time control
+  customInitialMinutes: number;
+  customIncrementSeconds: number;
+  // Phase 4: Level 2 Bonuses
+  replayOpen: boolean;
+  replayBoard: TileValue[][] | null;
+  hintsEnabled: boolean;
+  hintMove: Coordinate | null;
+  statsOpen: boolean;
+  // Track game start time for statistics
+  gameStartTime: number;
+  moveTimestamps: number[];
 }
 
 /**
@@ -100,14 +129,52 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     const savedTimeControlEnabled = getTimeControlEnabled();
     const savedTimePreset = getSelectedTimePreset();
 
+    // Phase 3.5: Load sound volume preference
+    const savedVolume = getSoundVolume();
+    soundEffects.setVolume(savedVolume);
+
+    // Phase 3.5: Load custom time config
+    const savedCustomConfig = getCustomTimeConfig();
+    const customInitialMinutes = savedCustomConfig?.initialMinutes ?? 5;
+    const customIncrementSeconds = savedCustomConfig?.incrementSeconds ?? 0;
+
+    // Determine the time config to use
+    let timeConfig: TimeControlConfig | undefined;
+    if (savedTimeControlEnabled) {
+      if (savedTimePreset === 'custom') {
+        timeConfig = {
+          initialTime: customInitialMinutes * 60 * 1000,
+          increment: customIncrementSeconds * 1000,
+        };
+      } else {
+        const preset = getPresetById(savedTimePreset) || getDefaultPreset();
+        timeConfig = preset.config;
+      }
+    }
+
     // Initialize the game engine (with time control if enabled in preferences)
-    const preset = getPresetById(savedTimePreset) || getDefaultPreset();
-    this.engine = new OthelloGameEngine(
-      undefined,
-      undefined,
-      undefined,
-      savedTimeControlEnabled ? preset.config : undefined
-    );
+    this.engine = new OthelloGameEngine(undefined, undefined, undefined, timeConfig);
+
+    // Phase 3.5: Check for saved time state to restore
+    const savedTimeState = getSavedTimeState();
+    let restoredTimeRemaining: PlayerTime | null = null;
+
+    if (savedTimeControlEnabled && savedTimeState && savedTimeState.presetId === savedTimePreset) {
+      // Restore the saved time state
+      // Use type assertion since the method was added to the engine
+      const engineWithRestore = this.engine as OthelloGameEngine & {
+        restoreTimeState?: (blackTime: number, whiteTime: number, currentPlayer: 'B' | 'W') => void;
+      };
+      engineWithRestore.restoreTimeState?.(
+        savedTimeState.blackTime,
+        savedTimeState.whiteTime,
+        savedTimeState.currentPlayer
+      );
+      restoredTimeRemaining = {
+        black: savedTimeState.blackTime,
+        white: savedTimeState.whiteTime,
+      };
+    }
 
     const initialState = this.engine.getState();
     this.state = {
@@ -118,7 +185,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       isLoading: hasLoadingScreen(),
       moveHistory: [],
       settingsOpen: false,
-      soundVolume: soundEffects.getVolume(),
+      soundVolume: savedVolume,
       aiEnabled: false,
       aiDifficulty: 'medium',
       aiPlayer: 'W',
@@ -127,10 +194,21 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       // Phase 3: Initialize from localStorage (user's saved preferences)
       timeControlEnabled: savedTimeControlEnabled,
       selectedTimePreset: savedTimePreset,
-      timeRemaining: null,
+      timeRemaining: restoredTimeRemaining,
       // Phase 3: Initialize time warning flags
       blackTimeWarningPlayed: false,
       whiteTimeWarningPlayed: false,
+      // Phase 3.5: Custom time control
+      customInitialMinutes,
+      customIncrementSeconds,
+      // Phase 4: Level 2 Bonuses
+      replayOpen: false,
+      replayBoard: null,
+      hintsEnabled: false,
+      hintMove: null,
+      statsOpen: false,
+      gameStartTime: Date.now(),
+      moveTimestamps: [],
     };
 
     // Phase 3: Load and apply mute time sounds preference
@@ -175,6 +253,17 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       if (this.engine.hasTimeControl() && !this.state.gameOver) {
         const timeRemaining = this.engine.getTimeRemaining();
         this.setState({ timeRemaining });
+
+        // Phase 3.5: Save time state periodically for refresh recovery
+        const engineState = this.engine.getState();
+        if (timeRemaining && !engineState.isGameOver) {
+          saveTimeState({
+            blackTime: timeRemaining.black,
+            whiteTime: timeRemaining.white,
+            currentPlayer: engineState.currentPlayer,
+            presetId: this.state.selectedTimePreset,
+          });
+        }
 
         // Check for low time warning (< 10 seconds = 10000ms)
         // Only play warning sound ONCE per player when they drop below threshold
@@ -228,10 +317,21 @@ class OthelloGame extends Component<{}, OthelloGameState> {
   }
 
   handleKeyDown = (event: KeyboardEvent): void => {
+    // Don't handle shortcuts when typing in an input
+    const target = event.target as HTMLElement;
+    if (
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.tagName === 'SELECT'
+    ) {
+      return;
+    }
+
     // Ctrl+Z or Cmd+Z for undo
     if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
       event.preventDefault();
       this.handleUndo();
+      return;
     }
 
     // Ctrl+Y or Cmd+Shift+Z for redo
@@ -241,11 +341,49 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     ) {
       event.preventDefault();
       this.handleRedo();
+      return;
+    }
+
+    // N for new game (without modifiers)
+    if (event.key === 'n' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      this.handleRestart();
+      return;
+    }
+
+    // S for settings (without modifiers)
+    if (event.key === 's' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      this.setState({ settingsOpen: true });
+      return;
+    }
+
+    // Escape to close settings
+    if (event.key === 'Escape') {
+      if (this.state.settingsOpen) {
+        event.preventDefault();
+        this.setState({ settingsOpen: false });
+      }
+      return;
+    }
+
+    // ? or H for help (show keyboard shortcuts)
+    if ((event.key === '?' || event.key === 'h') && !event.ctrlKey && !event.metaKey) {
+      event.preventDefault();
+      this.setState({
+        message: '⌨️ Shortcuts: N=New, S=Settings, Z=Undo, Y=Redo, Esc=Close',
+      });
+      setTimeout(() => this.setState({ message: null }), 4000);
+      return;
     }
   };
 
   handleMoveEvent = (event: GameEvent): void => {
     const { move, state } = event.data as MoveEventData;
+
+    // Phase 4: Track move timestamps for statistics
+    const now = Date.now();
+    const moveTimestamps = [...this.state.moveTimestamps, now];
 
     // Phase 3: Play move sound and increment sound (if time control active)
     if (hasSoundEffects()) {
@@ -275,11 +413,12 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       this.setState({
         lastMove: move.coordinate,
         moveHistory,
+        moveTimestamps,
         message: `${opponentName} has no valid moves and must pass!`,
       });
       setTimeout(() => this.setState({ message: null }), 2500);
     } else {
-      this.setState({ lastMove: move.coordinate, moveHistory });
+      this.setState({ lastMove: move.coordinate, moveHistory, moveTimestamps });
     }
   };
 
@@ -297,6 +436,9 @@ class OthelloGame extends Component<{}, OthelloGameState> {
   handleGameOverEvent = (event: GameEvent): void => {
     const { winner } = event.data as GameOverEventData;
     let message: string;
+
+    // Phase 3.5: Clear saved time state when game ends
+    clearSavedTimeState();
 
     // Check if game ended due to timeout
     const timeRemaining = this.engine.getTimeRemaining();
@@ -323,6 +465,9 @@ class OthelloGame extends Component<{}, OthelloGameState> {
         message = "Game Over! It's a tie!";
       }
     }
+
+    // Phase 4: Save game statistics
+    this.saveGameStatistics(winner, isTimeout ?? false);
 
     // Phase 3: Play appropriate sound (timeout alarm or normal game over)
     if (hasSoundEffects()) {
@@ -360,8 +505,57 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.engine.makeMove(coord);
   };
 
+  /**
+   * Save game statistics when game ends
+   * Calculates average move time and duration, then persists to localStorage
+   */
+  saveGameStatistics = (winner: 'B' | 'W' | null, endedByTimeout: boolean): void => {
+    const { moveTimestamps, gameStartTime, aiEnabled, aiDifficulty, aiPlayer, spectatorMode } =
+      this.state;
+    const state = this.engine.getState();
+
+    // Calculate average move time
+    let avgMoveTime = 0;
+    if (moveTimestamps.length > 1) {
+      let totalTime = 0;
+      for (let i = 1; i < moveTimestamps.length; i++) {
+        const prevTime = moveTimestamps[i - 1];
+        const currTime = moveTimestamps[i];
+        if (prevTime !== undefined && currTime !== undefined) {
+          totalTime += currTime - prevTime;
+        }
+      }
+      avgMoveTime = totalTime / (moveTimestamps.length - 1);
+    }
+
+    // Calculate game duration
+    const gameDuration = Date.now() - gameStartTime;
+
+    // Determine human player (if vs AI)
+    let humanPlayer: 'B' | 'W' | null = null;
+    if (aiEnabled && !spectatorMode) {
+      humanPlayer = aiPlayer === 'B' ? 'W' : 'B';
+    }
+
+    saveGameRecord({
+      winner,
+      humanPlayer,
+      aiDifficulty: aiEnabled ? aiDifficulty : null,
+      spectatorMode,
+      finalScore: state.score,
+      totalMoves: state.moveHistory.length,
+      avgMoveTime,
+      gameDuration,
+      timeControlEnabled: this.state.timeControlEnabled,
+      endedByTimeout,
+    });
+  };
+
   handleRestart = (): void => {
     this.engine.reset();
+
+    // Phase 3.5: Clear saved time state when starting new game
+    clearSavedTimeState();
 
     const initialState = this.engine.getState();
     this.setState({
@@ -373,6 +567,12 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       // Phase 3: Reset time warning flags when starting new game
       blackTimeWarningPlayed: false,
       whiteTimeWarningPlayed: false,
+      // Phase 4: Reset game statistics tracking
+      gameStartTime: Date.now(),
+      moveTimestamps: [],
+      replayOpen: false,
+      replayBoard: null,
+      hintMove: null,
     });
 
     // Check if AI should make the first move
@@ -433,6 +633,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
 
   handleVolumeChange = (volume: number): void => {
     soundEffects.setVolume(volume);
+    setSoundVolume(volume); // Phase 3.5: Save to localStorage
     this.setState({ soundVolume: volume });
   };
 
@@ -482,10 +683,22 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     // Phase 3: Save preference to localStorage
     setTimeControlEnabled(enabled);
 
+    // Phase 3.5: Clear saved time state when toggling time control
+    clearSavedTimeState();
+
     if (enabled) {
       // Create new engine with time control
-      const preset = getDefaultPreset();
-      this.recreateEngineWithTimeControl(preset.config);
+      let config: TimeControlConfig;
+      if (this.state.selectedTimePreset === 'custom') {
+        config = {
+          initialTime: this.state.customInitialMinutes * 60 * 1000,
+          increment: this.state.customIncrementSeconds * 1000,
+        };
+      } else {
+        const preset = getPresetById(this.state.selectedTimePreset) || getDefaultPreset();
+        config = preset.config;
+      }
+      this.recreateEngineWithTimeControl(config);
     } else {
       // Create new engine without time control
       this.recreateEngineWithoutTimeControl();
@@ -498,11 +711,45 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     // Phase 3: Save preference to localStorage
     setSelectedTimePreset(presetId);
 
+    // Phase 3.5: Clear saved time state when changing preset
+    clearSavedTimeState();
+
     if (this.state.timeControlEnabled) {
-      const preset = getPresetById(presetId);
-      if (preset) {
-        this.recreateEngineWithTimeControl(preset.config);
+      if (presetId === 'custom') {
+        // Use custom time config
+        const config: TimeControlConfig = {
+          initialTime: this.state.customInitialMinutes * 60 * 1000,
+          increment: this.state.customIncrementSeconds * 1000,
+        };
+        this.recreateEngineWithTimeControl(config);
+      } else {
+        const preset = getPresetById(presetId);
+        if (preset) {
+          this.recreateEngineWithTimeControl(preset.config);
+        }
       }
+    }
+  };
+
+  handleCustomTimeChange = (initialMinutes: number, incrementSeconds: number): void => {
+    this.setState({
+      customInitialMinutes: initialMinutes,
+      customIncrementSeconds: incrementSeconds,
+    });
+
+    // Phase 3.5: Save custom config to localStorage
+    setCustomTimeConfig({ initialMinutes, incrementSeconds });
+
+    // Phase 3.5: Clear saved time state when changing custom config
+    clearSavedTimeState();
+
+    // If currently using custom preset, update the engine
+    if (this.state.timeControlEnabled && this.state.selectedTimePreset === 'custom') {
+      const config: TimeControlConfig = {
+        initialTime: initialMinutes * 60 * 1000,
+        increment: incrementSeconds * 1000,
+      };
+      this.recreateEngineWithTimeControl(config);
     }
   };
 
@@ -664,11 +911,45 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     }
   };
 
+  // Phase 4: Replay handlers
+  handleReplayToggle = (): void => {
+    this.setState((prev) => ({
+      replayOpen: !prev.replayOpen,
+      replayBoard: null, // Reset to actual board when closing
+    }));
+  };
+
+  handleReplayMoveChange = (_moveIndex: number, board: TileValue[][]): void => {
+    this.setState({ replayBoard: board });
+  };
+
+  // Phase 4: Hints handlers
+  handleHintsToggle = (): void => {
+    this.setState((prev) => ({
+      hintsEnabled: !prev.hintsEnabled,
+      hintMove: null,
+    }));
+  };
+
+  handleHintMoveChange = (move: Coordinate | null): void => {
+    this.setState({ hintMove: move });
+  };
+
+  // Phase 4: Statistics handlers
+  handleStatsToggle = (): void => {
+    this.setState((prev) => ({ statsOpen: !prev.statsOpen }));
+  };
+
   render() {
     const state = this.engine.getState();
     const currentPlayer = state.currentPlayer === B ? 'black' : 'white';
     const blackScore = state.score.black;
     const whiteScore = state.score.white;
+
+    // Use replay board if in replay mode, otherwise use actual board
+    const displayBoard = this.state.replayBoard
+      ? { ...this.engine.getAnnotatedBoard(), tiles: this.state.replayBoard }
+      : this.engine.getAnnotatedBoard();
 
     return (
       <div className="OthelloGame">
@@ -681,14 +962,35 @@ class OthelloGame extends Component<{}, OthelloGameState> {
             <div className="game-container">
               <div className="board-area">
                 <Board
-                  board={this.engine.getAnnotatedBoard()}
+                  board={displayBoard}
                   onPlayerTurn={this.handlePlayerTurn}
                   lastMove={this.state.lastMove}
                   gameOver={this.state.gameOver}
+                  hintMove={this.state.hintMove}
                 />
               </div>
 
               <div className="sidebar-area">
+                {/* Phase 4: Position Analysis (hints) */}
+                {this.state.hintsEnabled && !this.state.gameOver && (
+                  <PositionAnalysis
+                    board={this.engine.getAnnotatedBoard()}
+                    enabled={this.state.hintsEnabled}
+                    onHintMove={this.handleHintMoveChange}
+                    showPanel={true}
+                  />
+                )}
+
+                {/* Phase 4: Game Replay (after game over or when toggled) */}
+                {this.state.replayOpen && this.state.moveHistory.length > 0 && (
+                  <GameReplay
+                    moves={this.state.moveHistory}
+                    isVisible={this.state.replayOpen}
+                    onMoveChange={this.handleReplayMoveChange}
+                    onClose={() => this.setState({ replayOpen: false, replayBoard: null })}
+                  />
+                )}
+
                 <Sidebar
                   currentPlayer={currentPlayer}
                   blackScore={blackScore}
@@ -703,6 +1005,12 @@ class OthelloGame extends Component<{}, OthelloGameState> {
                   message={this.state.message}
                   gameOver={this.state.gameOver}
                   timeRemaining={this.state.timeRemaining}
+                  // Phase 4: Level 2 bonus buttons
+                  onReplayToggle={this.handleReplayToggle}
+                  onHintsToggle={this.handleHintsToggle}
+                  onStatsToggle={this.handleStatsToggle}
+                  replayEnabled={this.state.replayOpen}
+                  hintsEnabled={this.state.hintsEnabled}
                 />
               </div>
             </div>
@@ -724,6 +1032,17 @@ class OthelloGame extends Component<{}, OthelloGameState> {
               onTimePresetChange={this.handleTimePresetChange}
               muteTimeSounds={soundEffects.getMuteTimeSounds()}
               onMuteTimeSoundsToggle={this.handleMuteTimeSoundsToggle}
+              customInitialMinutes={this.state.customInitialMinutes}
+              customIncrementSeconds={this.state.customIncrementSeconds}
+              onCustomTimeChange={this.handleCustomTimeChange}
+              soundVolume={this.state.soundVolume}
+              onSoundVolumeChange={this.handleVolumeChange}
+            />
+
+            {/* Phase 4: Game Statistics Modal */}
+            <GameStatistics
+              isVisible={this.state.statsOpen}
+              onClose={() => this.setState({ statsOpen: false })}
             />
           </>
         )}

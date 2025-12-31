@@ -537,6 +537,20 @@ export class OthelloGameEngine {
   }
 
   /**
+   * Restore time state (for page refresh recovery)
+   * @param blackTime - Time remaining for black in milliseconds
+   * @param whiteTime - Time remaining for white in milliseconds
+   * @param currentPlayer - Current player whose clock should be running
+   */
+  public restoreTimeState(blackTime: number, whiteTime: number, currentPlayer: 'B' | 'W'): void {
+    if (!this.timeControl) return;
+
+    this.timeControl.setTimeRemaining('B', blackTime);
+    this.timeControl.setTimeRemaining('W', whiteTime);
+    this.timeControl.startClock(currentPlayer);
+  }
+
+  /**
    * Reset the game to its initial state
    */
   public reset(): void {

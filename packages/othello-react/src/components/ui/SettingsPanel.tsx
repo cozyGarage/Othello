@@ -24,6 +24,13 @@ interface SettingsPanelProps {
   onTimePresetChange?: (presetId: string) => void;
   muteTimeSounds?: boolean;
   onMuteTimeSoundsToggle?: (muted: boolean) => void;
+  // Custom time control
+  customInitialMinutes?: number;
+  customIncrementSeconds?: number;
+  onCustomTimeChange?: (initialMinutes: number, incrementSeconds: number) => void;
+  // Sound volume
+  soundVolume?: number;
+  onSoundVolumeChange?: (volume: number) => void;
 }
 
 /**
@@ -58,8 +65,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onMuteTimeSoundsToggle,
   spectatorMode = false,
   onSpectatorToggle,
+  customInitialMinutes = 5,
+  customIncrementSeconds = 0,
+  onCustomTimeChange,
+  soundVolume = 100,
+  onSoundVolumeChange,
 }) => {
   const [localFeatures, setLocalFeatures] = useState<FeatureFlags>({ ...features });
+  const [localCustomMinutes, setLocalCustomMinutes] = useState(customInitialMinutes);
+  const [localCustomIncrement, setLocalCustomIncrement] = useState(customIncrementSeconds);
 
   if (!isOpen) return null;
 
@@ -223,7 +237,65 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   ))}
                 </select>
                 <p className="setting-description">
-                  Choose from bullet, blitz, rapid, or classical time controls
+                  Choose from bullet, blitz, rapid, classical, or custom time controls
+                </p>
+              </div>
+            )}
+
+            {/* Custom Time Control Inputs */}
+            {timeControlEnabled && selectedTimePreset === 'custom' && (
+              <div className="setting-item">
+                <label className="setting-label">
+                  <span className="setting-name">⚙️ Custom Time Settings</span>
+                </label>
+                <div className="custom-time-inputs">
+                  <div className="custom-time-row">
+                    <label className="custom-time-label">
+                      Initial Time (minutes):
+                      <input
+                        type="number"
+                        min="0.5"
+                        max="60"
+                        step="0.5"
+                        value={localCustomMinutes}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 5;
+                          setLocalCustomMinutes(value);
+                        }}
+                        onBlur={() => {
+                          const clamped = Math.max(0.5, Math.min(60, localCustomMinutes));
+                          setLocalCustomMinutes(clamped);
+                          onCustomTimeChange?.(clamped, localCustomIncrement);
+                        }}
+                        className="custom-time-input"
+                      />
+                    </label>
+                  </div>
+                  <div className="custom-time-row">
+                    <label className="custom-time-label">
+                      Increment (seconds):
+                      <input
+                        type="number"
+                        min="0"
+                        max="30"
+                        step="1"
+                        value={localCustomIncrement}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value, 10) || 0;
+                          setLocalCustomIncrement(value);
+                        }}
+                        onBlur={() => {
+                          const clamped = Math.max(0, Math.min(30, localCustomIncrement));
+                          setLocalCustomIncrement(clamped);
+                          onCustomTimeChange?.(localCustomMinutes, clamped);
+                        }}
+                        className="custom-time-input"
+                      />
+                    </label>
+                  </div>
+                </div>
+                <p className="setting-description">
+                  Set your own time: {localCustomMinutes} min + {localCustomIncrement} sec/move
                 </p>
               </div>
             )}
@@ -243,6 +315,33 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Sound Settings Section */}
+          <div className="settings-section">
+            <h3 className="section-title">🔊 Sound</h3>
+
+            <div className="setting-item">
+              <label className="setting-label">
+                <span className="setting-name">Volume</span>
+                <span className="volume-value">{soundVolume}%</span>
+              </label>
+              <div className="volume-slider-container">
+                <span className="volume-icon">🔈</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={soundVolume}
+                  onChange={(e) => onSoundVolumeChange?.(parseInt(e.target.value, 10))}
+                  className="volume-slider"
+                  style={{ '--volume-percent': `${soundVolume}%` } as React.CSSProperties}
+                />
+                <span className="volume-icon">🔊</span>
+              </div>
+              <p className="setting-description">Adjust the volume for all game sounds</p>
+            </div>
           </div>
 
           {/* Feature Flags Section */}

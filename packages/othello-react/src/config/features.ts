@@ -79,7 +79,7 @@ export function toggleFeature(feature: keyof FeatureFlags, enabled: boolean): vo
   features[feature] = enabled;
 
   if (features.debug) {
-    console.log(`🚩 Feature "${feature}" ${enabled ? 'enabled' : 'disabled'}`);
+    console.info(`🚩 Feature "${feature}" ${enabled ? 'enabled' : 'disabled'}`);
   }
 }
 

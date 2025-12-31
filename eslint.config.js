@@ -40,6 +40,7 @@ export default [
         Window: 'readonly',
         Document: 'readonly',
         HTMLDivElement: 'readonly',
+        HTMLElement: 'readonly',
         KeyboardEvent: 'readonly',
         global: 'writable',
         setTimeout: 'readonly',

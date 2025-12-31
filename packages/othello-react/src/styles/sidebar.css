@@ -334,6 +334,51 @@
   border-color: #5bc45f;
 }
 
+/* ========== BONUS CONTROLS (Phase 4) ========== */
+/**
+ * Level 2 Bonus feature buttons: Hints, Replay, Stats
+ */
+.bonus-controls {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.bonus-btn {
+  flex: 1;
+  min-width: 70px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.bonus-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--color-text-primary);
+}
+
+.bonus-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bonus-btn.active {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: var(--color-accent-green);
+  color: var(--color-accent-green);
+}
+
+.bonus-btn.active:hover {
+  background: rgba(76, 175, 80, 0.3);
+}
+
 /* ========== MOVE HISTORY ========== */
 .sidebar-card:last-child {
   flex: 1;

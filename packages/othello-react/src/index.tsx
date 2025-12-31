@@ -6,7 +6,7 @@ import { features, isDebugMode } from './config/features';
 
 // Log feature flags on startup
 if (isDebugMode()) {
-  console.log('🚩 Feature Flags:', features);
+  console.info('🚩 Feature Flags:', features);
 }
 
 const rootElement = document.getElementById('root');

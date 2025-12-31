@@ -20,6 +20,9 @@ const STORAGE_KEYS = {
   TIME_CONTROL_ENABLED: 'othello:timeControlEnabled',
   SELECTED_TIME_PRESET: 'othello:selectedTimePreset',
   MUTE_TIME_SOUNDS: 'othello:muteTimeSounds',
+  SOUND_VOLUME: 'othello:soundVolume',
+  CUSTOM_TIME_CONFIG: 'othello:customTimeConfig',
+  GAME_TIME_STATE: 'othello:gameTimeState',
 } as const;
 
 /**
@@ -111,6 +114,9 @@ export function clearTimeControlPreferences(): void {
   window.localStorage.removeItem(STORAGE_KEYS.TIME_CONTROL_ENABLED);
   window.localStorage.removeItem(STORAGE_KEYS.SELECTED_TIME_PRESET);
   window.localStorage.removeItem(STORAGE_KEYS.MUTE_TIME_SOUNDS);
+  window.localStorage.removeItem(STORAGE_KEYS.SOUND_VOLUME);
+  window.localStorage.removeItem(STORAGE_KEYS.CUSTOM_TIME_CONFIG);
+  window.localStorage.removeItem(STORAGE_KEYS.GAME_TIME_STATE);
 }
 
 /**
@@ -138,4 +144,193 @@ export function setMuteTimeSounds(muted: boolean): void {
   if (!isLocalStorageAvailable()) return;
 
   window.localStorage.setItem(STORAGE_KEYS.MUTE_TIME_SOUNDS, muted.toString());
+}
+
+// ============================================================
+// SOUND VOLUME (Phase 3.5)
+// ============================================================
+
+/**
+ * Get sound volume preference from localStorage
+ *
+ * @returns Stored volume (0-100) or 100 (default to full volume)
+ * @example
+ * const volume = getSoundVolume(); // 100 if never set
+ */
+export function getSoundVolume(): number {
+  if (!isLocalStorageAvailable()) return 100;
+
+  const stored = window.localStorage.getItem(STORAGE_KEYS.SOUND_VOLUME);
+  if (stored === null) return 100;
+
+  const volume = parseInt(stored, 10);
+  return isNaN(volume) ? 100 : Math.max(0, Math.min(100, volume));
+}
+
+/**
+ * Save sound volume preference to localStorage
+ *
+ * @param volume - Volume level (0-100)
+ * @example
+ * setSoundVolume(50); // Set to 50% volume
+ */
+export function setSoundVolume(volume: number): void {
+  if (!isLocalStorageAvailable()) return;
+
+  const clampedVolume = Math.max(0, Math.min(100, Math.round(volume)));
+  window.localStorage.setItem(STORAGE_KEYS.SOUND_VOLUME, clampedVolume.toString());
+}
+
+// ============================================================
+// CUSTOM TIME CONTROLS (Phase 3.5)
+// ============================================================
+
+/** Custom time control configuration */
+export interface CustomTimeConfig {
+  initialMinutes: number;
+  incrementSeconds: number;
+}
+
+/**
+ * Get custom time config from localStorage
+ *
+ * @returns Stored custom config or null if not set
+ * @example
+ * const custom = getCustomTimeConfig(); // null if never set
+ */
+export function getCustomTimeConfig(): CustomTimeConfig | null {
+  if (!isLocalStorageAvailable()) return null;
+
+  const stored = window.localStorage.getItem(STORAGE_KEYS.CUSTOM_TIME_CONFIG);
+  if (!stored) return null;
+
+  try {
+    const parsed = JSON.parse(stored) as CustomTimeConfig;
+    // Validate the structure
+    if (
+      typeof parsed.initialMinutes === 'number' &&
+      typeof parsed.incrementSeconds === 'number' &&
+      parsed.initialMinutes >= 0.5 &&
+      parsed.initialMinutes <= 60 &&
+      parsed.incrementSeconds >= 0 &&
+      parsed.incrementSeconds <= 30
+    ) {
+      return parsed;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Save custom time config to localStorage
+ *
+ * @param config - Custom time configuration
+ * @example
+ * setCustomTimeConfig({ initialMinutes: 5, incrementSeconds: 3 });
+ */
+export function setCustomTimeConfig(config: CustomTimeConfig): void {
+  if (!isLocalStorageAvailable()) return;
+
+  window.localStorage.setItem(STORAGE_KEYS.CUSTOM_TIME_CONFIG, JSON.stringify(config));
+}
+
+/**
+ * Clear custom time config from localStorage
+ */
+export function clearCustomTimeConfig(): void {
+  if (!isLocalStorageAvailable()) return;
+
+  window.localStorage.removeItem(STORAGE_KEYS.CUSTOM_TIME_CONFIG);
+}
+
+// ============================================================
+// GAME TIME STATE PERSISTENCE (Phase 3.5)
+// ============================================================
+
+/** Saved game time state for restoration on refresh */
+export interface SavedTimeState {
+  blackTime: number;
+  whiteTime: number;
+  currentPlayer: 'B' | 'W';
+  presetId: string;
+  timestamp: number; // When it was saved (for staleness check)
+}
+
+/**
+ * Get saved game time state from localStorage
+ *
+ * @returns Stored time state or null if not available/stale
+ * @remarks
+ * Time state is considered stale after 1 hour (game likely abandoned)
+ * @example
+ * const state = getSavedTimeState();
+ * if (state) { /* restore game *\/ }
+ */
+export function getSavedTimeState(): SavedTimeState | null {
+  if (!isLocalStorageAvailable()) return null;
+
+  const stored = window.localStorage.getItem(STORAGE_KEYS.GAME_TIME_STATE);
+  if (!stored) return null;
+
+  try {
+    const parsed = JSON.parse(stored) as SavedTimeState;
+
+    // Validate structure
+    if (
+      typeof parsed.blackTime !== 'number' ||
+      typeof parsed.whiteTime !== 'number' ||
+      (parsed.currentPlayer !== 'B' && parsed.currentPlayer !== 'W') ||
+      typeof parsed.presetId !== 'string' ||
+      typeof parsed.timestamp !== 'number'
+    ) {
+      return null;
+    }
+
+    // Check staleness (1 hour = 3600000ms)
+    const ONE_HOUR = 3600000;
+    if (Date.now() - parsed.timestamp > ONE_HOUR) {
+      clearSavedTimeState();
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Save current game time state to localStorage
+ *
+ * @param state - Current time state to save
+ * @example
+ * saveTimeState({
+ *   blackTime: 120000,
+ *   whiteTime: 115000,
+ *   currentPlayer: 'W',
+ *   presetId: 'blitz',
+ *   timestamp: Date.now()
+ * });
+ */
+export function saveTimeState(state: Omit<SavedTimeState, 'timestamp'>): void {
+  if (!isLocalStorageAvailable()) return;
+
+  const stateWithTimestamp: SavedTimeState = {
+    ...state,
+    timestamp: Date.now(),
+  };
+
+  window.localStorage.setItem(STORAGE_KEYS.GAME_TIME_STATE, JSON.stringify(stateWithTimestamp));
+}
+
+/**
+ * Clear saved game time state from localStorage
+ * Should be called when game ends or new game starts
+ */
+export function clearSavedTimeState(): void {
+  if (!isLocalStorageAvailable()) return;
+
+  window.localStorage.removeItem(STORAGE_KEYS.GAME_TIME_STATE);
 }
