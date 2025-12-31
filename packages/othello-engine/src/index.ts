@@ -1,4 +1,11 @@
-// Type definitions for the Othello game
+/**
+ * Othello Engine - Core Game Logic
+ *
+ * This module provides the foundational game logic for Othello/Reversi,
+ * including board representation, move validation, and game state management.
+ *
+ * @module othello-engine
+ */
 
 // Re-export the main engine class
 export { OthelloGameEngine } from './OthelloGameEngine';
@@ -21,39 +28,103 @@ export type { BotDifficulty } from './OthelloBot';
 export { TimeControlManager } from './TimeControlManager';
 export type { TimeControlConfig, PlayerTime, TimeControlState } from './TimeControlManager';
 
+/**
+ * Tile value types
+ * - 'W': White disc
+ * - 'B': Black disc
+ * - 'E': Empty cell
+ * - 'P': Possible move (for UI annotation)
+ */
 export type TileValue = 'W' | 'B' | 'E' | 'P';
+
+/**
+ * Board coordinate as [x, y] where x is column (0-7) and y is row (0-7)
+ */
 export type Coordinate = [number, number];
 
+/**
+ * Game board state
+ */
 export interface Board {
+  /** Current player's turn */
   playerTurn: 'W' | 'B';
+  /** 8x8 grid of tile values */
   tiles: TileValue[][];
 }
 
+/**
+ * Score for both players
+ */
 export interface Score {
+  /** Number of black discs on the board */
   black: number;
+  /** Number of white discs on the board */
   white: number;
 }
 
+/**
+ * Direction modifier for checking adjacent tiles
+ */
 export interface Direction {
+  /** X-axis modifier (-1, 0, or 1) */
   xMod: number;
+  /** Y-axis modifier (-1, 0, or 1) */
   yMod: number;
 }
 
+/**
+ * Map of direction names to direction modifiers
+ */
 export interface Directions {
   [key: string]: Direction;
 }
 
 // Constants
+
+/** White player/disc constant */
 export const W: 'W' = 'W';
+
+/** Black player/disc constant */
 export const B: 'B' = 'B';
+
+/** Empty cell constant */
 export const E: 'E' = 'E';
+
+/** Possible move annotation constant (for UI) */
 export const P: 'P' = 'P';
 
+/**
+ * Creates a new game board with the specified tiles
+ *
+ * @param tiles - 8x8 grid of tile values
+ * @returns Board object with Black player starting first
+ *
+ * @example
+ * ```typescript
+ * const board = createBoard([
+ *   [E, E, E, E, E, E, E, E],
+ *   // ... remaining rows
+ * ]);
+ * ```
+ */
 export const createBoard = (tiles: TileValue[][]): Board => ({
   playerTurn: B,
   tiles,
 });
 
+/**
+ * Gets the tile value at a specific coordinate
+ *
+ * @param board - Game board
+ * @param coordinate - [x, y] position to check
+ * @returns Tile value at the coordinate
+ * @throws Error if coordinate is out of bounds
+ *
+ * @example
+ * ```typescript
+ * const value = tile(board, [3, 3]); // 'W' or 'B' or 'E'
+ * ```
+ */
 export const tile = (board: Board, [x, y]: Coordinate): TileValue => {
   const row = board.tiles[y];
   if (!row) {
@@ -66,6 +137,18 @@ export const tile = (board: Board, [x, y]: Coordinate): TileValue => {
   return value;
 };
 
+/**
+ * Calculates the current score (disc count) for both players
+ *
+ * @param board - Game board to score
+ * @returns Object with black and white disc counts
+ *
+ * @example
+ * ```typescript
+ * const { black, white } = score(board);
+ * console.log(`Black: ${black}, White: ${white}`);
+ * ```
+ */
 export const score = (board: Board): Score => {
   let blackCount = 0;
   let whiteCount = 0;
@@ -88,9 +171,32 @@ export const score = (board: Board): Score => {
   };
 };
 
+/**
+ * Checks if a coordinate is outside the board boundaries
+ *
+ * @param board - Game board
+ * @param coordinate - [x, y] position to check
+ * @returns true if coordinate is out of bounds
+ * @internal
+ */
 const isOutOfBounds = (board: Board, [x, y]: Coordinate): boolean =>
   x < 0 || y < 0 || x >= board.tiles.length || y >= board.tiles.length;
 
+/**
+ * Checks if a coordinate has at least one adjacent piece (not empty)
+ * Used as an optimization to quickly reject impossible moves
+ *
+ * @param board - Game board
+ * @param coord - [x, y] position to check
+ * @returns true if at least one adjacent cell contains a disc
+ *
+ * @example
+ * ```typescript
+ * if (!hasAdjacentPiece(board, [3, 2])) {
+ *   // This move can't be valid (no pieces nearby)
+ * }
+ * ```
+ */
 export const hasAdjacentPiece = (board: Board, coord: Coordinate): boolean => {
   const [xCoord, yCoord] = coord;
   for (let x = xCoord - 1; x <= xCoord + 1; x++) {
@@ -111,6 +217,10 @@ export const hasAdjacentPiece = (board: Board, coord: Coordinate): boolean => {
   return false;
 };
 
+/**
+ * All 8 directions for checking flippable pieces
+ * @internal
+ */
 const DIRECTIONS: Directions = {
   top: {
     xMod: 0,
@@ -146,6 +256,21 @@ const DIRECTIONS: Directions = {
   },
 };
 
+/**
+ * Finds all directions in which opponent pieces can be flipped from a given position
+ *
+ * @param board - Game board
+ * @param coordinate - Starting [x, y] position
+ * @returns Array of direction names where flips are possible
+ * @internal
+ *
+ * Algorithm:
+ * 1. For each of 8 directions from the starting position
+ * 2. Check if adjacent cell has opponent's color
+ * 3. Continue in that direction until finding:
+ *    - Current player's piece (flippable) → add direction
+ *    - Empty cell or edge (not flippable) → skip direction
+ */
 const findFlippableDirections = (board: Board, [xCoord, yCoord]: Coordinate): string[] => {
   const startColor = tile(board, [xCoord, yCoord]);
   const alternateColor = startColor === W ? B : W;
@@ -182,6 +307,17 @@ const findFlippableDirections = (board: Board, [xCoord, yCoord]: Coordinate): st
   return flippableDirections;
 };
 
+/**
+ * Flips all opponent pieces in the specified directions
+ *
+ * @param board - Game board (mutated in place)
+ * @param directions - Direction names to flip pieces in
+ * @param coordinate - Starting [x, y] position
+ * @internal
+ *
+ * This function modifies the board state by changing opponent pieces
+ * to the current player's color in each specified direction.
+ */
 const flipTiles = (board: Board, directions: string[], [xCoord, yCoord]: Coordinate): void => {
   const flipColor = tile(board, [xCoord, yCoord]);
   for (const dirName of directions) {
@@ -200,8 +336,38 @@ const flipTiles = (board: Board, directions: string[], [xCoord, yCoord]: Coordin
   }
 };
 
+/**
+ * Alternates between players
+ *
+ * @param player - Current player
+ * @returns Opposite player
+ * @internal
+ */
 const alternatePlayer = (player: 'W' | 'B'): 'W' | 'B' => (player === B ? W : B);
 
+/**
+ * Executes a move on the board
+ *
+ * This is the core game logic function that:
+ * 1. Places a piece at the specified coordinate
+ * 2. Flips all opponent pieces in valid directions
+ * 3. Switches to the next player
+ * 4. Handles auto-pass if next player has no valid moves
+ *
+ * @param board - Game board (mutated in place)
+ * @param coord - [x, y] coordinate to place piece
+ * @throws Error if coordinate is occupied or move doesn't flip any pieces
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   takeTurn(board, [2, 3]);
+ *   console.log('Move successful');
+ * } catch (error) {
+ *   console.error('Invalid move:', error.message);
+ * }
+ * ```
+ */
 export const takeTurn = (board: Board, coord: Coordinate): void => {
   const [x, y] = coord;
   const row = board.tiles[y];
@@ -233,7 +399,24 @@ export const takeTurn = (board: Board, coord: Coordinate): void => {
   }
 };
 
-// Check if a move is valid for the current player
+/**
+ * Checks if a move is valid for the current player
+ *
+ * A move is valid if:
+ * 1. The target cell is empty
+ * 2. The move flips at least one opponent piece
+ *
+ * @param board - Game board
+ * @param coord - [x, y] coordinate to check
+ * @returns true if the move is valid for the current player
+ *
+ * @example
+ * ```typescript
+ * if (isValidMove(board, [2, 3])) {
+ *   takeTurn(board, [2, 3]);
+ * }
+ * ```
+ */
 export const isValidMove = (board: Board, coord: Coordinate): boolean => {
   const [x, y] = coord;
   const row = board.tiles[y];
@@ -249,7 +432,24 @@ export const isValidMove = (board: Board, coord: Coordinate): boolean => {
   return flippableDirections.length > 0;
 };
 
-// Get all valid moves for the current player
+/**
+ * Gets all valid moves for the current player
+ *
+ * Scans the entire board and returns coordinates of all cells
+ * where the current player can make a valid move.
+ *
+ * @param board - Game board
+ * @returns Array of [x, y] coordinates representing valid moves
+ *
+ * @example
+ * ```typescript
+ * const moves = getValidMoves(board);
+ * console.log(`Current player has ${moves.length} valid moves`);
+ * moves.forEach(([x, y]) => {
+ *   console.log(`Valid move at (${x}, ${y})`);
+ * });
+ * ```
+ */
 export const getValidMoves = (board: Board): Coordinate[] => {
   const validMoves: Coordinate[] = [];
   for (let y = 0; y < board.tiles.length; y++) {
@@ -264,7 +464,24 @@ export const getValidMoves = (board: Board): Coordinate[] => {
   return validMoves;
 };
 
-// Check if the game is over
+/**
+ * Checks if the game is over
+ *
+ * Game ends when:
+ * 1. The board is completely full, OR
+ * 2. Both players have no valid moves
+ *
+ * @param board - Game board
+ * @returns true if the game has ended
+ *
+ * @example
+ * ```typescript
+ * if (isGameOver(board)) {
+ *   const winner = getWinner(board);
+ *   console.log(winner ? `${winner} wins!` : 'Tie game!');
+ * }
+ * ```
+ */
 export const isGameOver = (board: Board): boolean => {
   // Check if board is full
   const isBoardFull = board.tiles.every((row) => row.every((tile) => tile !== E));
@@ -287,7 +504,24 @@ export const isGameOver = (board: Board): boolean => {
   return !otherPlayerHasMoves;
 };
 
-// Get the winner (or null if tie)
+/**
+ * Determines the winner of the game
+ *
+ * @param board - Game board
+ * @returns 'B' if black wins, 'W' if white wins, or null for a tie
+ *
+ * @example
+ * ```typescript
+ * const winner = getWinner(board);
+ * if (winner === B) {
+ *   console.log('Black wins!');
+ * } else if (winner === W) {
+ *   console.log('White wins!');
+ * } else {
+ *   console.log('Tie game!');
+ * }
+ * ```
+ */
 export const getWinner = (board: Board): 'W' | 'B' | null => {
   const scores = score(board);
   if (scores.black > scores.white) {
@@ -298,9 +532,34 @@ export const getWinner = (board: Board): 'W' | 'B' | null => {
   return null; // Tie
 };
 
+/**
+ * Annotates a single square with 'P' if it's a valid move
+ *
+ * @param square - Current tile value
+ * @param board - Game board
+ * @param coord - [x, y] coordinate
+ * @returns Annotated tile value ('P' for possible moves)
+ * @internal
+ */
 const annotateSquare = (square: TileValue, board: Board, coord: Coordinate): TileValue =>
   square !== E ? square : isValidMove(board, coord) ? P : E;
 
+/**
+ * Creates a copy of the board with valid moves annotated as 'P'
+ *
+ * Useful for UI to display possible move indicators without
+ * modifying the actual game state.
+ *
+ * @param board - Game board
+ * @returns New board with valid moves marked as 'P'
+ *
+ * @example
+ * ```typescript
+ * const annotated = getAnnotatedBoard(board);
+ * // Use annotated board for rendering UI hints
+ * // Original board remains unchanged
+ * ```
+ */
 export const getAnnotatedBoard = (board: Board): Board => ({
   ...board,
   tiles: board.tiles.map((row, y) => row.map((square, x) => annotateSquare(square, board, [x, y]))),

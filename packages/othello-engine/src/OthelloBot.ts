@@ -1,12 +1,25 @@
 import { Board, Coordinate, getValidMoves, score, E } from './index';
 
 /**
- * AI difficulty levels
+ * AI difficulty levels for the Othello bot
+ * - easy: Random valid move selection
+ * - medium: Greedy algorithm (maximizes immediate flips)
+ * - hard: Minimax with alpha-beta pruning and position evaluation
  */
 export type BotDifficulty = 'easy' | 'medium' | 'hard';
 
 /**
  * Position evaluation weights for the Minimax algorithm
+ *
+ * Strategic values for each board position:
+ * - Corners (100): Most valuable, cannot be flipped
+ * - Edge C-squares (-50): Dangerous, often lead to losing corners
+ * - Edge X-squares (-20): Dangerous, adjacent to corners
+ * - Edges (10): Moderately valuable, hard to flip
+ * - Interior (-1 to 5): Less valuable, easily flipped
+ *
+ * This heuristic guides the AI towards strong positions and
+ * away from weak ones during lookahead search.
  */
 const POSITION_WEIGHTS = [
   [100, -20, 10, 5, 5, 10, -20, 100],
@@ -22,19 +35,51 @@ const POSITION_WEIGHTS = [
 /**
  * OthelloBot - AI opponent for Othello game
  *
- * Provides three difficulty levels:
- * - Easy: Random valid move selection
- * - Medium: Greedy algorithm (maximizes immediate score)
- * - Hard: Minimax with alpha-beta pruning and position evaluation
+ * Provides three difficulty levels with different strategies:
+ *
+ * **Easy**: Random selection from valid moves
+ * - Unpredictable
+ * - No strategic thinking
+ * - Good for beginners
+ *
+ * **Medium**: Greedy algorithm
+ * - Maximizes immediate disc flips
+ * - Deterministic (same board → same move)
+ * - Challenging for casual players
+ *
+ * **Hard**: Minimax with alpha-beta pruning
+ * - Looks ahead 4 moves (depth 4)
+ * - Position-based evaluation (corners valuable)
+ * - Considers mobility (number of available moves)
+ * - Should defeat most human players
+ *
+ * @example
+ * ```typescript
+ * // Create a hard AI playing as White
+ * const bot = new OthelloBot('hard', 'W');
+ *
+ * // Get the AI's move
+ * const move = bot.calculateMove(board);
+ * if (move) {
+ *   engine.makeMove(move);
+ * }
+ * ```
  */
 export class OthelloBot {
   private difficulty: BotDifficulty;
   private player: 'W' | 'B';
 
   /**
-   * Create a new bot
-   * @param difficulty - AI difficulty level
-   * @param player - Which player the bot controls ('W' or 'B')
+   * Creates a new AI bot
+   *
+   * @param difficulty - AI difficulty level (easy/medium/hard)
+   * @param player - Which color the bot plays as ('W' for White, 'B' for Black)
+   *
+   * @example
+   * ```typescript
+   * const easyBot = new OthelloBot('easy', 'W');
+   * const hardBot = new OthelloBot('hard', 'B');
+   * ```
    */
   constructor(difficulty: BotDifficulty = 'medium', player: 'W' | 'B' = 'W') {
     this.difficulty = difficulty;
@@ -42,37 +87,64 @@ export class OthelloBot {
   }
 
   /**
-   * Get the difficulty level
+   * Gets the current difficulty level
+   *
+   * @returns The bot's difficulty setting
    */
   public getDifficulty(): BotDifficulty {
     return this.difficulty;
   }
 
   /**
-   * Set the difficulty level
+   * Changes the difficulty level
+   *
+   * @param difficulty - New difficulty level
    */
   public setDifficulty(difficulty: BotDifficulty): void {
     this.difficulty = difficulty;
   }
 
   /**
-   * Get which player the bot controls
+   * Gets which player (color) the bot controls
+   *
+   * @returns 'W' for White or 'B' for Black
    */
   public getPlayer(): 'W' | 'B' {
     return this.player;
   }
 
   /**
-   * Set which player the bot controls
+   * Changes which player the bot controls
+   *
+   * @param player - Player color ('W' or 'B')
    */
   public setPlayer(player: 'W' | 'B'): void {
     this.player = player;
   }
 
   /**
-   * Calculate the best move for the current board state
-   * @param board - Current game board
-   * @returns Best move coordinate, or null if no valid moves
+   * Calculates the best move for the current board state
+   *
+   * Uses the appropriate algorithm based on difficulty:
+   * - Easy: Random selection
+   * - Medium: Greedy (maximize immediate flips)
+   * - Hard: Minimax with alpha-beta pruning (depth 4)
+   *
+   * @param board - Current game board state
+   * @returns Best move coordinate [x, y], or null if no valid moves exist
+   *
+   * @example
+   * ```typescript
+   * const bot = new OthelloBot('hard', 'W');
+   * const move = bot.calculateMove(board);
+   *
+   * if (move) {
+   *   const [x, y] = move;
+   *   console.log(`AI chooses to play at (${x}, ${y})`);
+   * } else {
+   *   console.log('AI has no valid moves');
+   * }
+   * ```
    */
   public calculateMove(board: Board): Coordinate | null {
     const validMoves = getValidMoves(board);
@@ -94,7 +166,15 @@ export class OthelloBot {
   }
 
   /**
-   * Easy difficulty: Random move selection
+   * Easy difficulty: Randomly selects from valid moves
+   *
+   * Provides unpredictable play with no strategic thinking.
+   * Good for beginners to practice against.
+   *
+   * @param validMoves - Array of valid move coordinates
+   * @returns Randomly selected move
+   * @throws Error if no valid moves available
+   * @private
    */
   private getRandomMove(validMoves: Coordinate[]): Coordinate {
     const randomIndex = Math.floor(Math.random() * validMoves.length);
@@ -107,7 +187,20 @@ export class OthelloBot {
 
   /**
    * Medium difficulty: Greedy algorithm
-   * Selects the move that maximizes immediate score gain
+   *
+   * Selects the move that maximizes immediate disc flips.
+   * Deterministic - always chooses the same move for the same board state.
+   *
+   * Strategy:
+   * 1. Try each valid move
+   * 2. Count resulting disc difference
+   * 3. Choose move with highest immediate score gain
+   *
+   * @param board - Current game board
+   * @param validMoves - Array of valid move coordinates
+   * @returns Move that maximizes immediate score
+   * @throws Error if no valid moves available
+   * @private
    */
   private getGreedyMove(board: Board, validMoves: Coordinate[]): Coordinate {
     const firstMove = validMoves[0];
@@ -134,8 +227,25 @@ export class OthelloBot {
   }
 
   /**
-   * Hard difficulty: Minimax with alpha-beta pruning
-   * Looks ahead several moves and uses position evaluation
+   * Hard difficulty: Minimax algorithm with alpha-beta pruning
+   *
+   * Looks ahead 4 moves and uses position-based evaluation.
+   * Considers both strategic position values and mobility (available moves).
+   *
+   * Strategy:
+   * 1. Search game tree to depth 4
+   * 2. Evaluate positions using:
+   *    - Position weights (corners valuable, C/X squares dangerous)
+   *    - Mobility (more available moves is better)
+   *    - Disc count
+   * 3. Use alpha-beta pruning to skip unnecessary branches
+   * 4. Choose move leading to best evaluated position
+   *
+   * @param board - Current game board
+   * @param validMoves - Array of valid move coordinates
+   * @returns Move with highest minimax evaluation
+   * @throws Error if no valid moves available
+   * @private
    */
   private getMinimaxMove(board: Board, validMoves: Coordinate[]): Coordinate {
     const depth = 4; // Look ahead 4 moves
@@ -168,11 +278,21 @@ export class OthelloBot {
 
   /**
    * Minimax algorithm with alpha-beta pruning
+   *
+   * Recursively explores the game tree to find the best move.
+   * Uses alpha-beta pruning to eliminate branches that cannot
+   * affect the final decision, significantly improving performance.
+   *
    * @param board - Current board state
-   * @param depth - Remaining search depth
-   * @param alpha - Alpha value for pruning
-   * @param beta - Beta value for pruning
-   * @param isMaximizing - Whether this is a maximizing or minimizing node
+   * @param depth - Remaining search depth (decreases with recursion)
+   * @param alpha - Best score for maximizing player (pruning lower bound)
+   * @param beta - Best score for minimizing player (pruning upper bound)
+   * @param isMaximizing - true if maximizing player's turn, false for minimizing
+   * @returns Evaluated score for this board position
+   * @private
+   *
+   * Time complexity: O(b^d) where b is branching factor (~10) and d is depth (4)
+   * Alpha-beta pruning can reduce this to O(b^(d/2)) in best case
    */
   private minimax(
     board: Board,
@@ -226,7 +346,14 @@ export class OthelloBot {
   }
 
   /**
-   * Evaluate position using disc count only (for greedy algorithm)
+   * Evaluates board position using only disc count
+   *
+   * Simple heuristic for greedy algorithm:
+   * Returns positive if bot is winning, negative if losing.
+   *
+   * @param board - Board to evaluate
+   * @returns Score difference from bot's perspective
+   * @private
    */
   private evaluateScore(board: Board): number {
     const scores = score(board);
@@ -234,8 +361,25 @@ export class OthelloBot {
   }
 
   /**
-   * Evaluate position using multiple heuristics (for minimax)
-   * Combines disc count, position weights, and mobility
+   * Evaluates board position using multiple heuristics
+   *
+   * Comprehensive evaluation for minimax algorithm combining:
+   * 1. **Position Value**: Strategic importance of occupied squares
+   *    - Corners: +100 (most valuable)
+   *    - C-squares: -50 (dangerous, lead to losing corners)
+   *    - Edges: +10 (stable)
+   *    - Interior: -1 to +5 (less important)
+   *
+   * 2. **Mobility**: Number of available moves (×5 weight)
+   *    - More moves = better position
+   *    - Restricting opponent is valuable
+   *
+   * 3. **Disc Count**: Simple disc difference
+   *    - Secondary consideration (can mislead early game)
+   *
+   * @param board - Board to evaluate
+   * @returns Weighted score from bot's perspective
+   * @private
    */
   private evaluatePosition(board: Board): number {
     const scores = score(board);
@@ -279,7 +423,14 @@ export class OthelloBot {
   }
 
   /**
-   * Deep clone a board
+   * Creates a deep copy of the board
+   *
+   * Necessary for lookahead search to avoid mutating the actual game state.
+   * Copies both the tile array and the playerTurn property.
+   *
+   * @param board - Board to clone
+   * @returns New board with copied state
+   * @private
    */
   private cloneBoard(board: Board): Board {
     return {
@@ -289,8 +440,23 @@ export class OthelloBot {
   }
 
   /**
-   * Simulate a move on a board (mutates the board)
-   * This is a simplified version that doesn't validate
+   * Simulates a move on the board (mutates the board in place)
+   *
+   * Efficient move simulation for lookahead search.
+   * Does NOT validate the move - assumes it's valid.
+   *
+   * Steps:
+   * 1. Place piece at coordinate
+   * 2. Check all 8 directions for opponent pieces to flip
+   * 3. Flip captured pieces
+   * 4. Switch to opponent's turn
+   *
+   * @param board - Board to modify (mutated in place)
+   * @param coord - [x, y] coordinate for the move
+   * @private
+   *
+   * Note: This is a simplified, optimized version used only for
+   * AI lookahead. Does not emit events or update history.
    */
   private simulateMove(board: Board, coord: Coordinate): void {
     const [x, y] = coord;

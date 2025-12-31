@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { Move, Coordinate, TileValue } from 'othello-engine';
-import { E, B, W } from 'othello-engine';
+import { type Move, type Coordinate, type TileValue, E, B, W } from 'othello-engine';
 
 /**
  * Props for the GameReplay component
