@@ -1,0 +1,131 @@
+/* ========================================
+   EVALUATION GRAPH - Egaroucid-style visualization
+   Shows game evaluation over time
+   ======================================== */
+
+.evaluation-panel {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.evaluation-panel.collapsed {
+  padding: var(--spacing-xs);
+}
+
+.evaluation-panel.open {
+  padding: var(--spacing-sm);
+}
+
+/* Toggle button */
+.evaluation-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 16px;
+  cursor: pointer;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  transition: background 0.2s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.evaluation-toggle:hover {
+  background: var(--color-bg-tertiary);
+}
+
+.evaluation-panel.open .evaluation-toggle {
+  margin-bottom: var(--spacing-sm);
+}
+
+.toggle-text {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* Graph container */
+.evaluation-graph-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.evaluation-graph {
+  display: block;
+}
+
+/* Axis labels */
+.axis-label {
+  font-size: 10px;
+  fill: var(--color-text-muted);
+  font-family: 'Courier New', monospace;
+}
+
+/* Graph points */
+.graph-point {
+  cursor: pointer;
+  transition: r 0.15s ease;
+}
+
+.graph-point:hover {
+  r: 6;
+}
+
+/* Legend */
+.graph-legend {
+  display: flex;
+  gap: var(--spacing-lg);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.legend-black {
+  color: var(--color-accent-green);
+}
+
+.legend-white {
+  color: var(--color-accent-red);
+}
+
+/* Graph CSS variables */
+:root {
+  --graph-bg: rgba(0, 0, 0, 0.3);
+  --graph-zero-line: rgba(255, 255, 255, 0.3);
+  --graph-black-area: rgba(76, 175, 80, 0.25);
+  --graph-white-area: rgba(244, 67, 54, 0.25);
+  --graph-line: #4fc3f7;
+  --graph-current: rgba(255, 255, 255, 0.7);
+  --graph-current-point: #ffffff;
+  --graph-point: #4fc3f7;
+}
+
+/* Light theme overrides */
+[data-theme='light'] {
+  --graph-bg: rgba(0, 0, 0, 0.05);
+  --graph-zero-line: rgba(0, 0, 0, 0.2);
+  --graph-black-area: rgba(76, 175, 80, 0.3);
+  --graph-white-area: rgba(244, 67, 54, 0.3);
+  --graph-line: #1976d2;
+  --graph-current: rgba(0, 0, 0, 0.5);
+  --graph-current-point: #1976d2;
+  --graph-point: #1976d2;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .evaluation-panel {
+    margin-top: var(--spacing-sm);
+  }
+
+  .evaluation-graph {
+    width: 100%;
+    max-width: 320px;
+  }
+}

@@ -245,11 +245,6 @@ Future improvements:
 - Schema validation for saved/imported states.
 - Error Boundary around React root to catch unexpected failures.
 
-## 📄 Additional Documentation
-
-- **[STATUS.md](./STATUS.md)** - Development history
-- **[IMPROVEMENTS.md](./IMPROVEMENTS.md)** - Future enhancement ideas
-
 ---
 
 <div align="center">

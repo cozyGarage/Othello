@@ -17,6 +17,25 @@ import {
 import { TimeControlManager, TimeControlConfig, PlayerTime } from './TimeControlManager';
 
 /**
+ * Position weights for board evaluation (same as OthelloBot)
+ * Corners: +100 (most valuable)
+ * X-squares (diagonal to corners): -50 (dangerous)
+ * C-squares (adjacent to corners): -10 (risky)
+ * Edges: +10 (stable)
+ * Interior: -1 to +5 (less important)
+ */
+const POSITION_WEIGHTS: number[][] = [
+  [100, -10, 10, 5, 5, 10, -10, 100],
+  [-10, -50, -1, -1, -1, -1, -50, -10],
+  [10, -1, 5, 1, 1, 5, -1, 10],
+  [5, -1, 1, 0, 0, 1, -1, 5],
+  [5, -1, 1, 0, 0, 1, -1, 5],
+  [10, -1, 5, 1, 1, 5, -1, 10],
+  [-10, -50, -1, -1, -1, -1, -50, -10],
+  [100, -10, 10, 5, 5, 10, -10, 100],
+];
+
+/**
  * Represents a single move in the game
  */
 export interface Move {
@@ -499,6 +518,68 @@ export class OthelloGameEngine {
    */
   public getWinner(): 'W' | 'B' | null {
     return isGameOver(this.board) ? getWinner(this.board) : null;
+  }
+
+  /**
+   * Evaluate the current board position for the Egaroucid-style graph
+   * Returns a value from -64 to +64 representing disc advantage
+   * Positive = Black advantage, Negative = White advantage
+   *
+   * Uses a weighted evaluation combining:
+   * - Position value (corner control, edge stability)
+   * - Mobility (available moves)
+   * - Disc count
+   *
+   * @returns Evaluation score normalized to approximate disc difference
+   */
+  public evaluatePosition(): number {
+    const currentScore = score(this.board);
+    const validMoves = getValidMoves(this.board);
+
+    // Switch player temporarily to check opponent mobility
+    const originalPlayer = this.board.playerTurn;
+    this.board.playerTurn = this.board.playerTurn === 'B' ? 'W' : 'B';
+    const opponentMoves = getValidMoves(this.board);
+    this.board.playerTurn = originalPlayer;
+
+    // Position value based on strategic importance (from Black's perspective)
+    let positionValue = 0;
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 8; x++) {
+        const row = this.board.tiles[y];
+        const tile = row ? row[x] : undefined;
+        const weightRow = POSITION_WEIGHTS[y];
+        const weight = weightRow ? weightRow[x] : 0;
+
+        if (tile === B) {
+          positionValue += weight ?? 0;
+        } else if (tile === W) {
+          positionValue -= weight ?? 0;
+        }
+      }
+    }
+
+    // Mobility value (more moves = better)
+    const myMoves = this.board.playerTurn === 'B' ? validMoves.length : opponentMoves.length;
+    const theirMoves = this.board.playerTurn === 'B' ? opponentMoves.length : validMoves.length;
+    const mobilityValue = (myMoves - theirMoves) * 3;
+
+    // Simple disc difference
+    const discDiff = currentScore.black - currentScore.white;
+
+    // Combine: position is most important early, disc count matters more late game
+    const totalPieces = currentScore.black + currentScore.white;
+    const isEndgame = totalPieces > 50;
+
+    if (isEndgame) {
+      // In endgame, actual disc count matters more
+      return Math.max(-64, Math.min(64, discDiff * 2));
+    }
+
+    // Normalize to -64 to +64 range
+    // Position weight ranges from about -800 to +800, scale it down
+    const normalizedEval = positionValue / 10 + mobilityValue + discDiff * 0.5;
+    return Math.max(-64, Math.min(64, Math.round(normalizedEval)));
   }
 
   /**
