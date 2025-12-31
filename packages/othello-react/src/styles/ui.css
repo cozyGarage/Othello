@@ -951,6 +951,8 @@
   justify-content: center;
   gap: var(--spacing-xs);
   margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
+  /* Allow wrapping on small containers */
 }
 
 .replay-btn {
@@ -960,8 +962,12 @@
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
   transition: all 0.2s ease;
+  flex-shrink: 1;
+  /* Allow shrinking to fit */
+  min-width: 32px;
+  /* Minimum touch target */
 }
 
 .replay-btn:hover:not(:disabled) {
@@ -1045,10 +1051,10 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Light theme: Game Replay styling */
+/* Light theme: Game Replay styling - Wood texture */
 [data-theme='light'] .game-replay {
-  background: var(--color-bg-secondary);
-  border-color: rgba(0, 0, 0, 0.15);
+  background: linear-gradient(180deg, var(--color-wood-light) 0%, var(--color-wood-base) 100%);
+  border-color: var(--color-wood-dark);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
@@ -1061,13 +1067,14 @@
 }
 
 [data-theme='light'] .replay-btn {
-  background: rgba(0, 0, 0, 0.08);
-  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.5);
+  border-color: var(--color-wood-dark);
+  color: #4a3520;
 }
 
 [data-theme='light'] .replay-btn:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.12);
-  border-color: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--color-wood-dark);
 }
 
 [data-theme='light'] .replay-move-list {
@@ -1244,6 +1251,29 @@
   color: var(--color-text-secondary);
   font-size: 13px;
   padding: var(--spacing-md);
+}
+
+/* Light theme: Position Analysis - Wood texture */
+[data-theme='light'] .position-analysis {
+  background: linear-gradient(180deg, var(--color-wood-light) 0%, var(--color-wood-base) 100%);
+  border-color: var(--color-wood-dark);
+}
+
+[data-theme='light'] .analysis-header h4 {
+  color: #4a3520;
+}
+
+[data-theme='light'] .analysis-item {
+  background: rgba(255, 255, 255, 0.4);
+  border-color: var(--color-wood-dark);
+}
+
+[data-theme='light'] .analysis-item:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+[data-theme='light'] .analysis-legend {
+  border-top-color: var(--color-wood-dark);
 }
 
 /* ========== GAME STATISTICS ========== */

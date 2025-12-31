@@ -129,3 +129,17 @@
     max-width: 320px;
   }
 }
+
+/* Light theme: Wood background for evaluation panel */
+[data-theme='light'] .evaluation-panel {
+  background: linear-gradient(180deg, var(--color-wood-light) 0%, var(--color-wood-base) 100%);
+  border-color: var(--color-wood-dark);
+}
+
+[data-theme='light'] .evaluation-toggle {
+  color: #4a3520;
+}
+
+[data-theme='light'] .toggle-text {
+  color: rgba(74, 53, 32, 0.7);
+}
