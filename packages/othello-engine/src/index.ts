@@ -154,9 +154,11 @@ export const score = (board: Board): Score => {
   let whiteCount = 0;
 
   for (let y = 0; y < board.tiles.length; ++y) {
-    const row = board.tiles[y]!;
+    const row = board.tiles[y];
+    if (!row) continue;
     for (let x = 0; x < row.length; ++x) {
-      const tileVal = row[x]!;
+      const tileVal = row[x];
+      if (tileVal === undefined) continue;
       if (tileVal === B) {
         blackCount++;
       } else if (tileVal === W) {

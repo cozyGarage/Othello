@@ -183,8 +183,6 @@ describe('OthelloGameEngine', () => {
   });
 
   test('game correctly identifies when it is over', () => {
-    const engine = new OthelloGameEngine();
-
     // Create a completely filled board
     const fullBoard = [
       ['B', 'B', 'B', 'B', 'B', 'B', 'B', 'B'],

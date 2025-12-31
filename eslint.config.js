@@ -103,9 +103,10 @@ export default [
     },
   },
   {
-    files: ['**/*.test.{ts,tsx,js,jsx}'],
+    files: ['**/*.test.{ts,tsx,js,jsx}', '**/registerServiceWorker.js'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
       'no-console': 'off',
     },
   },

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { type Board as BoardType, type Coordinate, B, W, P } from 'othello-engine';
+import { type Board as BoardType, type Coordinate, B, W, P, E } from 'othello-engine';
 import { features } from '../../config/features';
 import '../../styles/board.css';
 
@@ -69,7 +69,7 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, lastMove, gameOver, 
     let pieceCount = 0;
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
-        const tile = board.tiles[row]![col];
+        const tile = board.tiles[row]?.[col];
         if (tile === B || tile === W) pieceCount++;
       }
     }
@@ -113,8 +113,9 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, lastMove, gameOver, 
       // Scan for pieces that flipped (B→W or W→B)
       for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
-          const prevTile = prevBoardRef.current.tiles[row]![col];
-          const currTile = board.tiles[row]![col];
+          const prevTile = prevBoardRef.current.tiles[row]?.[col];
+          const currTile = board.tiles[row]?.[col];
+          if (!prevTile || !currTile) continue;
 
           // Only animate actual flips (not new placements)
           const isFlip = (prevTile === B && currTile === W) || (prevTile === W && currTile === B);
@@ -122,7 +123,8 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, lastMove, gameOver, 
           if (isFlip) {
             newFlipping.add(`${row}-${col}`);
             // Keep displaying OLD color during first half of flip
-            newDisplayBoard.tiles[row]![col] = prevTile;
+            const displayRow = newDisplayBoard.tiles[row];
+            if (displayRow) displayRow[col] = prevTile;
           }
         }
       }
@@ -214,10 +216,10 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, lastMove, gameOver, 
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
       // Get tile from DISPLAY board (may show old color during flip)
-      const displayTile = displayBoard.tiles[row]![col]!;
+      const displayTile = displayBoard.tiles[row]?.[col] ?? E;
 
       // Get tile from GAME board (for move validation)
-      const gameTile = board.tiles[row]![col]!;
+      const gameTile = board.tiles[row]?.[col] ?? E;
 
       // Calculate tile states
       const isValid = gameTile === P; // Use game state for valid moves

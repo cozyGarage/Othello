@@ -176,7 +176,8 @@ export const PositionAnalysis: React.FC<PositionAnalysisProps> = ({
     if (onHintMove) {
       onHintMove(aiMove);
     }
-  }, [enabled, board, getPositionScore, isCorner]); // Removed onHintMove from deps to prevent infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, board, getPositionScore, isCorner]); // onHintMove intentionally excluded to prevent infinite loop
 
   /**
    * Reference to track if we need to re-analyze

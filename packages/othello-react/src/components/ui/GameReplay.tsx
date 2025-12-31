@@ -114,7 +114,9 @@ export const GameReplay: React.FC<GameReplayProps> = ({
         const opponent = player === B ? W : B;
 
         // Place the disc
-        board[row]![col] = player;
+        const boardRow = board[row];
+        if (!boardRow) continue;
+        boardRow[col] = player;
 
         // Find and flip captured discs in all directions
         for (const [dr, dc] of DIRECTIONS) {
@@ -123,16 +125,17 @@ export const GameReplay: React.FC<GameReplayProps> = ({
           let c = col + dc;
 
           // Collect opponent discs in this direction
-          while (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r]![c] === opponent) {
+          while (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r]?.[c] === opponent) {
             toFlip.push([r, c]);
             r += dr;
             c += dc;
           }
 
           // If we ended on our own disc, flip all collected discs
-          if (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r]![c] === player && toFlip.length > 0) {
+          if (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r]?.[c] === player && toFlip.length > 0) {
             for (const [flipR, flipC] of toFlip) {
-              board[flipR]![flipC] = player;
+              const flipRow = board[flipR];
+              if (flipRow) flipRow[flipC] = player;
             }
           }
         }

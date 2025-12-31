@@ -481,9 +481,10 @@ export class OthelloBot {
     const opponent = currentPlayer === 'B' ? 'W' : 'B';
 
     for (const [dx, dy] of directions) {
+      if (dx === undefined || dy === undefined) continue;
       const toFlip: Coordinate[] = [];
-      let nx = x + dx!;
-      let ny = y + dy!;
+      let nx = x + dx;
+      let ny = y + dy;
 
       // Collect opponent pieces in this direction
       while (nx >= 0 && nx < 8 && ny >= 0 && ny < 8) {
@@ -493,8 +494,8 @@ export class OthelloBot {
         if (targetTile !== opponent) break;
 
         toFlip.push([nx, ny]);
-        nx += dx!;
-        ny += dy!;
+        nx += dx;
+        ny += dy;
       }
 
       // If we end on our own piece, flip all collected pieces
