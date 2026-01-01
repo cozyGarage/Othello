@@ -1,8 +1,8 @@
 # Othello Testing Guide
 
-**Version**: 2.0  
-**Last Updated**: December 31, 2025  
-**Status**: Active Development
+**Version**: 2.1  
+**Last Updated**: January 2, 2026  
+**Status**: Stable ✅
 
 ---
 
@@ -24,13 +24,13 @@ This monorepo uses a **hybrid testing approach** with different test runners opt
 
 ### Test Suite Summary
 
-| Package          | Runner   | Tests                   | Status         |
-| ---------------- | -------- | ----------------------- | -------------- |
-| `othello-engine` | Bun Test | 122 passing, 3 failing  | ⚠️             |
-| `othello-react`  | Vitest   | 145 passing, 24 failing | ⚠️             |
-| **Total**        | -        | **267 passing**         | In Development |
+| Package          | Runner   | Tests                   | Status |
+| ---------------- | -------- | ----------------------- | ------ |
+| `othello-engine` | Bun Test | 144 passing             | ✅     |
+| `othello-react`  | Vitest   | 169 passing (1 skipped) | ✅     |
+| **Total**        | -        | **313 passing**         | ✅     |
 
-> **Note**: Some tests have known issues related to feature flag imports and bot edge cases. Core game functionality is fully tested and working.
+> All tests passing. Core game functionality fully tested.
 
 ---
 
@@ -147,13 +147,14 @@ bun run test:ui
 
 ### Engine Package Tests
 
-| Category       | Tests | Description                                      |
-| -------------- | ----- | ------------------------------------------------ |
-| Game Logic     | 27    | Core Othello rules, scoring, valid moves         |
-| Bot AI         | 40    | Easy/Medium/Hard difficulty, minimax, alpha-beta |
-| Game Engine    | 25    | Event-driven engine, state management            |
-| Time Control   | 20    | Clock management, timeout detection              |
-| Pass Scenarios | 10    | Edge cases for turn passing                      |
+| Category       | Tests | Description                                        |
+| -------------- | ----- | -------------------------------------------------- |
+| Game Logic     | 27    | Core Othello rules, scoring, valid moves           |
+| Bot AI         | 48    | Easy/Medium/Hard difficulty, minimax, opening book |
+| Game Engine    | 29    | Event-driven engine, state management, undo/redo   |
+| Time Control   | 20    | Clock management, timeout detection, increment     |
+| Pass Scenarios | 10    | Edge cases for turn passing                        |
+| Opening Book   | 10    | Book lookups, move notation conversion             |
 
 **Key Test Files:**
 
@@ -163,17 +164,18 @@ bun run test:ui
 - `OthelloGameEngine.test.ts` - Engine integration
 - `TimeControl.test.ts` - Time management
 - `pass-scenario.test.ts` - Pass edge cases
+- `openingBook.test.ts` - Opening book
 
 ### React Package Tests
 
-| Category          | Tests | Description                         |
-| ----------------- | ----- | ----------------------------------- |
-| Board Component   | 20+   | Rendering, interactions, animations |
-| Sidebar Component | 15+   | Score display, move history         |
-| Settings Panel    | 10+   | Configuration, presets              |
-| Integration       | 30+   | Full app workflows                  |
-| Features          | 15+   | Feature flags, sound effects        |
-| UI Components     | 50+   | Individual UI elements              |
+| Category          | Tests | Description                              |
+| ----------------- | ----- | ---------------------------------------- |
+| Board Component   | 28    | Rendering, interactions, animations      |
+| Sidebar Component | 30    | Score display, move history, time        |
+| Settings Panel    | 25    | Configuration, presets, feature toggles  |
+| Integration       | 20    | Full app workflows                       |
+| Features          | 40    | Feature flags, defaults, toggle behavior |
+| UI Components     | 26    | Sound effects, time control, messages    |
 
 **Key Test Files:**
 
@@ -183,6 +185,7 @@ bun run test:ui
 - `integration.test.ts` - End-to-end flows
 - `features.test.ts` - Feature flag system
 - `soundEffects.test.ts` - Audio system
+- `ui.test.tsx` - UI component tests
 
 ---
 
