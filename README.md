@@ -6,7 +6,7 @@
 
 _A fully playable implementation of the classic Othello (Reversi) board game built with React, TypeScript, and Bun_
 
-**Latest Update:** December 31, 2025 – **Responsive Layout Overhaul!** Dynamic board sizing for all screen sizes (320px-1400px+), action bar below game area, comprehensive CSS variable system, and merged testing documentation. Includes time controls, sound effects, animations, and localStorage persistence.
+**Latest Update:** January 2, 2026 – **CSS Refactoring & UI Polish!** Created reusable utility classes (DRY), updated defaults (sound ON, glare OFF), slowed AI vs AI for human viewing, 3 React hooks extracted for maintainability.
 
 ![Deploy Status](https://github.com/cozyGarage/Othello/actions/workflows/deploy.yml/badge.svg)
 ![Tests](https://github.com/cozyGarage/Othello/actions/workflows/test.yml/badge.svg)
@@ -14,8 +14,8 @@ _A fully playable implementation of the classic Othello (Reversi) board game bui
 ![React](https://img.shields.io/badge/React-18.2.0-blue?style=flat-square&logo=react)
 ![Bun](https://img.shields.io/badge/Bun-1.3.4-orange?style=flat-square&logo=bun)
 ![Vite](https://img.shields.io/badge/Vite-5.4.21-646CFF?style=flat-square&logo=vite)
-![Tests](https://img.shields.io/badge/Engine%20Tests-122%20passing-success?style=flat-square)
-![Tests](https://img.shields.io/badge/React%20Tests-145%20passing-success?style=flat-square)
+![Tests](https://img.shields.io/badge/Engine%20Tests-144%20passing-success?style=flat-square)
+![Tests](https://img.shields.io/badge/React%20Tests-169%20passing-success?style=flat-square)
 
 </div>
 
@@ -155,8 +155,8 @@ packages/
 
 **Hybrid Testing Strategy** - Engine uses Bun Test, React uses Vitest
 
-- 122 engine tests (logic, AI, undo/redo, time control, pass scenarios)
-- 145+ React tests (board, sidebar, settings, integration, features)
+- 144 engine tests (logic, AI, undo/redo, time control, pass scenarios)
+- 169+ React tests (board, sidebar, settings, integration, features)
 
 ```bash
 bun test                                          # Run all tests
@@ -181,12 +181,13 @@ Default snapshot:
 ```ts
 export const features = {
   animations: true,
-  glassGlare: true,
-  soundEffects: false, // disabled by default
+  glassGlare: false, // disabled by default (less distracting)
+  soundEffects: true, // enabled by default for feedback
   moveHistory: true,
-  scoreAnimations: false,
+  scoreAnimations: true,
   loadingScreen: false,
   debug: false,
+  darkMode: true,
 };
 ```
 
