@@ -149,9 +149,9 @@ describe('UI Components', () => {
   });
 
   describe('Animation States', () => {
-    test('glass glare should be enabled by default', () => {
+    test('glass glare should be disabled by default', () => {
       const { hasGlassGlare } = require('./config/features');
-      expect(hasGlassGlare()).toBe(true);
+      expect(hasGlassGlare()).toBe(false);
     });
 
     test('animations should be enabled by default', () => {

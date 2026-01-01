@@ -126,7 +126,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   return (
     <div className="settings-overlay" onClick={onClose}>
-      <div className="settings-panel shadow border" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="settings-panel shadow border custom-scrollbar"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="settings-header">
           <div className="settings-header-content">
             <h2>⚙️ Settings</h2>

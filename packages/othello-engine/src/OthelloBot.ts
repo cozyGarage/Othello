@@ -1,5 +1,5 @@
 import { Board, Coordinate, getValidMoves, score, E } from './index';
-import { lookupOpeningBook, getOpeningName, buildSequenceKey } from './openingBook';
+import { lookupOpeningBook, getOpeningName } from './openingBook';
 
 /**
  * AI difficulty levels for the Othello bot
@@ -270,17 +270,11 @@ export class OthelloBot {
     }
 
     // Check opening book first (only for hard difficulty and early game)
-    if (
-      this.useOpeningBook &&
-      this.difficulty === 'hard' &&
-      this.moveHistory.length < 12
-    ) {
+    if (this.useOpeningBook && this.difficulty === 'hard' && this.moveHistory.length < 12) {
       const bookMove = lookupOpeningBook(this.moveHistory);
       if (bookMove) {
         // Verify the book move is valid
-        const isValid = validMoves.some(
-          (m) => m[0] === bookMove[0] && m[1] === bookMove[1]
-        );
+        const isValid = validMoves.some((m) => m[0] === bookMove[0] && m[1] === bookMove[1]);
         if (isValid) {
           const openingName = getOpeningName(this.moveHistory);
           if (openingName) {

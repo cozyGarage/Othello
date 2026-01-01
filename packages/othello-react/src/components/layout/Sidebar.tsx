@@ -263,7 +263,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {features.moveHistory && (
         <div className="sidebar-card move-history-card">
           <h3 className="sidebar-card-title">Move History</h3>
-          <div className="move-history">
+          <div className="move-history custom-scrollbar">
             {moves.length === 0 ? (
               <p
                 style={{

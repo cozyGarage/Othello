@@ -1,0 +1,341 @@
+/* ========================================
+   UTILITIES - Reusable CSS Patterns
+   DRY: Define once, use everywhere
+   ======================================== */
+
+/* ========== CUSTOM SCROLLBAR ========== */
+/**
+ * Elegant thin scrollbar for panels and lists
+ * Usage: Add .custom-scrollbar to any scrollable container
+ */
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+/* Light theme */
+[data-theme='light'] .custom-scrollbar {
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: var(--radius-lg);
+  margin: var(--spacing-md) 0;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-lg);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+  background-clip: padding-box;
+}
+
+[data-theme='light'] .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  background-clip: padding-box;
+}
+
+[data-theme='light'] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+  background-clip: padding-box;
+}
+
+/* ========== CARD ========== */
+/**
+ * Base card component for panels and containers
+ * Usage: .card, .card-header, .card-body
+ */
+.card {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+}
+
+[data-theme='light'] .card {
+  background: linear-gradient(
+    180deg,
+    var(--color-wood-light) 0%,
+    var(--color-wood-base) 50%,
+    var(--color-wood-dark) 100%
+  );
+  border-color: var(--color-wood-dark);
+  box-shadow:
+    inset 0 1px 3px rgba(255, 255, 255, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-md);
+  text-align: center;
+}
+
+[data-theme='light'] .card-header {
+  color: #4a3520;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+/* ========== BUTTONS ========== */
+/**
+ * Base button styles
+ * Usage: .btn, .btn-primary, .btn-icon, .btn-compact
+ */
+.btn {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 14px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: all var(--transition-normal);
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border-hover);
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Primary button - green accent */
+.btn-primary {
+  background: var(--color-accent-green);
+  border-color: var(--color-accent-green);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #45a049;
+  border-color: #45a049;
+}
+
+/* Icon button - square with emoji/icon */
+.btn-icon {
+  min-width: 36px;
+  min-height: 36px;
+  padding: var(--spacing-xs);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Compact button - smaller padding */
+.btn-compact {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 16px;
+  border-radius: 6px;
+}
+
+/* Light theme buttons */
+[data-theme='light'] .btn {
+  background: linear-gradient(180deg, var(--color-wood-light) 0%, var(--color-wood-base) 100%);
+  border-color: var(--color-wood-dark);
+  color: #4a3520;
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='light'] .btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--color-wood-base) 0%, var(--color-wood-dark) 100%);
+}
+
+/* ========== BADGES ========== */
+/**
+ * Small status indicators
+ * Usage: .badge, .badge-success, .badge-warning, .badge-error
+ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.badge-success {
+  background: rgba(76, 175, 80, 0.2);
+  color: var(--color-accent-green);
+}
+
+.badge-warning {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+
+.badge-error {
+  background: rgba(244, 67, 54, 0.2);
+  color: var(--color-accent-red);
+}
+
+.badge-info {
+  background: rgba(33, 150, 243, 0.2);
+  color: var(--color-accent-blue);
+}
+
+/* Circular badge for counts */
+.badge-count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 50%;
+  background: var(--color-accent-green);
+  color: white;
+}
+
+/* ========== MESSAGE BOXES ========== */
+/**
+ * Feedback messages
+ * Usage: .message, .message-error, .message-success
+ */
+.message {
+  padding: var(--spacing-md);
+  text-align: center;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  background: rgba(33, 150, 243, 0.1);
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  color: var(--color-accent-blue);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.message-error {
+  background: rgba(244, 67, 54, 0.1);
+  border-color: rgba(244, 67, 54, 0.3);
+  color: var(--color-accent-red);
+}
+
+.message-success {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: rgba(76, 175, 80, 0.3);
+  color: var(--color-accent-green);
+}
+
+/* ========== OVERLAY ========== */
+/**
+ * Modal/panel overlay backdrop
+ * Usage: .overlay
+ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  animation: fadeIn 0.3s ease;
+  backdrop-filter: blur(6px);
+}
+
+/* ========== PANEL ========== */
+/**
+ * Modal/settings panel container
+ * Usage: .panel
+ */
+.panel {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.7),
+    0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.panel-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-bg-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.panel-header h2,
+.panel-header h3 {
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.panel-close {
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 32px;
+  cursor: pointer;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.panel-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: rotate(90deg);
+}
+
+.panel-body {
+  padding: var(--spacing-md) var(--spacing-xl) var(--spacing-xl);
+}
+
+/* ========== RESPONSIVE UTILITIES ========== */
+@media (max-width: 768px) {
+  .btn-icon {
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .card {
+    padding: var(--spacing-sm);
+  }
+
+  .card-header {
+    font-size: 12px;
+  }
+}

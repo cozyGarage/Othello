@@ -51,8 +51,8 @@ export interface FeatureFlags {
  */
 export const features: FeatureFlags = {
   animations: true,
-  glassGlare: true,
-  soundEffects: false, // Default: disabled to avoid auto-playing sound
+  glassGlare: false, // Disabled by default (can be distracting)
+  soundEffects: true, // Enabled by default for better feedback
   moveHistory: true, // Now implemented - displays move history with timestamps
   scoreAnimations: true, // Enabled by default - visual feedback for score changes
   loadingScreen: false, // Disabled by default (optional UX)

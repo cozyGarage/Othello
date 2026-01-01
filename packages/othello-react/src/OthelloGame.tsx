@@ -54,6 +54,7 @@ import {
 
 // Import new modular CSS
 import './styles/variables.css';
+import './styles/utilities.css'; // DRY: reusable patterns
 import './styles/layout.css';
 import './styles/animations.css';
 import './styles/navbar.css';
