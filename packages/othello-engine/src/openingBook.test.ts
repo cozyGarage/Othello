@@ -118,7 +118,7 @@ describe('Opening Book', () => {
     });
 
     test('all entries have valid bestMove coordinates', () => {
-      for (const [key, entry] of Object.entries(OPENING_BOOK)) {
+      for (const entry of Object.values(OPENING_BOOK)) {
         const [col, row] = entry.bestMove;
         expect(col).toBeGreaterThanOrEqual(0);
         expect(col).toBeLessThanOrEqual(7);
