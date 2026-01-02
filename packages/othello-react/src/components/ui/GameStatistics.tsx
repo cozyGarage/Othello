@@ -322,7 +322,7 @@ export const GameStatistics: React.FC<GameStatisticsProps> = ({
                       {game.moves && game.moves.length > 0 && onReplayGame && (
                         <button
                           className="history-replay-btn"
-                          onClick={() => onReplayGame(game.moves!)}
+                          onClick={() => game.moves && onReplayGame(game.moves)}
                           title="Replay this game"
                         >
                           ▶️ Replay

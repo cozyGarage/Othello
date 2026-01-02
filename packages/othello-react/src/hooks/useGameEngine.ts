@@ -143,7 +143,10 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
     }
   }
 
-  const engine = engineRef.current!;
+  if (!engineRef.current) {
+    throw new Error('Engine not initialized');
+  }
+  const engine = engineRef.current;
 
   // State
   const [board, setBoard] = useState<BoardType>(() => engine.getState().board);

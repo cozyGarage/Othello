@@ -52,9 +52,12 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
   const totalWidth = baseWidth * zoom;
 
   // Scale functions
-  const scaleX = (move: number): number => {
-    return padding.left + (move / 60) * graphWidth;
-  };
+  const scaleX = React.useCallback(
+    (move: number): number => {
+      return padding.left + (move / 60) * graphWidth;
+    },
+    [padding.left, graphWidth]
+  );
 
   const scaleY = (evaluation: number): number => {
     // Invert Y axis, and map -64 to +64 range

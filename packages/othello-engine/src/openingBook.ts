@@ -188,7 +188,7 @@ export function notationToMove(notation: string): [number, number] {
     );
   }
 
-  const colChar = notation[0]!.toLowerCase();
+  const colChar = notation.charAt(0).toLowerCase();
   if (colChar < 'a' || colChar > 'h') {
     throw new Error(`Invalid move notation "${notation}": column must be between "a" and "h".`);
   }
