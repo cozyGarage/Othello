@@ -126,7 +126,7 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
       const centeredLeft = currentX - container.clientWidth / 2;
       container.scrollTo({ left: centeredLeft, behavior: 'smooth' });
     }
-  }, [currentMove, zoom]);
+  }, [currentMove, zoom, scaleX]);
 
   return (
     <div className={`evaluation-panel ${isVisible ? 'open' : 'collapsed'}`}>
