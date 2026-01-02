@@ -435,7 +435,7 @@ describe('OthelloBot', () => {
         [B, B, B, B, B, B, W, E],
       ]);
 
-      const _move = bot.calculateMove(board);
+      bot.calculateMove(board);
       // May or may not have a valid move depending on position
       // Just ensure it doesn't crash
       expect(true).toBe(true);
@@ -493,7 +493,7 @@ describe('OthelloBot', () => {
         [W, B, W, B, W, B, W, E],
       ]);
 
-      const _move = bot.calculateMove(board);
+      bot.calculateMove(board);
       // Should handle this without crashing
       expect(true).toBe(true);
     });

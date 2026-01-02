@@ -1,5 +1,5 @@
 import { Board, Coordinate, getValidMoves, score, E } from './index';
-import { lookupOpeningBook, getOpeningName } from './openingBook';
+import { lookupOpeningBook } from './openingBook';
 
 /**
  * AI difficulty levels for the Othello bot
@@ -276,10 +276,6 @@ export class OthelloBot {
         // Verify the book move is valid
         const isValid = validMoves.some((m) => m[0] === bookMove[0] && m[1] === bookMove[1]);
         if (isValid) {
-          const openingName = getOpeningName(this.moveHistory);
-          if (openingName) {
-            console.log(`Opening book: ${openingName}`);
-          }
           return bookMove;
         }
       }
