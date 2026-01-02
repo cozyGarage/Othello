@@ -182,8 +182,22 @@ export function moveToNotation(move: [number, number]): string {
  * d3 → [3, 5] (col d = 3, row 3 from bottom = row index 5)
  */
 export function notationToMove(notation: string): [number, number] {
-  const col = notation.charCodeAt(0) - 97; // a=0, b=1, ...
-  const row = 8 - parseInt(notation[1] ?? '1', 10); // 8→0, 7→1, ... 1→7
+  if (notation.length < 2) {
+    throw new Error(`Invalid move notation "${notation}": expected at least 2 characters (e.g., "d3").`);
+  }
+
+  const colChar = notation[0].toLowerCase();
+  if (colChar < 'a' || colChar > 'h') {
+    throw new Error(`Invalid move notation "${notation}": column must be between "a" and "h".`);
+  }
+
+  const rowNumber = parseInt(notation.slice(1), 10);
+  if (Number.isNaN(rowNumber) || rowNumber < 1 || rowNumber > 8) {
+    throw new Error(`Invalid move notation "${notation}": row must be a number between 1 and 8.`);
+  }
+
+  const col = colChar.charCodeAt(0) - 97; // a=0, b=1, ...
+  const row = 8 - rowNumber; // 8→0, 7→1, ... 1→7
   return [col, row];
 }
 
