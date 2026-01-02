@@ -1303,33 +1303,6 @@
   max-height: 80vh;
   overflow-y: auto;
   animation: slideIn 0.3s ease;
-
-  /* Custom scrollbar styling - matches settings panel */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-}
-
-/* Webkit scrollbar styling for stats panel */
-.game-statistics::-webkit-scrollbar {
-  width: 8px;
-}
-
-.game-statistics::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: var(--radius-lg);
-  margin: var(--spacing-md) 0;
-}
-
-.game-statistics::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: var(--radius-lg);
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-.game-statistics::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
-  background-clip: padding-box;
 }
 
 /* slideIn animation defined in animations.css */
