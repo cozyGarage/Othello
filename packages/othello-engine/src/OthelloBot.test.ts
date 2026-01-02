@@ -603,7 +603,7 @@ describe('OthelloBot', () => {
 
     test('hard bot vs easy bot - hard should win most games', () => {
       const wins = { hard: 0, easy: 0, draw: 0 };
-      const games = 1; // Run just 1 game to avoid timeout
+      const games = 3; // Run 3 games for more reliable result
 
       for (let i = 0; i < games; i++) {
         const hardBot = new OthelloBot('hard', 'B');
@@ -646,9 +646,9 @@ describe('OthelloBot', () => {
         else wins.draw++;
       }
 
-      // Hard bot should perform well (win or draw against easy)
-      expect(wins.hard + wins.draw).toBeGreaterThanOrEqual(1);
-    }, 30000); // 30 second timeout for full game
+      // Hard bot should win or draw majority of games (at least 2 out of 3)
+      expect(wins.hard + wins.draw).toBeGreaterThanOrEqual(2);
+    }, 60000); // 60 second timeout for multiple games
   });
 
   describe('Corner and Edge Strategy', () => {
