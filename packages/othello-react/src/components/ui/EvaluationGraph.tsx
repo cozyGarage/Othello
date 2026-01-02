@@ -263,7 +263,7 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
         <div className="graph-legend">
           <span className="legend-black">⬤ Black</span>
           <span className="legend-white">⬤ White</span>
-          <span className="legend-hint">(Scroll to zoom, drag to pan)</span>
+          <span className="legend-hint">(Scroll to zoom)</span>
         </div>
       )}
     </div>
