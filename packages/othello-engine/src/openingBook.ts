@@ -183,10 +183,12 @@ export function moveToNotation(move: [number, number]): string {
  */
 export function notationToMove(notation: string): [number, number] {
   if (notation.length < 2) {
-    throw new Error(`Invalid move notation "${notation}": expected at least 2 characters (e.g., "d3").`);
+    throw new Error(
+      `Invalid move notation "${notation}": expected at least 2 characters (e.g., "d3").`
+    );
   }
 
-  const colChar = notation[0].toLowerCase();
+  const colChar = notation[0]!.toLowerCase();
   if (colChar < 'a' || colChar > 'h') {
     throw new Error(`Invalid move notation "${notation}": column must be between "a" and "h".`);
   }
