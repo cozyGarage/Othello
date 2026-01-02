@@ -449,7 +449,8 @@ class OthelloGame extends Component<{}, OthelloGameState> {
         moveHistory,
         moveTimestamps,
         message: `${opponentName} has no valid moves and must pass!`,
-        evaluationHistory: [...prev.evaluationHistory, newEvalPoint],
+        // Slice to ensure we overwrite any future history if we branched
+        evaluationHistory: [...prev.evaluationHistory.slice(0, moveHistory.length), newEvalPoint],
       }));
       setTimeout(() => this.setState({ message: null }), 2500);
     } else {
@@ -460,7 +461,8 @@ class OthelloGame extends Component<{}, OthelloGameState> {
         lastMove: move.coordinate,
         moveHistory,
         moveTimestamps,
-        evaluationHistory: [...prev.evaluationHistory, newEvalPoint],
+        // Slice to ensure we overwrite any future history if we branched
+        evaluationHistory: [...prev.evaluationHistory.slice(0, moveHistory.length), newEvalPoint],
       }));
     }
   };
@@ -618,6 +620,8 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       endedByTimeout: false,
       // Clear history replay
       historyReplayMoves: null,
+      // Reset evaluation graph
+      evaluationHistory: [{ move: 0, evaluation: 0 }],
     });
 
     // Check if AI should make the first move
@@ -634,13 +638,15 @@ class OthelloGame extends Component<{}, OthelloGameState> {
           ? (state.moveHistory[state.moveHistory.length - 1]?.coordinate ?? null)
           : null;
 
-      this.setState({
+      this.setState((prev) => ({
         board: state.board,
         moveHistory: state.moveHistory,
         lastMove: lastMoveCoord,
         gameOver: false,
         message: null,
-      });
+        // Slice evaluation history to match new move history length + 1 (for initial state)
+        evaluationHistory: prev.evaluationHistory.slice(0, state.moveHistory.length + 1),
+      }));
 
       // Check if AI should move after undo
       setTimeout(() => this.checkAndMakeAIMove(), 500);
@@ -657,7 +663,11 @@ class OthelloGame extends Component<{}, OthelloGameState> {
           ? (state.moveHistory[state.moveHistory.length - 1]?.coordinate ?? null)
           : null;
 
-      this.setState({
+      // Evaluate position for graph
+      const evaluation = this.engine.evaluatePosition();
+      const newEvalPoint = { move: state.moveHistory.length, evaluation };
+
+      this.setState((prev) => ({
         board: state.board,
         moveHistory: state.moveHistory,
         lastMove: lastMoveCoord,
@@ -669,7 +679,9 @@ class OthelloGame extends Component<{}, OthelloGameState> {
               ? 'Game Over! White wins!'
               : "Game Over! It's a tie!"
           : null,
-      });
+        // Append new evaluation point
+        evaluationHistory: [...prev.evaluationHistory, newEvalPoint],
+      }));
 
       // Check if AI should move after redo
       setTimeout(() => this.checkAndMakeAIMove(), 500);
