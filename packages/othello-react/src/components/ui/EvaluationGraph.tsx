@@ -141,11 +141,19 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
         </button>
         {isVisible && (
           <div className="zoom-controls">
-            <button onClick={() => setZoom((z) => Math.max(1, z - 0.5))} title="Zoom Out">
+            <button
+              onClick={() => setZoom((z) => Math.max(1, z - 0.5))}
+              title="Zoom Out"
+              aria-label="Zoom out"
+            >
               -
             </button>
             <span className="zoom-level">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom((z) => Math.min(10, z + 0.5))} title="Zoom In">
+            <button
+              onClick={() => setZoom((z) => Math.min(10, z + 0.5))}
+              title="Zoom In"
+              aria-label="Zoom in"
+            >
               +
             </button>
           </div>
