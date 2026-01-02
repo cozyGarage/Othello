@@ -281,8 +281,9 @@ export const GameReplay: React.FC<GameReplayProps> = ({
    * Sync to the latest move when moves change (new move or undo)
    */
   useEffect(() => {
-    // When history updates, snap to the latest move (live state)
-    // instead of resetting to start (-1)
+    // When history updates, sync the index to the latest move.
+    // Note: moves.length - 1 will be -1 when there are no moves,
+    // which represents the initial pre-move game state.
     setCurrentMoveIndex(moves.length - 1);
     setIsPlaying(false);
   }, [moves]);
