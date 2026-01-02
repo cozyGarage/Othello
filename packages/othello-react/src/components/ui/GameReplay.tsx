@@ -278,10 +278,13 @@ export const GameReplay: React.FC<GameReplayProps> = ({
   }, [isVisible, stepBackward, stepForward, togglePlay, jumpToStart, jumpToEnd, onClose]);
 
   /**
-   * Reset to start when moves change (new game)
+   * Sync to the latest move when moves change (new move or undo)
    */
   useEffect(() => {
-    setCurrentMoveIndex(-1);
+    // When history updates, sync the index to the latest move.
+    // Note: moves.length - 1 will be -1 when there are no moves,
+    // which represents the initial pre-move game state.
+    setCurrentMoveIndex(moves.length - 1);
     setIsPlaying(false);
   }, [moves]);
 

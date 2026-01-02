@@ -43,7 +43,6 @@
 }
 
 @keyframes pulseGreen {
-
   0%,
   100% {
     box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
@@ -85,7 +84,6 @@
 }
 
 @keyframes blink {
-
   0%,
   100% {
     opacity: 1;
@@ -731,11 +729,13 @@
 
 .volume-slider::-webkit-slider-runnable-track {
   height: 8px;
-  background: linear-gradient(to right,
-      var(--color-accent-green) 0%,
-      var(--color-accent-green) var(--volume-percent, 100%),
-      rgba(255, 255, 255, 0.1) var(--volume-percent, 100%),
-      rgba(255, 255, 255, 0.1) 100%);
+  background: linear-gradient(
+    to right,
+    var(--color-accent-green) 0%,
+    var(--color-accent-green) var(--volume-percent, 100%),
+    rgba(255, 255, 255, 0.1) var(--volume-percent, 100%),
+    rgba(255, 255, 255, 0.1) 100%
+  );
   border-radius: 4px;
 }
 
@@ -1303,6 +1303,33 @@
   max-height: 80vh;
   overflow-y: auto;
   animation: slideIn 0.3s ease;
+
+  /* Custom scrollbar styling - matches settings panel */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+/* Webkit scrollbar styling for stats panel */
+.game-statistics::-webkit-scrollbar {
+  width: 8px;
+}
+
+.game-statistics::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: var(--radius-lg);
+  margin: var(--spacing-md) 0;
+}
+
+.game-statistics::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-lg);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.game-statistics::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+  background-clip: padding-box;
 }
 
 /* slideIn animation defined in animations.css */

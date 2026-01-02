@@ -16,6 +16,7 @@ export default [
       '**/*.bundle.js',
       '**/.vite/**',
       '**/coverage/**',
+      '**/Egaroucid/**', // C++ reference implementation - not our code
     ],
   },
   {

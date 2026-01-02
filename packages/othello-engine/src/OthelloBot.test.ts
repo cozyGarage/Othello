@@ -49,6 +49,7 @@ describe('OthelloBot', () => {
 
     test('clearTranspositionTable clears the cache', () => {
       const bot = new OthelloBot('hard', 'B');
+      bot.setUseOpeningBook(false); // Disable book to test actual search
       const board = createStartingBoard();
       bot.calculateMove(board);
       expect(bot.getTranspositionTableSize()).toBeGreaterThan(0);
@@ -58,6 +59,7 @@ describe('OthelloBot', () => {
 
     test('getNodesSearched returns search count', () => {
       const bot = new OthelloBot('hard', 'B');
+      bot.setUseOpeningBook(false); // Disable book to test actual search
       const board = createStartingBoard();
       bot.calculateMove(board);
       expect(bot.getNodesSearched()).toBeGreaterThan(0);
@@ -279,6 +281,7 @@ describe('OthelloBot', () => {
   describe('Transposition Table', () => {
     test('caches positions during search', () => {
       const bot = new OthelloBot('hard', 'B');
+      bot.setUseOpeningBook(false); // Disable book to test actual search
       const board = createStartingBoard();
 
       bot.clearTranspositionTable();
@@ -310,6 +313,7 @@ describe('OthelloBot', () => {
 
     test('clears cache between games', () => {
       const bot = new OthelloBot('hard', 'B');
+      bot.setUseOpeningBook(false); // Disable book to test actual search
       const board = createStartingBoard();
 
       bot.calculateMove(board);
@@ -351,6 +355,7 @@ describe('OthelloBot', () => {
     test('hard bot searches more nodes than medium bot', () => {
       const mediumBot = new OthelloBot('medium', 'B');
       const hardBot = new OthelloBot('hard', 'B');
+      hardBot.setUseOpeningBook(false); // Disable book to test actual search
       const board = createStartingBoard();
 
       mediumBot.calculateMove(board);
@@ -598,7 +603,7 @@ describe('OthelloBot', () => {
 
     test('hard bot vs easy bot - hard should win most games', () => {
       const wins = { hard: 0, easy: 0, draw: 0 };
-      const games = 1; // Run just 1 game to avoid timeout
+      const games = 3; // Run 3 games for more reliable result
 
       for (let i = 0; i < games; i++) {
         const hardBot = new OthelloBot('hard', 'B');
@@ -641,9 +646,9 @@ describe('OthelloBot', () => {
         else wins.draw++;
       }
 
-      // Hard bot should perform well (win or draw against easy)
-      expect(wins.hard + wins.draw).toBeGreaterThanOrEqual(1);
-    }, 30000); // 30 second timeout for full game
+      // Hard bot should win or draw majority of games (at least 2 out of 3)
+      expect(wins.hard + wins.draw).toBeGreaterThanOrEqual(2);
+    }, 60000); // 60 second timeout for multiple games
   });
 
   describe('Corner and Edge Strategy', () => {

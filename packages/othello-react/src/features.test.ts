@@ -79,12 +79,12 @@ describe('Feature Flags', () => {
       expect(features.animations).toBe(true);
     });
 
-    test('glassGlare should be enabled by default', () => {
-      expect(features.glassGlare).toBe(true);
+    test('glassGlare should be disabled by default', () => {
+      expect(features.glassGlare).toBe(false);
     });
 
-    test('soundEffects should be disabled by default', () => {
-      expect(features.soundEffects).toBe(false);
+    test('soundEffects should be enabled by default', () => {
+      expect(features.soundEffects).toBe(true);
     });
 
     test('moveHistory should be enabled by default', () => {
@@ -215,8 +215,8 @@ describe('Animations', () => {
     expect(hasAnimations()).toBe(true);
   });
 
-  test('glass glare effect should be enabled', () => {
-    expect(hasGlassGlare()).toBe(true);
+  test('glass glare effect should be disabled by default', () => {
+    expect(hasGlassGlare()).toBe(false);
   });
 
   test('animations can be toggled', () => {

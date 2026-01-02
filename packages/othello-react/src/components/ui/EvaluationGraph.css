@@ -19,6 +19,18 @@
   padding: var(--spacing-sm);
 }
 
+/* Header with toggle and zoom controls */
+.evaluation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.evaluation-panel.collapsed .evaluation-header {
+  margin-bottom: 0;
+}
+
 /* Toggle button */
 .evaluation-toggle {
   display: flex;
@@ -32,16 +44,10 @@
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-md);
   transition: background 0.2s ease;
-  width: 100%;
-  justify-content: center;
 }
 
 .evaluation-toggle:hover {
   background: var(--color-bg-tertiary);
-}
-
-.evaluation-panel.open .evaluation-toggle {
-  margin-bottom: var(--spacing-sm);
 }
 
 .toggle-text {
@@ -49,16 +55,69 @@
   color: var(--color-text-secondary);
 }
 
-/* Graph container */
-.evaluation-graph-container {
+/* Zoom controls */
+.zoom-controls {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 4px;
+  background: var(--color-bg-tertiary);
+  padding: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.zoom-controls button {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+}
+
+.zoom-controls button:hover {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+
+.zoom-level {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  min-width: 32px;
+  text-align: center;
+}
+
+/* Graph container with scroll props */
+.evaluation-graph-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+  padding-bottom: 4px;
+  /* Space for scrollbar */
+}
+
+.evaluation-graph-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.evaluation-graph-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.evaluation-graph-container::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 3px;
 }
 
 .evaluation-graph {
   display: block;
+  /* Ensure min-width prevents shrinking below container */
+  min-width: 100%;
 }
 
 /* Axis labels */
@@ -92,6 +151,12 @@
 
 .legend-white {
   color: var(--color-accent-red);
+}
+
+.legend-hint {
+  margin-left: auto;
+  opacity: 0.7;
+  font-style: italic;
 }
 
 /* Graph CSS variables */

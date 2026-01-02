@@ -111,7 +111,10 @@ export const GameStatistics: React.FC<GameStatisticsProps> = ({
 
   return (
     <div className="game-statistics-overlay" onClick={onClose}>
-      <div className="game-statistics stats-panel-large" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="game-statistics stats-panel-large custom-scrollbar"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="stats-header">
           <h3>📊 Stats & Replays</h3>
           <button className="stats-close" onClick={onClose} aria-label="Close statistics">

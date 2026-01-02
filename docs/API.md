@@ -1,7 +1,7 @@
 # Othello Engine API Documentation
 
-**Version**: 2.0  
-**Last Updated**: December 31, 2025
+**Version**: 2.1  
+**Last Updated**: January 2, 2026
 
 This document describes the public API of the `othello-engine` package. The engine is a standalone, framework-agnostic game logic implementation with zero UI dependencies.
 

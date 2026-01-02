@@ -1,4 +1,5 @@
 import { Board, Coordinate, getValidMoves, score, E } from './index';
+import { lookupOpeningBook, getOpeningName } from './openingBook';
 
 /**
  * AI difficulty levels for the Othello bot
@@ -144,6 +145,8 @@ export class OthelloBot {
   private player: 'W' | 'B';
   private transpositionTable: Map<string, TranspositionEntry>;
   private nodesSearched: number = 0;
+  private useOpeningBook: boolean = true;
+  private moveHistory: Array<{ coordinate: Coordinate }> = [];
 
   /**
    * Creates a new AI bot
@@ -250,12 +253,36 @@ export class OthelloBot {
    * }
    * ```
    */
-  public calculateMove(board: Board): Coordinate | null {
+  public calculateMove(
+    board: Board,
+    moveHistory?: Array<{ coordinate: Coordinate }>
+  ): Coordinate | null {
     this.nodesSearched = 0;
     const validMoves = getValidMoves(board);
 
     if (validMoves.length === 0) {
       return null;
+    }
+
+    // Update move history if provided
+    if (moveHistory) {
+      this.moveHistory = moveHistory;
+    }
+
+    // Check opening book first (only for hard difficulty and early game)
+    if (this.useOpeningBook && this.difficulty === 'hard' && this.moveHistory.length < 12) {
+      const bookMove = lookupOpeningBook(this.moveHistory);
+      if (bookMove) {
+        // Verify the book move is valid
+        const isValid = validMoves.some((m) => m[0] === bookMove[0] && m[1] === bookMove[1]);
+        if (isValid) {
+          const openingName = getOpeningName(this.moveHistory);
+          if (openingName) {
+            console.log(`Opening book: ${openingName}`);
+          }
+          return bookMove;
+        }
+      }
     }
 
     switch (this.difficulty) {
@@ -268,6 +295,20 @@ export class OthelloBot {
       default:
         return this.getRandomMove(validMoves);
     }
+  }
+
+  /**
+   * Enable or disable opening book usage
+   */
+  public setUseOpeningBook(use: boolean): void {
+    this.useOpeningBook = use;
+  }
+
+  /**
+   * Check if opening book is enabled
+   */
+  public isOpeningBookEnabled(): boolean {
+    return this.useOpeningBook;
   }
 
   /**

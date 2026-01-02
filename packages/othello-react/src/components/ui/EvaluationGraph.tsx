@@ -38,13 +38,18 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
   isVisible,
   onToggle,
 }) => {
+  const [zoom, setZoom] = React.useState(1);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
   // Graph dimensions
-  const width = 280;
+  const baseWidth = 280;
   const height = 120;
   const padding = { top: 10, right: 10, bottom: 20, left: 30 };
 
-  const graphWidth = width - padding.left - padding.right;
+  // Calculate dynamic width based on zoom
+  const graphWidth = baseWidth * zoom - padding.left - padding.right;
   const graphHeight = height - padding.top - padding.bottom;
+  const totalWidth = baseWidth * zoom;
 
   // Scale functions
   const scaleX = (move: number): number => {
@@ -103,24 +108,65 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
     }
   };
 
+  const handleWheel = (e: React.WheelEvent) => {
+    // Stop propagation to prevent page scroll if we are consuming the event
+    e.stopPropagation();
+
+    // Zoom in/out based on wheel direction
+    // DeltaY is negative for scrolling up (Zoom In), positive for down (Zoom Out)
+    const delta = -Math.sign(e.deltaY) * 0.1;
+    setZoom((prev) => Math.min(Math.max(1, prev + delta), 10));
+  };
+
+  // Auto-scroll to keep current move in view
+  React.useEffect(() => {
+    if (containerRef.current) {
+      const currentX = scaleX(currentMove);
+      const container = containerRef.current;
+      const centeredLeft = currentX - container.clientWidth / 2;
+      container.scrollTo({ left: centeredLeft, behavior: 'smooth' });
+    }
+  }, [currentMove, zoom, scaleX]);
+
   return (
     <div className={`evaluation-panel ${isVisible ? 'open' : 'collapsed'}`}>
-      <button
-        className="evaluation-toggle"
-        onClick={onToggle}
-        title={isVisible ? 'Hide evaluation graph' : 'Show evaluation graph'}
-      >
-        📊
-        <span className="toggle-text">{isVisible ? 'Hide' : 'Show'}</span>
-      </button>
+      <div className="evaluation-header">
+        <button
+          className="evaluation-toggle"
+          onClick={onToggle}
+          title={isVisible ? 'Hide evaluation graph' : 'Show evaluation graph'}
+        >
+          📊
+          <span className="toggle-text">{isVisible ? 'Hide Analysis' : 'Show Analysis'}</span>
+        </button>
+        {isVisible && (
+          <div className="zoom-controls">
+            <button
+              onClick={() => setZoom((z) => Math.max(1, z - 0.5))}
+              title="Zoom Out"
+              aria-label="Zoom out"
+            >
+              -
+            </button>
+            <span className="zoom-level">{Math.round(zoom * 100)}%</span>
+            <button
+              onClick={() => setZoom((z) => Math.min(10, z + 0.5))}
+              title="Zoom In"
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+          </div>
+        )}
+      </div>
 
       {isVisible && (
-        <div className="evaluation-graph-container">
+        <div className="evaluation-graph-container" ref={containerRef} onWheel={handleWheel}>
           <svg
             className="evaluation-graph"
-            width={width}
+            width={totalWidth}
             height={height}
-            viewBox={`0 0 ${width} ${height}`}
+            viewBox={`0 0 ${totalWidth} ${height}`}
           >
             {/* Background */}
             <rect
@@ -136,7 +182,7 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
             <line
               x1={padding.left}
               y1={scaleY(0)}
-              x2={width - padding.right}
+              x2={totalWidth - padding.right}
               y2={scaleY(0)}
               stroke="var(--graph-zero-line, rgba(255,255,255,0.3))"
               strokeDasharray="4,4"
@@ -189,7 +235,7 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
               />
             ))}
 
-            {/* Y-axis labels */}
+            {/* Y-axis labels (Fixed position would be better but simple for now) */}
             <text x={padding.left - 5} y={padding.top + 5} className="axis-label" textAnchor="end">
               +64
             </text>
@@ -205,23 +251,27 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
               -64
             </text>
 
-            {/* X-axis labels */}
-            <text x={padding.left} y={height - 4} className="axis-label">
-              0
-            </text>
-            <text x={width / 2} y={height - 4} className="axis-label" textAnchor="middle">
-              30
-            </text>
-            <text x={width - padding.right} y={height - 4} className="axis-label" textAnchor="end">
-              60
-            </text>
+            {/* X-axis labels roughly every 10 moves */}
+            {[0, 10, 20, 30, 40, 50, 60].map((move) => (
+              <text
+                key={move}
+                x={scaleX(move)}
+                y={height - 4}
+                className="axis-label"
+                textAnchor="middle"
+              >
+                {move}
+              </text>
+            ))}
           </svg>
+        </div>
+      )}
 
-          {/* Legend */}
-          <div className="graph-legend">
-            <span className="legend-black">⬤ Black</span>
-            <span className="legend-white">⬤ White</span>
-          </div>
+      {isVisible && (
+        <div className="graph-legend">
+          <span className="legend-black">⬤ Black</span>
+          <span className="legend-white">⬤ White</span>
+          <span className="legend-hint">(Scroll to zoom)</span>
         </div>
       )}
     </div>
