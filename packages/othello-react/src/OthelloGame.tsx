@@ -61,8 +61,11 @@ import './styles/navbar.css';
 import './styles/board.css';
 import './styles/sidebar.css';
 import './styles/ui.css';
+import './styles/landing.css';
 // Import EvaluationGraph component
 import EvaluationGraph from './components/ui/EvaluationGraph';
+import { BlogSection } from './components/layout/BlogSection';
+import { blogPosts, type BlogPost } from './config/blogPosts';
 
 /**
  * Extend the Window interface to expose the game engine for browser console testing.
@@ -139,6 +142,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
   private spectatorBotWhite: OthelloBot | null = null;
   private botMoveTimeout: number | null = null;
   private timeUpdateInterval: number | null = null;
+  private blogMessageTimeout: number | null = null;
 
   constructor(props: {}) {
     super(props);
@@ -345,7 +349,31 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     if (this.timeUpdateInterval !== null) {
       clearInterval(this.timeUpdateInterval);
     }
+
+    if (this.blogMessageTimeout !== null) {
+      clearTimeout(this.blogMessageTimeout);
+    }
   }
+
+  scrollToGame = (): void => {
+    document.getElementById('play-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  handleHeroPlayClick = (): void => {
+    this.handleRestart();
+    this.scrollToGame();
+  };
+
+  handleBlogOpen = (post: BlogPost): void => {
+    if (this.blogMessageTimeout) {
+      clearTimeout(this.blogMessageTimeout);
+    }
+
+    this.setState({ message: `${post.title} draft is coming soon.` });
+    this.blogMessageTimeout = window.setTimeout(() => {
+      this.setState({ message: null });
+    }, 2200);
+  };
 
   handleKeyDown = (event: KeyboardEvent): void => {
     // Don't handle shortcuts when typing in an input
@@ -1116,14 +1144,70 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       : this.engine.getAnnotatedBoard();
 
     return (
-      <div className="OthelloGame">
+      <div className="OthelloGame page-shell">
         <LoadingScreen isLoading={this.state.isLoading} />
 
         {!this.state.isLoading && (
-          <>
-            <Navbar onPlayClick={this.handleRestart} onStatsClick={this.handleStatsToggle} />
+          <div className="content-layer">
+            <Navbar onPlayClick={this.handleHeroPlayClick} onStatsClick={this.handleStatsToggle} />
 
-            <div className="game-wrapper">
+            <section className="hero" id="learn">
+              <div className="hero-panel">
+                <div className="meta-strip">
+                  <span className="meta-chip">Deployment fixed</span>
+                  <span className="meta-chip">Fresh UI</span>
+                  <span className="meta-chip">Blog drafts</span>
+                </div>
+                <h1>Focus on the fight, let the interface disappear.</h1>
+                <p>
+                  A calmer board, richer sidebar, and quicker actions tuned for blitz or thoughtful
+                  play. Stay in flow while the evaluation graph and stats keep you informed.
+                </p>
+                <div className="hero-actions">
+                  <button className="hero-btn primary" onClick={this.handleHeroPlayClick}>
+                    Start a match
+                  </button>
+                  <button className="hero-btn" onClick={this.scrollToGame}>
+                    Jump to board
+                  </button>
+                  <button
+                    className="hero-btn"
+                    onClick={() =>
+                      document.getElementById('blog')?.scrollIntoView({ behavior: 'smooth' })
+                    }
+                  >
+                    Read updates
+                  </button>
+                </div>
+                <div className="info-badges" style={{ marginTop: 12 }}>
+                  <span className="info-badge">Evaluation graph</span>
+                  <span className="info-badge">Time controls</span>
+                  <span className="info-badge">Replay + stats</span>
+                </div>
+              </div>
+
+              <div className="secondary-panel">
+                <h3>Playing rhythm</h3>
+                <div className="insight-grid">
+                  <div className="insight-card">
+                    <strong>Sharper board</strong>
+                    <span>Elevated contrast on tiles and stones for faster scanning mid-game.</span>
+                  </div>
+                  <div className="insight-card">
+                    <strong>Smarter pacing</strong>
+                    <span>
+                      Action bar and keyboard shortcuts keep you moving; spectator bots stay ready.
+                    </span>
+                  </div>
+                  <div className="insight-card">
+                    <strong>Blog + notes</strong>
+                    <span>Follow the thinking behind strategy tweaks, UI, and engine work.</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div className="game-wrapper" id="play-area">
               <div className="game-container">
                 <div className="board-area">
                   <Board
@@ -1196,6 +1280,10 @@ class OthelloGame extends Component<{}, OthelloGameState> {
               </div>
             </div>
 
+            <div className="below-fold">
+              <BlogSection posts={blogPosts} onRead={this.handleBlogOpen} />
+            </div>
+
             <SettingsPanel
               isOpen={this.state.settingsOpen}
               onClose={this.handleCloseSettings}
@@ -1259,7 +1347,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
               onReplay={this.handleResultReplay}
               onClose={this.handleResultModalClose}
             />
-          </>
+          </div>
         )}
       </div>
     );

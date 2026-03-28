@@ -52,6 +52,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onPlayClick, onStatsClick }) => 
           </a>
         </li>
         <li className="nav-item">
+          <a className="nav-link" href="#blog">
+            Blog
+          </a>
+        </li>
+        <li className="nav-item">
           <a className="nav-link" onClick={handleStatsClick}>
             📊 Stats
           </a>
