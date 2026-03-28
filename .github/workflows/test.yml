@@ -22,10 +22,10 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Run tests
-        run: bun test
+        run: bun run test
 
       - name: Test build
         run: bun run build

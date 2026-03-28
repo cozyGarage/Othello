@@ -6,7 +6,7 @@
 
 _A fully playable implementation of the classic Othello (Reversi) board game built with React, TypeScript, and Bun_
 
-**Latest Update:** January 2, 2026 – **CSS Refactoring & UI Polish!** Created reusable utility classes (DRY), updated defaults (sound ON, glare OFF), slowed AI vs AI for human viewing, 3 React hooks extracted for maintainability.
+**Latest Update:** March 28, 2026 – **GitHub Pages deploy fixed + refreshed hero/blog UI.** New landing hero, focused board styling, and a lightweight blog strip with strategy/design notes.
 
 ![Deploy Status](https://github.com/cozyGarage/Othello/actions/workflows/deploy.yml/badge.svg)
 ![Tests](https://github.com/cozyGarage/Othello/actions/workflows/test.yml/badge.svg)
@@ -64,6 +64,11 @@ Othello (also known as Reversi) is a classic strategy board game for two players
 - 🎵 **Web Audio API** - Programmatic sound generation (no audio files needed)
 - 🎨 **CSS Animations** - GPU-accelerated for 60fps performance
 - 💾 **localStorage** - Graceful degradation for privacy modes
+
+### CI/CD & Deployment
+
+- `deploy.yml`, `test.yml`, and `pr-validation.yml` run on Bun, execute the workspace build/test scripts, and publish the Vite `packages/othello-react/dist` bundle to GitHub Pages.
+- Installs no longer block on stale lockfiles; workflows install dependencies directly before building and deploying.
 
 ## 🎮 How to Play
 

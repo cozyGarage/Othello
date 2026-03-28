@@ -25,7 +25,7 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Validate commit messages
         run: |
@@ -36,7 +36,7 @@ jobs:
         run: bun run validate
 
       - name: Run tests with coverage
-        run: bun test --coverage
+        run: bun run test:coverage
 
       - name: Build
         run: bun run build
