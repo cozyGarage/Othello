@@ -13,6 +13,7 @@ import {
   ScreenReaderAnnouncer,
   GameModeSelector,
   type GameModeConfig,
+  EvaluationBar,
 } from './components/ui';
 import { hasLoadingScreen, hasSoundEffects } from './config/features';
 import { soundEffects } from './utils/soundEffects';
@@ -1339,6 +1340,10 @@ class OthelloGame extends Component<{}, OthelloGameState> {
                   onTouchEnd={this.handleTouchEnd}
                 >
                   <div className="board-area">
+                    <EvaluationBar
+                      evaluation={blackScore - whiteScore}
+                      currentPlayer={currentPlayer}
+                    />
                     <Board
                       board={displayBoard}
                       onPlayerTurn={this.handlePlayerTurn}
