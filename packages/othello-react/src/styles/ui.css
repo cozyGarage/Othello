@@ -2057,7 +2057,9 @@
   border: 2px solid var(--color-border);
   border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: border-color var(--transition-fast), background var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
   color: var(--color-text-primary);
 }
 
@@ -2168,7 +2170,9 @@
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 600;
-  transition: border-color var(--transition-fast), background var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
   color: var(--color-text-primary);
 }
 
@@ -2203,7 +2207,9 @@
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background var(--transition-fast), transform var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .mode-start-btn:hover {
@@ -2225,8 +2231,12 @@
     gap: var(--spacing-md);
     padding: var(--spacing-sm) var(--spacing-md);
   }
-  .mode-icon { font-size: 1.4rem; }
-  .mode-desc { text-align: left; }
+  .mode-icon {
+    font-size: 1.4rem;
+  }
+  .mode-desc {
+    text-align: left;
+  }
 }
 
 /* ========== ENHANCED MOVE HISTORY ========== */
@@ -2273,7 +2283,9 @@
   border-radius: var(--radius-sm);
   letter-spacing: 0.02em;
   color: var(--color-text-secondary);
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .move-entry.black::before {

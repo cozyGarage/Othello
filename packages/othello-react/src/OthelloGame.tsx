@@ -1007,7 +1007,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
               aiThinkingNodes: progress.nodesSearched,
             });
           },
-          this.state.aiDifficulty === 'hard' ? 3000 : undefined,
+          this.state.aiDifficulty === 'hard' ? 3000 : undefined
         )
         .then((result) => {
           this.setState({ aiThinking: false, aiThinkingDepth: 0, aiThinkingNodes: 0 });
@@ -1267,143 +1267,151 @@ class OthelloGame extends Component<{}, OthelloGameState> {
           <div className="content-layer">
             <Navbar onPlayClick={this.handleHeroPlayClick} onStatsClick={this.handleStatsToggle} />
 
-            <section className="hero" id="learn">
-              <div className="hero-panel">
-                <div className="meta-strip">
-                  <span className="meta-chip">Deployment fixed</span>
-                  <span className="meta-chip">Fresh UI</span>
-                  <span className="meta-chip">Blog drafts</span>
+            {/* LANDING SECTION - hero CTA only */}
+            <section className="landing-section">
+              <div className="hero" id="learn">
+                <div className="hero-panel">
+                  <div className="meta-strip">
+                    <span className="meta-chip">Deployment fixed</span>
+                    <span className="meta-chip">Fresh UI</span>
+                    <span className="meta-chip">Blog drafts</span>
+                  </div>
+                  <h1>Focus on the fight, let the interface disappear.</h1>
+                  <p>
+                    A calmer board, richer sidebar, and quicker actions tuned for blitz or
+                    thoughtful play. Stay in flow while the evaluation graph and stats keep you
+                    informed.
+                  </p>
+                  <div className="hero-actions">
+                    <button className="hero-btn primary" onClick={this.handleHeroPlayClick}>
+                      Start a match
+                    </button>
+                    <button className="hero-btn" onClick={this.scrollToGame}>
+                      Jump to board
+                    </button>
+                    <button
+                      className="hero-btn"
+                      onClick={() =>
+                        document.getElementById('blog')?.scrollIntoView({ behavior: 'smooth' })
+                      }
+                    >
+                      Read updates
+                    </button>
+                  </div>
+                  <div className="info-badges" style={{ marginTop: 12 }}>
+                    <span className="info-badge">Evaluation graph</span>
+                    <span className="info-badge">Time controls</span>
+                    <span className="info-badge">Replay + stats</span>
+                  </div>
                 </div>
-                <h1>Focus on the fight, let the interface disappear.</h1>
-                <p>
-                  A calmer board, richer sidebar, and quicker actions tuned for blitz or thoughtful
-                  play. Stay in flow while the evaluation graph and stats keep you informed.
-                </p>
-                <div className="hero-actions">
-                  <button className="hero-btn primary" onClick={this.handleHeroPlayClick}>
-                    Start a match
-                  </button>
-                  <button className="hero-btn" onClick={this.scrollToGame}>
-                    Jump to board
-                  </button>
-                  <button
-                    className="hero-btn"
-                    onClick={() =>
-                      document.getElementById('blog')?.scrollIntoView({ behavior: 'smooth' })
-                    }
-                  >
-                    Read updates
-                  </button>
-                </div>
-                <div className="info-badges" style={{ marginTop: 12 }}>
-                  <span className="info-badge">Evaluation graph</span>
-                  <span className="info-badge">Time controls</span>
-                  <span className="info-badge">Replay + stats</span>
-                </div>
-              </div>
 
-              <div className="secondary-panel">
-                <h3>Playing rhythm</h3>
-                <div className="insight-grid">
-                  <div className="insight-card">
-                    <strong>Sharper board</strong>
-                    <span>Elevated contrast on tiles and stones for faster scanning mid-game.</span>
-                  </div>
-                  <div className="insight-card">
-                    <strong>Smarter pacing</strong>
-                    <span>
-                      Action bar and keyboard shortcuts keep you moving; spectator bots stay ready.
-                    </span>
-                  </div>
-                  <div className="insight-card">
-                    <strong>Blog + notes</strong>
-                    <span>Follow the thinking behind strategy tweaks, UI, and engine work.</span>
+                <div className="secondary-panel">
+                  <h3>Playing rhythm</h3>
+                  <div className="insight-grid">
+                    <div className="insight-card">
+                      <strong>Sharper board</strong>
+                      <span>
+                        Elevated contrast on tiles and stones for faster scanning mid-game.
+                      </span>
+                    </div>
+                    <div className="insight-card">
+                      <strong>Smarter pacing</strong>
+                      <span>
+                        Action bar and keyboard shortcuts keep you moving; spectator bots stay
+                        ready.
+                      </span>
+                    </div>
+                    <div className="insight-card">
+                      <strong>Game analysis</strong>
+                      <span>Evaluation graph, move replay, and position hints as you learn.</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </section>
 
+            {/* GAME SECTION - dedicated play area */}
             <div className="game-wrapper" id="play-area">
               <ErrorBoundary onReset={this.handleRestart}>
-              <div
-                className="game-container"
-                onTouchStart={this.handleTouchStart}
-                onTouchEnd={this.handleTouchEnd}
-              >
-                <div className="board-area">
-                  <Board
-                    board={displayBoard}
-                    onPlayerTurn={this.handlePlayerTurn}
-                    lastMove={this.state.lastMove}
-                    gameOver={this.state.gameOver}
-                    hintMove={this.state.hintMove}
-                  />
-                </div>
-
-                <div className="sidebar-area">
-                  {/* Position Analysis (hints) - shown when hint is active */}
-                  {this.state.hintsEnabled && !this.state.gameOver && (
-                    <PositionAnalysis
-                      board={this.engine.getAnnotatedBoard()}
-                      enabled={this.state.hintsEnabled}
-                      onHintMove={this.handleHintMoveChange}
-                      showPanel={true}
+                <div
+                  className="game-container"
+                  onTouchStart={this.handleTouchStart}
+                  onTouchEnd={this.handleTouchEnd}
+                >
+                  <div className="board-area">
+                    <Board
+                      board={displayBoard}
+                      onPlayerTurn={this.handlePlayerTurn}
+                      lastMove={this.state.lastMove}
+                      gameOver={this.state.gameOver}
+                      hintMove={this.state.hintMove}
                     />
-                  )}
+                  </div>
 
-                  <Sidebar
-                    currentPlayer={currentPlayer}
-                    blackScore={blackScore}
-                    whiteScore={whiteScore}
-                    onUndo={this.handleUndo}
-                    onRedo={this.handleRedo}
-                    canUndo={this.engine.canUndo()}
-                    canRedo={this.engine.canRedo()}
-                    moves={this.state.moveHistory}
-                    message={this.state.message}
-                    gameOver={this.state.gameOver}
-                    timeRemaining={this.state.timeRemaining}
-                    // Hints feature
-                    onHintRequest={this.handleHintRequest}
-                    hintsRemaining={this.state.hintsRemaining}
-                    hintsEnabled={this.state.hintsEnabled}
-                    // AI thinking indicator
-                    aiThinking={this.state.aiThinking}
-                    aiThinkingDepth={this.state.aiThinkingDepth}
-                    aiThinkingNodes={this.state.aiThinkingNodes}
-                  />
+                  <div className="sidebar-area">
+                    {/* Position Analysis (hints) - shown when hint is active */}
+                    {this.state.hintsEnabled && !this.state.gameOver && (
+                      <PositionAnalysis
+                        board={this.engine.getAnnotatedBoard()}
+                        enabled={this.state.hintsEnabled}
+                        onHintMove={this.handleHintMoveChange}
+                        showPanel={true}
+                      />
+                    )}
 
-                  {/* Evaluation Graph - Egaroucid-style */}
-                  <EvaluationGraph
-                    history={this.state.evaluationHistory}
-                    currentMove={this.state.moveHistory.length}
-                    onMoveClick={this.handleGraphMoveClick}
-                    isVisible={this.state.graphVisible}
-                    onToggle={this.handleGraphToggle}
-                  />
+                    <Sidebar
+                      currentPlayer={currentPlayer}
+                      blackScore={blackScore}
+                      whiteScore={whiteScore}
+                      onUndo={this.handleUndo}
+                      onRedo={this.handleRedo}
+                      canUndo={this.engine.canUndo()}
+                      canRedo={this.engine.canRedo()}
+                      moves={this.state.moveHistory}
+                      message={this.state.message}
+                      gameOver={this.state.gameOver}
+                      timeRemaining={this.state.timeRemaining}
+                      // Hints feature
+                      onHintRequest={this.handleHintRequest}
+                      hintsRemaining={this.state.hintsRemaining}
+                      hintsEnabled={this.state.hintsEnabled}
+                      // AI thinking indicator
+                      aiThinking={this.state.aiThinking}
+                      aiThinkingDepth={this.state.aiThinkingDepth}
+                      aiThinkingNodes={this.state.aiThinkingNodes}
+                    />
+
+                    {/* Evaluation Graph - Egaroucid-style */}
+                    <EvaluationGraph
+                      history={this.state.evaluationHistory}
+                      currentMove={this.state.moveHistory.length}
+                      onMoveClick={this.handleGraphMoveClick}
+                      isVisible={this.state.graphVisible}
+                      onToggle={this.handleGraphToggle}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Action Bar - New Game, Settings, Stats */}
-              <div className="action-bar">
-                <button className="action-bar-btn primary" onClick={this.handleOpenModeSelector}>
-                  <span className="btn-icon">🔄</span>
-                  <span className="btn-text">New Game</span>
-                </button>
-                <button className="action-bar-btn" onClick={this.handleOpenSettings}>
-                  <span className="btn-icon">⚙️</span>
-                  <span className="btn-text">Settings</span>
-                </button>
-                <button className="action-bar-btn" onClick={this.handleStatsToggle}>
-                  <span className="btn-icon">📊</span>
-                  <span className="btn-text">Stats</span>
-                </button>
-                <button className="action-bar-btn" onClick={this.handleReplayToggle}>
-                  <span className="btn-icon">📽️</span>
-                  <span className="btn-text">Replay</span>
-                </button>
-              </div>
-            </ErrorBoundary>
+                {/* Action Bar - New Game, Settings, Stats */}
+                <div className="action-bar">
+                  <button className="action-bar-btn primary" onClick={this.handleOpenModeSelector}>
+                    <span className="btn-icon">🔄</span>
+                    <span className="btn-text">New Game</span>
+                  </button>
+                  <button className="action-bar-btn" onClick={this.handleOpenSettings}>
+                    <span className="btn-icon">⚙️</span>
+                    <span className="btn-text">Settings</span>
+                  </button>
+                  <button className="action-bar-btn" onClick={this.handleStatsToggle}>
+                    <span className="btn-icon">📊</span>
+                    <span className="btn-text">Stats</span>
+                  </button>
+                  <button className="action-bar-btn" onClick={this.handleReplayToggle}>
+                    <span className="btn-icon">📽️</span>
+                    <span className="btn-text">Replay</span>
+                  </button>
+                </div>
+              </ErrorBoundary>
             </div>
 
             <div className="below-fold">

@@ -102,7 +102,7 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, lastMove, gameOver, 
       setFocusedCell([nextRow, nextCol]);
       tileRefs.current.get(`${nextRow}-${nextCol}`)?.focus();
     },
-    [focusedCell, gameOver, onPlayerTurn],
+    [focusedCell, gameOver, onPlayerTurn]
   );
 
   /**

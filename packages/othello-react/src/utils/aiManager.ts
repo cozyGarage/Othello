@@ -49,7 +49,7 @@ export class AIManager {
     player: 'W' | 'B',
     moveHistory?: Array<{ coordinate: Coordinate }>,
     onProgress?: ProgressCallback,
-    timeLimit?: number,
+    timeLimit?: number
   ): Promise<AICalculationResult> {
     // Cancel any previous calculation
     this.cancel();
@@ -119,7 +119,7 @@ export class AIManager {
     board: Board,
     difficulty: BotDifficulty,
     player: 'W' | 'B',
-    moveHistory?: Array<{ coordinate: Coordinate }>,
+    moveHistory?: Array<{ coordinate: Coordinate }>
   ): AICalculationResult {
     const start = performance.now();
     const bot = new OthelloBot(difficulty, player);

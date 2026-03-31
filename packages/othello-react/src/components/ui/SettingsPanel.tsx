@@ -131,7 +131,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   };
 
   return (
-    <div className="settings-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Game settings">
+    <div
+      className="settings-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Game settings"
+    >
       <div
         className="settings-panel shadow border custom-scrollbar"
         onClick={(e) => e.stopPropagation()}

@@ -161,7 +161,7 @@ export function useAIPlayer(config: UseAIPlayerConfig): UseAIPlayerReturn {
           aiPlayer,
           moveHistory,
           (progress) => setThinkingState(progress),
-          aiDifficulty === 'hard' ? 3000 : undefined,
+          aiDifficulty === 'hard' ? 3000 : undefined
         )
         .then((result) => {
           calculatingRef.current = false;
@@ -190,7 +190,7 @@ export function useAIPlayer(config: UseAIPlayerConfig): UseAIPlayerReturn {
         cancelPendingAIMove();
       }
     },
-    [checkAndMakeAIMove, cancelPendingAIMove],
+    [checkAndMakeAIMove, cancelPendingAIMove]
   );
 
   const setAIDifficulty = useCallback((difficulty: BotDifficulty) => {
@@ -210,7 +210,7 @@ export function useAIPlayer(config: UseAIPlayerConfig): UseAIPlayerReturn {
       setAIPlayerState(player);
       setTimeout(() => checkAndMakeAIMove(), 500);
     },
-    [checkAndMakeAIMove],
+    [checkAndMakeAIMove]
   );
 
   const setSpectatorMode = useCallback(
@@ -231,7 +231,7 @@ export function useAIPlayer(config: UseAIPlayerConfig): UseAIPlayerReturn {
         cancelPendingAIMove();
       }
     },
-    [aiDifficulty, checkAndMakeAIMove, cancelPendingAIMove],
+    [aiDifficulty, checkAndMakeAIMove, cancelPendingAIMove]
   );
 
   // Cleanup on unmount

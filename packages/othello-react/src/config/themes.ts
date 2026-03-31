@@ -54,7 +54,9 @@ export const THEMES: Theme[] = [
 const STORAGE_KEY = 'othello-board-theme';
 
 export function getThemeById(id: string): Theme {
-  return THEMES.find((t) => t.id === id) ?? THEMES[0] ?? { id: 'green', name: 'Classic Green', vars: {} };
+  return (
+    THEMES.find((t) => t.id === id) ?? THEMES[0] ?? { id: 'green', name: 'Classic Green', vars: {} }
+  );
 }
 
 export function getSavedThemeId(): string {
