@@ -14,6 +14,7 @@ import {
   GameModeSelector,
   type GameModeConfig,
   EvaluationBar,
+  Puzzles,
 } from './components/ui';
 import { hasLoadingScreen, hasSoundEffects } from './config/features';
 import { soundEffects } from './utils/soundEffects';
@@ -117,6 +118,7 @@ interface OthelloGameState {
   hintsEnabled: boolean;
   hintMove: Coordinate | null;
   statsOpen: boolean;
+  puzzlesOpen: boolean;
   // Track game start time for statistics
   gameStartTime: number;
   moveTimestamps: number[];
@@ -251,6 +253,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       hintsEnabled: false,
       hintMove: null,
       statsOpen: false,
+      puzzlesOpen: false,
       gameStartTime: Date.now(),
       moveTimestamps: [],
       // Hints per game
@@ -1141,6 +1144,11 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.setState((prev) => ({ statsOpen: !prev.statsOpen }));
   };
 
+  // Phase 4: Puzzles handlers
+  handlePuzzlesToggle = (): void => {
+    this.setState((prev) => ({ puzzlesOpen: !prev.puzzlesOpen }));
+  };
+
   // Settings panel handlers - pause game while settings open
   handleOpenSettings = (): void => {
     // Pause time control if active
@@ -1415,6 +1423,10 @@ class OthelloGame extends Component<{}, OthelloGameState> {
                     <span className="btn-icon">📽️</span>
                     <span className="btn-text">Replay</span>
                   </button>
+                  <button className="action-bar-btn" onClick={this.handlePuzzlesToggle}>
+                    <span className="btn-icon">🧩</span>
+                    <span className="btn-text">Puzzles</span>
+                  </button>
                 </div>
               </ErrorBoundary>
             </div>
@@ -1458,6 +1470,12 @@ class OthelloGame extends Component<{}, OthelloGameState> {
               currentGameMoves={this.state.moveHistory}
               onOpenCurrentReplay={this.handleReplayToggle}
               onReplayGame={this.handleReplayFromHistory}
+            />
+
+            {/* Puzzles Modal - Tactical training system */}
+            <Puzzles
+              isVisible={this.state.puzzlesOpen}
+              onClose={() => this.setState({ puzzlesOpen: false })}
             />
 
             {/* Game Replay (when opened from Stats, result modal, or history) */}

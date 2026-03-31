@@ -1,0 +1,94 @@
+{
+  "puzzles": [
+    {
+      "id": "puzzle_001",
+      "difficulty": "easy",
+      "description": "Win by taking the corner!",
+      "currentPlayer": "B",
+      "board": [
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "W", "B", "E", "E", "E"],
+        ["E", "E", "E", "B", "W", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "B", "E", "E", "E", "E", "E"]
+      ],
+      "bestMove": [0, 0],
+      "explanation": "The corner is the most valuable position in Othello. Secure it whenever possible!"
+    },
+    {
+      "id": "puzzle_002",
+      "difficulty": "medium",
+      "description": "Find the move that flips the most pieces",
+      "currentPlayer": "B",
+      "board": [
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "B", "B", "B", "E", "E", "E", "E"],
+        ["E", "W", "W", "W", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"]
+      ],
+      "bestMove": [0, 2],
+      "explanation": "Playing at a2 flips all three white pieces in a row. Maximum material gain!"
+    },
+    {
+      "id": "puzzle_003",
+      "difficulty": "medium",
+      "description": "Avoid giving your opponent an advantage",
+      "currentPlayer": "W",
+      "board": [
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "B", "B", "B", "E", "E", "E"],
+        ["E", "E", "B", "W", "W", "E", "E", "E"],
+        ["E", "E", "B", "W", "B", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"]
+      ],
+      "bestMove": [1, 4],
+      "explanation": "Playing at b5 keeps Black from accessing a dangerous edge position. Strategic defense!"
+    },
+    {
+      "id": "puzzle_004",
+      "difficulty": "hard",
+      "description": "Find the winning sequence",
+      "currentPlayer": "B",
+      "board": [
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "W", "B", "E", "E", "E"],
+        ["E", "E", "E", "B", "W", "B", "E", "E"],
+        ["E", "E", "E", "E", "B", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"]
+      ],
+      "bestMove": [2, 4],
+      "explanation": "A subtle move that sets up a strong tactical advantage. Think several moves ahead!"
+    },
+    {
+      "id": "puzzle_005",
+      "difficulty": "easy",
+      "description": "Secure multiple corners if possible",
+      "currentPlayer": "B",
+      "board": [
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "B"],
+        ["E", "E", "E", "E", "E", "E", "B", "W"],
+        ["E", "E", "E", "W", "B", "B", "W", "E"],
+        ["E", "E", "E", "B", "W", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "B"]
+      ],
+      "bestMove": [7, 7],
+      "explanation": "Corners are worth far more than regular pieces. Always claim corner opportunities!"
+    }
+  ]
+}

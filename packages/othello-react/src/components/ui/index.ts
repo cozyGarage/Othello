@@ -22,3 +22,4 @@ export { ScreenReaderAnnouncer } from './ScreenReaderAnnouncer';
 export { GameModeSelector } from './GameModeSelector';
 export type { GameMode, GameModeConfig } from './GameModeSelector';
 export { EvaluationBar } from './EvaluationBar';
+export { Puzzles } from './Puzzles';
