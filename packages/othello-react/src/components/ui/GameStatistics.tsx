@@ -1,12 +1,119 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   getAggregatedStats,
+  getGameRecords,
   clearGameRecords,
   formatDuration,
   formatDate,
   type AggregatedStats,
   type GameRecord,
 } from '../../utils/gameStatistics';
+
+// ---------------------------------------------------------------------------
+// Chart sub-components (pure SVG + CSS, no external libraries)
+// ---------------------------------------------------------------------------
+
+/**
+ * WinRateSpark — SVG sparkline of cumulative win rate over the last 20 games.
+ */
+const WinRateSpark: React.FC<{ records: GameRecord[] }> = ({ records }) => {
+  const humanGames = [...records]
+    .filter((r) => !r.spectatorMode && r.humanPlayer !== null)
+    .reverse()
+    .slice(-20);
+
+  if (humanGames.length < 2) {
+    return <p className="chart-no-data">Play more games to see your trend</p>;
+  }
+
+  let wins = 0;
+  const points = humanGames.map((record, idx) => {
+    if (record.winner === record.humanPlayer) wins++;
+    return { x: idx, y: (wins / (idx + 1)) * 100 };
+  });
+
+  const W = 300;
+  const H = 80;
+  const PAD = 6;
+
+  const toX = (i: number) => PAD + (i / Math.max(points.length - 1, 1)) * (W - PAD * 2);
+  const toY = (v: number) => H - PAD - (v / 100) * (H - PAD * 2);
+
+  const linePath = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'}${toX(i).toFixed(1)},${toY(p.y).toFixed(1)}`)
+    .join(' ');
+  const areaPath = linePath + ` L${toX(points.length - 1).toFixed(1)},${H} L${PAD},${H} Z`;
+  const midY = toY(50).toFixed(1);
+  const lastY = toY(points[points.length - 1]?.y ?? 50).toFixed(1);
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="win-rate-spark" aria-label="Win rate over time chart">
+      <defs>
+        <linearGradient id="wrGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--color-accent-green)" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="var(--color-accent-green)" stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      <line x1={PAD} y1={midY} x2={W - PAD} y2={midY} className="chart-midline" />
+      <path d={areaPath} fill="url(#wrGrad)" />
+      <path d={linePath} className="chart-line" />
+      <circle cx={toX(points.length - 1).toFixed(1)} cy={lastY} r="4" className="chart-dot" />
+    </svg>
+  );
+};
+
+/**
+ * DiffBar — horizontal stacked W/D/L bar for one difficulty level.
+ */
+const DiffBar: React.FC<{ wins: number; losses: number; draws: number }> = ({
+  wins,
+  losses,
+  draws,
+}) => {
+  const total = wins + losses + draws;
+  if (total === 0) return <span className="diff-bar-empty">No games played</span>;
+
+  const wPct = (wins / total) * 100;
+  const dPct = (draws / total) * 100;
+  const lPct = (losses / total) * 100;
+
+  return (
+    <div
+      className="diff-bar-track"
+      title={`${wins}W  ${draws}D  ${losses}L`}
+      role="img"
+      aria-label={`${wins} wins, ${draws} draws, ${losses} losses`}
+    >
+      {wPct > 0 && <div className="diff-bar-segment diff-bar-win" style={{ width: `${wPct}%` }} />}
+      {dPct > 0 && <div className="diff-bar-segment diff-bar-draw" style={{ width: `${dPct}%` }} />}
+      {lPct > 0 && <div className="diff-bar-segment diff-bar-loss" style={{ width: `${lPct}%` }} />}
+    </div>
+  );
+};
+
+/**
+ * RecentResults — last 10 game outcomes as coloured W/L/D dots.
+ */
+const RecentResults: React.FC<{ records: GameRecord[] }> = ({ records }) => {
+  const humanGames = records.filter((r) => !r.spectatorMode && r.humanPlayer !== null).slice(0, 10);
+
+  if (humanGames.length === 0) return null;
+
+  return (
+    <div className="recent-results-track">
+      {humanGames.map((record) => {
+        const isDraw = record.winner === null;
+        const humanWon = record.winner === record.humanPlayer;
+        const cls = isDraw ? 'draw' : humanWon ? 'win' : 'loss';
+        return (
+          <div key={record.id} className={`result-dot ${cls}`} title={formatDate(record.timestamp)}>
+            {isDraw ? 'D' : humanWon ? 'W' : 'L'}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 /**
  * Props for the GameStatistics component
@@ -52,6 +159,7 @@ export const GameStatistics: React.FC<GameStatisticsProps> = ({
   onOpenCurrentReplay,
 }) => {
   const [stats, setStats] = useState<AggregatedStats | null>(null);
+  const [allRecords, setAllRecords] = useState<GameRecord[]>([]);
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const [activeTab, setActiveTab] = useState<StatsTab>('overview');
 
@@ -59,8 +167,8 @@ export const GameStatistics: React.FC<GameStatisticsProps> = ({
    * Load statistics on mount and when visibility changes
    */
   const loadStats = useCallback(() => {
-    const aggregated = getAggregatedStats();
-    setStats(aggregated);
+    setStats(getAggregatedStats());
+    setAllRecords(getGameRecords());
   }, []);
 
   useEffect(() => {
@@ -169,7 +277,20 @@ export const GameStatistics: React.FC<GameStatisticsProps> = ({
               </div>
             </div>
 
-            {/* Winning Streaks */}
+            {/* Win Rate Trend */}
+            <div className="stats-section">
+              <h4>📈 Win Rate Trend</h4>
+              <div className="win-rate-chart-wrap">
+                <WinRateSpark records={allRecords} />
+                <div className="chart-labels">
+                  <span>Older</span>
+                  <span>50%</span>
+                  <span>Recent</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Winning Streaks + Recent Form */}
             <div className="stats-section">
               <h4>🔥 Winning Streaks</h4>
               <div className="streaks">
@@ -182,42 +303,35 @@ export const GameStatistics: React.FC<GameStatisticsProps> = ({
                   <span className="streak-value">{stats.longestWinStreak}</span>
                 </div>
               </div>
+              <div className="recent-form-label">Recent form (newest first):</div>
+              <RecentResults records={allRecords} />
             </div>
 
             {/* Performance by Difficulty */}
             <div className="stats-section">
               <h4>Performance by AI Difficulty</h4>
               <div className="difficulty-stats">
-                <div className="difficulty-row">
-                  <span className="difficulty-name">🟢 Easy</span>
-                  <span className="difficulty-record">
-                    {stats.byDifficulty.easy.wins}W - {stats.byDifficulty.easy.losses}L -{' '}
-                    {stats.byDifficulty.easy.draws}D
-                  </span>
-                  <span className="difficulty-rate">
-                    {getDifficultyWinRate(stats.byDifficulty.easy)}
-                  </span>
-                </div>
-                <div className="difficulty-row">
-                  <span className="difficulty-name">🟡 Medium</span>
-                  <span className="difficulty-record">
-                    {stats.byDifficulty.medium.wins}W - {stats.byDifficulty.medium.losses}L -{' '}
-                    {stats.byDifficulty.medium.draws}D
-                  </span>
-                  <span className="difficulty-rate">
-                    {getDifficultyWinRate(stats.byDifficulty.medium)}
-                  </span>
-                </div>
-                <div className="difficulty-row">
-                  <span className="difficulty-name">🔴 Hard</span>
-                  <span className="difficulty-record">
-                    {stats.byDifficulty.hard.wins}W - {stats.byDifficulty.hard.losses}L -{' '}
-                    {stats.byDifficulty.hard.draws}D
-                  </span>
-                  <span className="difficulty-rate">
-                    {getDifficultyWinRate(stats.byDifficulty.hard)}
-                  </span>
-                </div>
+                {(
+                  [
+                    { key: 'easy', label: '🟢 Easy' },
+                    { key: 'medium', label: '🟡 Medium' },
+                    { key: 'hard', label: '🔴 Hard' },
+                  ] as const
+                ).map(({ key, label }) => {
+                  const d = stats.byDifficulty[key];
+                  return (
+                    <div key={key} className="difficulty-row-visual">
+                      <span className="difficulty-name">{label}</span>
+                      <div className="diff-bar-container">
+                        <DiffBar wins={d.wins} losses={d.losses} draws={d.draws} />
+                        <span className="diff-bar-sub">
+                          {d.wins}W · {d.draws}D · {d.losses}L
+                        </span>
+                      </div>
+                      <span className="difficulty-rate">{getDifficultyWinRate(d)}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
