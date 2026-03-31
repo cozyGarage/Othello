@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { OthelloBot, OthelloGameEngine, type BotDifficulty, type Coordinate } from 'othello-engine';
+import { aiManager, type AIThinkingState } from '../utils/aiManager';
 
 /**
  * Configuration for the useAIPlayer hook
@@ -25,6 +26,9 @@ export interface UseAIPlayerReturn {
   // Spectator mode (AI vs AI)
   spectatorMode: boolean;
 
+  // Thinking state (for UI indicator)
+  thinkingState: AIThinkingState;
+
   // Actions
   setAIEnabled: (enabled: boolean) => void;
   setAIDifficulty: (difficulty: BotDifficulty) => void;
@@ -38,12 +42,23 @@ export interface UseAIPlayerReturn {
   cancelPendingAIMove: () => void;
 }
 
+const IDLE_THINKING: AIThinkingState = {
+  isThinking: false,
+  depth: 0,
+  nodesSearched: 0,
+  bestMove: null,
+};
+
 /**
  * Custom hook that encapsulates AI player logic.
  *
+ * Uses Web Worker via AIManager for hard difficulty to avoid blocking the UI.
+ * Falls back to main-thread OthelloBot for easy/medium and spectator mode.
+ *
  * Handles:
  * - Bot initialization (single AI or spectator mode)
- * - Bot move calculation with delayed execution
+ * - Web Worker-based move calculation for hard difficulty
+ * - AI thinking state for UI indicators
  * - AI settings (difficulty, player color)
  * - Timeout management for bot moves
  */
@@ -55,12 +70,13 @@ export function useAIPlayer(config: UseAIPlayerConfig): UseAIPlayerReturn {
   const [aiDifficulty, setAIDifficultyState] = useState<BotDifficulty>('medium');
   const [aiPlayer, setAIPlayerState] = useState<'W' | 'B'>('W');
   const [spectatorMode, setSpectatorModeState] = useState(false);
+  const [thinkingState, setThinkingState] = useState<AIThinkingState>(IDLE_THINKING);
 
-  // Refs for bots and timeouts
-  const botRef = useRef<OthelloBot | null>(null);
+  // Refs for spectator bots (still run on main thread — they're fast enough)
   const spectatorBotBlackRef = useRef<OthelloBot | null>(null);
   const spectatorBotWhiteRef = useRef<OthelloBot | null>(null);
   const botMoveTimeoutRef = useRef<number | null>(null);
+  const calculatingRef = useRef(false);
 
   // Refs for callbacks to avoid stale closures
   const onAIMoveRef = useRef(onAIMove);
@@ -74,23 +90,25 @@ export function useAIPlayer(config: UseAIPlayerConfig): UseAIPlayerReturn {
       clearTimeout(botMoveTimeoutRef.current);
       botMoveTimeoutRef.current = null;
     }
+    aiManager.cancel();
+    calculatingRef.current = false;
+    setThinkingState(IDLE_THINKING);
   }, []);
 
   // Check and make AI move
   const checkAndMakeAIMove = useCallback(() => {
-    if (gameOver) return;
+    if (gameOver || calculatingRef.current) return;
 
     const state = engine.getState();
     const currentPlayer = state.currentPlayer;
 
-    // Spectator mode: both players are AI
+    // Spectator mode: both players are AI (main thread, fast bots)
     if (spectatorMode) {
       const bot =
         currentPlayer === 'B' ? spectatorBotBlackRef.current : spectatorBotWhiteRef.current;
 
       if (!bot) return;
 
-      // Add delay for better UX (longer for spectator mode so humans can follow)
       botMoveTimeoutRef.current = window.setTimeout(() => {
         if (!spectatorMode || gameOver) return;
 
@@ -107,30 +125,59 @@ export function useAIPlayer(config: UseAIPlayerConfig): UseAIPlayerReturn {
           engine.makeMove(move);
           onAIMoveRef.current?.(move);
         }
-      }, 1500); // 1.5 seconds for spectator mode
+      }, 1500);
       return;
     }
 
     // Single AI mode
-    if (!aiEnabled || !botRef.current) return;
-
-    // Only make AI move if it's the AI's turn
+    if (!aiEnabled) return;
     if (currentPlayer !== aiPlayer) return;
 
-    // Add delay for better UX
+    // Use Web Worker via AIManager
+    calculatingRef.current = true;
+    setThinkingState({ isThinking: true, depth: 0, nodesSearched: 0, bestMove: null });
+
+    // Small delay before starting computation for UX
     botMoveTimeoutRef.current = window.setTimeout(() => {
-      if (!aiEnabled || !botRef.current || gameOver) return;
+      if (!aiEnabled || gameOver) {
+        calculatingRef.current = false;
+        setThinkingState(IDLE_THINKING);
+        return;
+      }
 
       const currentState = engine.getState();
-      if (currentState.currentPlayer !== aiPlayer) return;
-
-      const move = botRef.current.calculateMove(currentState.board);
-      if (move) {
-        engine.makeMove(move);
-        onAIMoveRef.current?.(move);
+      if (currentState.currentPlayer !== aiPlayer) {
+        calculatingRef.current = false;
+        setThinkingState(IDLE_THINKING);
+        return;
       }
-    }, 800);
-  }, [engine, gameOver, aiEnabled, aiPlayer, spectatorMode]);
+
+      const moveHistory = engine.getMoveHistory().map((m) => ({ coordinate: m.coordinate }));
+
+      aiManager
+        .calculateMove(
+          currentState.board,
+          aiDifficulty,
+          aiPlayer,
+          moveHistory,
+          (progress) => setThinkingState(progress),
+          aiDifficulty === 'hard' ? 3000 : undefined,
+        )
+        .then((result) => {
+          calculatingRef.current = false;
+          setThinkingState(IDLE_THINKING);
+
+          if (result.move && !gameOver) {
+            engine.makeMove(result.move);
+            onAIMoveRef.current?.(result.move);
+          }
+        })
+        .catch(() => {
+          calculatingRef.current = false;
+          setThinkingState(IDLE_THINKING);
+        });
+    }, 300);
+  }, [engine, gameOver, aiEnabled, aiPlayer, aiDifficulty, spectatorMode]);
 
   // Actions
   const setAIEnabled = useCallback(
@@ -138,26 +185,16 @@ export function useAIPlayer(config: UseAIPlayerConfig): UseAIPlayerReturn {
       setAIEnabledState(enabled);
 
       if (enabled) {
-        // Initialize bot
-        botRef.current = new OthelloBot(aiDifficulty, aiPlayer);
-        // Schedule AI move check
         setTimeout(() => checkAndMakeAIMove(), 500);
       } else {
-        // Clean up
-        botRef.current = null;
         cancelPendingAIMove();
       }
     },
-    [aiDifficulty, aiPlayer, checkAndMakeAIMove, cancelPendingAIMove]
+    [checkAndMakeAIMove, cancelPendingAIMove],
   );
 
   const setAIDifficulty = useCallback((difficulty: BotDifficulty) => {
     setAIDifficultyState(difficulty);
-
-    // Update existing bot
-    if (botRef.current) {
-      botRef.current.setDifficulty(difficulty);
-    }
 
     // Update spectator bots
     if (spectatorBotBlackRef.current) {
@@ -171,16 +208,9 @@ export function useAIPlayer(config: UseAIPlayerConfig): UseAIPlayerReturn {
   const setAIPlayer = useCallback(
     (player: 'W' | 'B') => {
       setAIPlayerState(player);
-
-      // Update existing bot
-      if (botRef.current) {
-        botRef.current.setPlayer(player);
-      }
-
-      // Check if AI should move immediately
       setTimeout(() => checkAndMakeAIMove(), 500);
     },
-    [checkAndMakeAIMove]
+    [checkAndMakeAIMove],
   );
 
   const setSpectatorMode = useCallback(
@@ -188,30 +218,27 @@ export function useAIPlayer(config: UseAIPlayerConfig): UseAIPlayerReturn {
       setSpectatorModeState(enabled);
 
       if (enabled) {
-        // Disable regular AI
         setAIEnabledState(false);
-        botRef.current = null;
+        cancelPendingAIMove();
 
-        // Initialize bots for both players
         spectatorBotBlackRef.current = new OthelloBot(aiDifficulty, 'B');
         spectatorBotWhiteRef.current = new OthelloBot(aiDifficulty, 'W');
 
-        // Start AI vs AI game
         setTimeout(() => checkAndMakeAIMove(), 500);
       } else {
-        // Clean up spectator bots
         spectatorBotBlackRef.current = null;
         spectatorBotWhiteRef.current = null;
         cancelPendingAIMove();
       }
     },
-    [aiDifficulty, checkAndMakeAIMove, cancelPendingAIMove]
+    [aiDifficulty, checkAndMakeAIMove, cancelPendingAIMove],
   );
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       cancelPendingAIMove();
+      aiManager.dispose();
     };
   }, [cancelPendingAIMove]);
 
@@ -220,6 +247,7 @@ export function useAIPlayer(config: UseAIPlayerConfig): UseAIPlayerReturn {
     aiDifficulty,
     aiPlayer,
     spectatorMode,
+    thinkingState,
     setAIEnabled,
     setAIDifficulty,
     setAIPlayer,

@@ -92,7 +92,7 @@ const generateGameId = (): string => {
  */
 export const getGameRecords = (): GameRecord[] => {
   try {
-    // eslint-disable-next-line no-undef
+     
     const stored = localStorage.getItem(STATS_KEY);
     if (!stored) return [];
     const records = JSON.parse(stored) as GameRecord[];
@@ -120,7 +120,7 @@ export const saveGameRecord = (record: Omit<GameRecord, 'id' | 'timestamp'>): vo
       records.splice(MAX_RECORDS);
     }
 
-    // eslint-disable-next-line no-undef
+     
     localStorage.setItem(STATS_KEY, JSON.stringify(records));
   } catch {
     // localStorage might be full or unavailable
@@ -133,7 +133,7 @@ export const saveGameRecord = (record: Omit<GameRecord, 'id' | 'timestamp'>): vo
  */
 export const clearGameRecords = (): void => {
   try {
-    // eslint-disable-next-line no-undef
+     
     localStorage.removeItem(STATS_KEY);
   } catch {
     // Ignore errors

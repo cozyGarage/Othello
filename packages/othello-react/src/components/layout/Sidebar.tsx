@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { type Move, type PlayerTime } from 'othello-engine';
 import { PlayerInfoCard } from '../ui/PlayerInfoCard';
 import { TimeControl } from '../ui/TimeControl';
+import { MoveHistory } from '../ui/MoveHistory';
 import { features } from '../../config/features';
 import '../../styles/sidebar.css';
 
@@ -21,6 +22,13 @@ interface SidebarProps {
   onHintRequest?: () => void;
   hintsRemaining?: number;
   hintsEnabled?: boolean;
+  // AI thinking indicator
+  aiThinking?: boolean;
+  aiThinkingDepth?: number;
+  aiThinkingNodes?: number;
+  // Move navigation (replay)
+  activeMoveIndex?: number | null;
+  onMoveClick?: (index: number) => void;
 }
 
 /**
@@ -44,6 +52,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onHintRequest,
   hintsRemaining = 0,
   hintsEnabled = false,
+  // AI thinking
+  aiThinking = false,
+  aiThinkingDepth = 0,
+  aiThinkingNodes = 0,
+  // Move navigation
+  activeMoveIndex = null,
+  onMoveClick,
 }) => {
   // Store previous scores to calculate deltas
   // useRef persists across renders without triggering re-render
@@ -136,25 +151,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     prevBlackScore.current = blackScore;
     prevWhiteScore.current = whiteScore;
   }, [blackScore, whiteScore]);
-  /**
-   * Convert Coordinate to Chess Notation
-   *
-   * Converts engine coordinates [x, y] to readable chess notation
-   * Example: [3, 4] → "d5"
-   *
-   * Chess notation:
-   * - Files (columns): a-h (left to right)
-   * - Ranks (rows): 1-8 (bottom to top)
-   *
-   * @param coord - Engine coordinate [x, y] where x=column, y=row
-   * @returns Chess notation string like "e4"
-   */
-  const coordinateToNotation = (coord: [number, number]): string => {
-    const [row, col] = coord;
-    const file = String.fromCharCode(97 + col); // 97 = 'a', so col 0='a', 1='b', etc
-    const rank = (8 - row).toString(); // Flip row: row 0=rank 8, row 7=rank 1
-    return `${file}${rank}`;
-  };
 
   return (
     <div className="sidebar">
@@ -193,6 +189,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
       </div>
+
+      {/* AI Thinking Indicator */}
+      {aiThinking && (
+        <div className="sidebar-card ai-thinking-card">
+          <div className="ai-thinking-indicator">
+            <span className="ai-thinking-dots">
+              <span className="dot" />
+              <span className="dot" />
+              <span className="dot" />
+            </span>
+            <span className="ai-thinking-text">AI thinking...</span>
+          </div>
+          {aiThinkingDepth > 0 && (
+            <div className="ai-thinking-stats">
+              <span>Depth {aiThinkingDepth}</span>
+              <span>{aiThinkingNodes.toLocaleString()} nodes</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Score Display */}
       <div className="sidebar-card">
@@ -262,30 +278,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Move History - fills remaining space in sidebar */}
       {features.moveHistory && (
         <div className="sidebar-card move-history-card">
-          <h3 className="sidebar-card-title">Move History</h3>
-          <div className="move-history custom-scrollbar">
-            {moves.length === 0 ? (
-              <p
-                style={{
-                  color: 'var(--color-text-muted)',
-                  textAlign: 'center',
-                  padding: 'var(--spacing-md)',
-                }}
-              >
-                No moves yet
-              </p>
-            ) : (
-              <ul className="move-list">
-                {moves.map((move, index) => (
-                  <li key={index} className="move-item">
-                    <span className="move-number">{index + 1}.</span>
-                    <div className={`move-player ${move.player === 'B' ? 'black' : 'white'}`} />
-                    <span className="move-notation">{coordinateToNotation(move.coordinate)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <h3 className="sidebar-card-title">Moves</h3>
+          <MoveHistory
+            moves={moves}
+            isVisible={true}
+            activeMove={activeMoveIndex}
+            onMoveClick={onMoveClick}
+          />
         </div>
       )}
     </div>

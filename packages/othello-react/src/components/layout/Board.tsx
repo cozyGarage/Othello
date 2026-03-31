@@ -1,7 +1,17 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { type Board as BoardType, type Coordinate, B, W, P, E } from 'othello-engine';
 import { features } from '../../config/features';
 import '../../styles/board.css';
+
+const COL_LABELS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const;
+
+function tileLabel(row: number, col: number, tile: string | null): string {
+  const pos = `${COL_LABELS[col]}${8 - row}`;
+  if (tile === B) return `${pos}, Black piece`;
+  if (tile === W) return `${pos}, White piece`;
+  if (tile === P) return `${pos}, Valid move`;
+  return `${pos}, Empty`;
+}
 
 /**
  * Board Component Props
@@ -57,6 +67,43 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, lastMove, gameOver, 
   const prevBoardRef = useRef<BoardType | null>(null);
   const [displayBoard, setDisplayBoard] = useState<BoardType>(board);
   const [flippingTiles, setFlippingTiles] = useState<Set<string>>(new Set());
+  const [focusedCell, setFocusedCell] = useState<[number, number]>([3, 3]);
+  const tileRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const [row, col] = focusedCell;
+      let nextRow = row;
+      let nextCol = col;
+
+      switch (e.key) {
+        case 'ArrowUp':
+          nextRow = Math.max(0, row - 1);
+          break;
+        case 'ArrowDown':
+          nextRow = Math.min(7, row + 1);
+          break;
+        case 'ArrowLeft':
+          nextCol = Math.max(0, col - 1);
+          break;
+        case 'ArrowRight':
+          nextCol = Math.min(7, col + 1);
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          if (!gameOver) onPlayerTurn([col, row]);
+          return;
+        default:
+          return;
+      }
+
+      e.preventDefault();
+      setFocusedCell([nextRow, nextCol]);
+      tileRefs.current.get(`${nextRow}-${nextCol}`)?.focus();
+    },
+    [focusedCell, gameOver, onPlayerTurn],
+  );
 
   /**
    * Helper: Check if board is in initial game state
@@ -256,11 +303,20 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, lastMove, gameOver, 
         .filter(Boolean)
         .join(' ');
 
+      const isFocused = focusedCell[0] === row && focusedCell[1] === col;
+
       tiles.push(
         <div
           key={`${row}-${col}`}
+          ref={(el) => {
+            if (el) tileRefs.current.set(`${row}-${col}`, el);
+          }}
           className={tileClasses}
+          role="gridcell"
+          aria-label={tileLabel(row, col, gameTile)}
+          tabIndex={isFocused ? 0 : -1}
           onClick={() => handleTileClick(row, col)}
+          onKeyDown={handleKeyDown}
         >
           {/* 
             tile-inner wrapper is ESSENTIAL for CSS 3D transforms
@@ -322,7 +378,9 @@ const Board: React.FC<BoardProps> = ({ board, onPlayerTurn, lastMove, gameOver, 
 
   return (
     <div className="Board">
-      <div className="board-grid">{tiles}</div>
+      <div className="board-grid" role="grid" aria-label="Othello game board">
+        {tiles}
+      </div>
     </div>
   );
 };

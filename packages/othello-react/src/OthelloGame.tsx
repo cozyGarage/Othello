@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { Component, type TouchEvent } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import Board from './components/layout/Board';
@@ -9,6 +9,10 @@ import {
   PositionAnalysis,
   GameStatistics,
   GameResultModal,
+  ErrorBoundary,
+  ScreenReaderAnnouncer,
+  GameModeSelector,
+  type GameModeConfig,
 } from './components/ui';
 import { hasLoadingScreen, hasSoundEffects } from './config/features';
 import { soundEffects } from './utils/soundEffects';
@@ -31,6 +35,10 @@ import {
 } from './utils/timePreferences';
 // Hints preferences
 import { getHintsPerGame, setHintsPerGame } from './utils/hintPreferences';
+// AI Manager (Web Worker)
+import { aiManager } from './utils/aiManager';
+// Theme system
+import { applyTheme, getSavedThemeId } from './config/themes';
 // Phase 4: Import game statistics
 import { saveGameRecord } from './utils/gameStatistics';
 import {
@@ -123,6 +131,16 @@ interface OthelloGameState {
   // Evaluation graph
   evaluationHistory: Array<{ move: number; evaluation: number }>;
   graphVisible: boolean;
+  // Accessibility
+  srAnnouncement: string | null;
+  // AI thinking indicator
+  aiThinking: boolean;
+  aiThinkingDepth: number;
+  aiThinkingNodes: number;
+  // Game mode selector
+  modeSelectorOpen: boolean;
+  // Board theme
+  boardTheme: string;
 }
 
 /**
@@ -136,13 +154,15 @@ interface OthelloGameState {
  */
 class OthelloGame extends Component<{}, OthelloGameState> {
   private engine: OthelloGameEngine;
-  private bot: OthelloBot | null = null;
-  // Second bot for spectator mode (AI vs AI)
+  // Spectator mode bots (AI vs AI) — run on main thread
   private spectatorBotBlack: OthelloBot | null = null;
   private spectatorBotWhite: OthelloBot | null = null;
   private botMoveTimeout: number | null = null;
   private timeUpdateInterval: number | null = null;
   private blogMessageTimeout: number | null = null;
+  // Swipe gesture tracking
+  private touchStartX: number = 0;
+  private touchStartY: number = 0;
 
   constructor(props: {}) {
     super(props);
@@ -244,6 +264,12 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       // Evaluation graph - start with initial position evaluation
       evaluationHistory: [{ move: 0, evaluation: 0 }],
       graphVisible: true,
+      srAnnouncement: null,
+      aiThinking: false,
+      aiThinkingDepth: 0,
+      aiThinkingNodes: 0,
+      modeSelectorOpen: false,
+      boardTheme: getSavedThemeId(),
     };
 
     // Phase 3: Load and apply mute time sounds preference
@@ -252,6 +278,9 @@ class OthelloGame extends Component<{}, OthelloGameState> {
   }
 
   componentDidMount(): void {
+    // Apply saved board theme
+    applyTheme(this.state.boardTheme);
+
     // Subscribe to engine events
     this.engine.on('move', this.handleMoveEvent);
     this.engine.on('invalidMove', this.handleInvalidMoveEvent);
@@ -472,11 +501,15 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       // Track evaluation after move
       const evaluation = this.engine.evaluatePosition();
       const newEvalPoint = { move: moveHistory.length, evaluation };
+      const colLabel = String.fromCharCode(97 + move.coordinate[0]);
+      const rowLabel = 8 - move.coordinate[1];
+      const playerName = move.player === 'B' ? 'Black' : 'White';
       this.setState((prev) => ({
         lastMove: move.coordinate,
         moveHistory,
         moveTimestamps,
         message: `${opponentName} has no valid moves and must pass!`,
+        srAnnouncement: `${playerName} played ${colLabel}${rowLabel}. ${opponentName} must pass. Score: Black ${state.score.black}, White ${state.score.white}.`,
         // Slice to ensure we overwrite any future history if we branched
         evaluationHistory: [...prev.evaluationHistory.slice(0, moveHistory.length), newEvalPoint],
       }));
@@ -485,10 +518,15 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       // Track evaluation after move
       const evaluation = this.engine.evaluatePosition();
       const newEvalPoint = { move: moveHistory.length, evaluation };
+      const colLabel = String.fromCharCode(97 + move.coordinate[0]);
+      const rowLabel = 8 - move.coordinate[1];
+      const playerName = move.player === 'B' ? 'Black' : 'White';
+      const nextPlayer = currentPlayer === 'B' ? 'Black' : 'White';
       this.setState((prev) => ({
         lastMove: move.coordinate,
         moveHistory,
         moveTimestamps,
+        srAnnouncement: `${playerName} played ${colLabel}${rowLabel}. ${nextPlayer}'s turn. Score: Black ${state.score.black}, White ${state.score.white}.`,
         // Slice to ensure we overwrite any future history if we branched
         evaluationHistory: [...prev.evaluationHistory.slice(0, moveHistory.length), newEvalPoint],
       }));
@@ -726,37 +764,25 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.setState({ aiEnabled: enabled });
 
     if (enabled) {
-      // Initialize bot with current settings
-      this.bot = new OthelloBot(this.state.aiDifficulty, this.state.aiPlayer);
-
       // Check if AI should move immediately
       setTimeout(() => this.checkAndMakeAIMove(), 500);
     } else {
-      // Clean up bot
-      this.bot = null;
+      // Cancel any pending AI computation
+      aiManager.cancel();
       if (this.botMoveTimeout !== null) {
         clearTimeout(this.botMoveTimeout);
         this.botMoveTimeout = null;
       }
+      this.setState({ aiThinking: false });
     }
   };
 
   handleAiDifficultyChange = (difficulty: BotDifficulty): void => {
     this.setState({ aiDifficulty: difficulty });
-
-    // Update bot if it exists
-    if (this.bot) {
-      this.bot.setDifficulty(difficulty);
-    }
   };
 
   handleAiPlayerChange = (player: 'W' | 'B'): void => {
     this.setState({ aiPlayer: player });
-
-    // Update bot if it exists
-    if (this.bot) {
-      this.bot.setPlayer(player);
-    }
 
     // Check if AI should move immediately
     setTimeout(() => this.checkAndMakeAIMove(), 500);
@@ -943,7 +969,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     }
 
     // Single AI mode
-    if (!aiEnabled || !this.bot) {
+    if (!aiEnabled) {
       return;
     }
 
@@ -952,22 +978,47 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       return;
     }
 
-    // Add a small delay for better UX
+    // Use Web Worker via AIManager for non-blocking AI computation
+    this.setState({ aiThinking: true, aiThinkingDepth: 0, aiThinkingNodes: 0 });
+
     this.botMoveTimeout = window.setTimeout(() => {
-      if (!this.state.aiEnabled || !this.bot) {
+      if (!this.state.aiEnabled || this.state.gameOver) {
+        this.setState({ aiThinking: false });
         return;
       }
 
       const currentState = this.engine.getState();
       if (currentState.currentPlayer !== this.state.aiPlayer) {
+        this.setState({ aiThinking: false });
         return;
       }
 
-      const move = this.bot.calculateMove(currentState.board);
-      if (move) {
-        this.engine.makeMove(move);
-      }
-    }, 800);
+      const moveHistory = this.engine.getMoveHistory().map((m) => ({ coordinate: m.coordinate }));
+
+      aiManager
+        .calculateMove(
+          currentState.board,
+          this.state.aiDifficulty,
+          this.state.aiPlayer,
+          moveHistory,
+          (progress) => {
+            this.setState({
+              aiThinkingDepth: progress.depth,
+              aiThinkingNodes: progress.nodesSearched,
+            });
+          },
+          this.state.aiDifficulty === 'hard' ? 3000 : undefined,
+        )
+        .then((result) => {
+          this.setState({ aiThinking: false, aiThinkingDepth: 0, aiThinkingNodes: 0 });
+          if (result.move && !this.state.gameOver) {
+            this.engine.makeMove(result.move);
+          }
+        })
+        .catch(() => {
+          this.setState({ aiThinking: false, aiThinkingDepth: 0, aiThinkingNodes: 0 });
+        });
+    }, 300);
   };
 
   handleSpectatorToggle = (enabled: boolean): void => {
@@ -976,7 +1027,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     if (enabled) {
       // Disable regular AI when entering spectator mode
       this.setState({ aiEnabled: false });
-      this.bot = null;
+      aiManager.cancel();
 
       // Initialize bots for both players
       this.spectatorBotBlack = new OthelloBot(this.state.aiDifficulty, 'B');
@@ -1119,6 +1170,70 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     }
   };
 
+  // Game mode selector handlers
+  handleOpenModeSelector = (): void => {
+    if (this.engine.hasTimeControl() && !this.state.gameOver) {
+      this.engine.pauseTime();
+    }
+    this.setState({ modeSelectorOpen: true });
+  };
+
+  handleModeStart = (config: GameModeConfig): void => {
+    this.setState({ modeSelectorOpen: false });
+
+    // Apply AI settings from the config
+    if (config.mode === 'ai') {
+      this.setState({
+        aiEnabled: true,
+        aiDifficulty: config.aiDifficulty,
+        aiPlayer: config.aiPlaysAs,
+        spectatorMode: false,
+      });
+    } else if (config.mode === 'spectator') {
+      this.setState({
+        aiEnabled: false,
+        spectatorMode: true,
+        aiDifficulty: config.aiDifficulty,
+      });
+      this.spectatorBotBlack = new OthelloBot(config.aiDifficulty, 'B');
+      this.spectatorBotWhite = new OthelloBot(config.aiDifficulty, 'W');
+    } else {
+      this.setState({ aiEnabled: false, spectatorMode: false });
+      aiManager.cancel();
+    }
+
+    this.handleRestart();
+  };
+
+  // Theme handler
+  handleThemeChange = (themeId: string): void => {
+    applyTheme(themeId);
+    this.setState({ boardTheme: themeId });
+  };
+
+  // Swipe gesture handlers (mobile undo/redo)
+  handleTouchStart = (e: TouchEvent): void => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    this.touchStartX = touch.clientX;
+    this.touchStartY = touch.clientY;
+  };
+
+  handleTouchEnd = (e: TouchEvent): void => {
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    const dx = touch.clientX - this.touchStartX;
+    const dy = touch.clientY - this.touchStartY;
+    // Only handle horizontal swipes (dx dominates, threshold 60px)
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60) {
+      if (dx < 0) {
+        this.handleUndo();
+      } else {
+        this.handleRedo();
+      }
+    }
+  };
+
   // Result modal handlers
   handleResultModalClose = (): void => {
     this.setState({ resultModalOpen: false });
@@ -1146,6 +1261,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     return (
       <div className="OthelloGame page-shell">
         <LoadingScreen isLoading={this.state.isLoading} />
+        <ScreenReaderAnnouncer message={this.state.srAnnouncement} />
 
         {!this.state.isLoading && (
           <div className="content-layer">
@@ -1208,7 +1324,12 @@ class OthelloGame extends Component<{}, OthelloGameState> {
             </section>
 
             <div className="game-wrapper" id="play-area">
-              <div className="game-container">
+              <ErrorBoundary onReset={this.handleRestart}>
+              <div
+                className="game-container"
+                onTouchStart={this.handleTouchStart}
+                onTouchEnd={this.handleTouchEnd}
+              >
                 <div className="board-area">
                   <Board
                     board={displayBoard}
@@ -1246,6 +1367,10 @@ class OthelloGame extends Component<{}, OthelloGameState> {
                     onHintRequest={this.handleHintRequest}
                     hintsRemaining={this.state.hintsRemaining}
                     hintsEnabled={this.state.hintsEnabled}
+                    // AI thinking indicator
+                    aiThinking={this.state.aiThinking}
+                    aiThinkingDepth={this.state.aiThinkingDepth}
+                    aiThinkingNodes={this.state.aiThinkingNodes}
                   />
 
                   {/* Evaluation Graph - Egaroucid-style */}
@@ -1261,7 +1386,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
 
               {/* Action Bar - New Game, Settings, Stats */}
               <div className="action-bar">
-                <button className="action-bar-btn primary" onClick={this.handleRestart}>
+                <button className="action-bar-btn primary" onClick={this.handleOpenModeSelector}>
                   <span className="btn-icon">🔄</span>
                   <span className="btn-text">New Game</span>
                 </button>
@@ -1278,6 +1403,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
                   <span className="btn-text">Replay</span>
                 </button>
               </div>
+            </ErrorBoundary>
             </div>
 
             <div className="below-fold">
@@ -1308,6 +1434,8 @@ class OthelloGame extends Component<{}, OthelloGameState> {
               onSoundVolumeChange={this.handleVolumeChange}
               hintsPerGame={this.state.hintsPerGame}
               onHintsPerGameChange={this.handleHintsPerGameChange}
+              boardTheme={this.state.boardTheme}
+              onThemeChange={this.handleThemeChange}
             />
 
             {/* Game Statistics Modal (accessed from navbar) */}
@@ -1346,6 +1474,22 @@ class OthelloGame extends Component<{}, OthelloGameState> {
               onPlayAgain={this.handleResultPlayAgain}
               onReplay={this.handleResultReplay}
               onClose={this.handleResultModalClose}
+            />
+
+            {/* Game Mode Selector */}
+            <GameModeSelector
+              isOpen={this.state.modeSelectorOpen}
+              onStart={this.handleModeStart}
+              onClose={() => this.setState({ modeSelectorOpen: false })}
+              currentConfig={{
+                mode: this.state.spectatorMode
+                  ? 'spectator'
+                  : this.state.aiEnabled
+                    ? 'ai'
+                    : 'human',
+                aiDifficulty: this.state.aiDifficulty,
+                aiPlaysAs: this.state.aiPlayer,
+              }}
             />
           </div>
         )}

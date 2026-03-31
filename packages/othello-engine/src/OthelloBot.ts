@@ -147,6 +147,7 @@ export class OthelloBot {
   private nodesSearched: number = 0;
   private useOpeningBook: boolean = true;
   private moveHistory: Array<{ coordinate: Coordinate }> = [];
+  private searchDepth: number = 5;
 
   /**
    * Creates a new AI bot
@@ -210,6 +211,23 @@ export class OthelloBot {
    */
   public getNodesSearched(): number {
     return this.nodesSearched;
+  }
+
+  /**
+   * Sets the minimax search depth (for hard difficulty)
+   * Higher depth = stronger play but slower computation
+   *
+   * @param depth - Search depth (1-12)
+   */
+  public setSearchDepth(depth: number): void {
+    this.searchDepth = Math.max(1, Math.min(12, depth));
+  }
+
+  /**
+   * Gets the current search depth
+   */
+  public getSearchDepth(): number {
+    return this.searchDepth;
   }
 
   /**
@@ -393,7 +411,7 @@ export class OthelloBot {
    * @private
    */
   private getMinimaxMove(board: Board, validMoves: Coordinate[]): Coordinate {
-    const depth = 5; // Look ahead 5 moves (increased from 4)
+    const depth = this.searchDepth;
     const firstMove = validMoves[0];
     if (!firstMove) {
       throw new Error('No valid moves available');

@@ -35,14 +35,20 @@ export default [
         window: 'readonly',
         document: 'readonly',
         navigator: 'readonly',
+        localStorage: 'readonly',
         console: 'readonly',
         AudioContext: 'readonly',
         webkitAudioContext: 'readonly',
         Window: 'readonly',
         Document: 'readonly',
         HTMLDivElement: 'readonly',
+        HTMLSpanElement: 'readonly',
         HTMLElement: 'readonly',
         KeyboardEvent: 'readonly',
+        MessageEvent: 'readonly',
+        Worker: 'readonly',
+        URL: 'readonly',
+        performance: 'readonly',
         global: 'writable',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
@@ -109,6 +115,33 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
       'no-console': 'off',
+    },
+  },
+  {
+    // Service worker runs in ServiceWorkerGlobalScope
+    files: ['**/public/sw.js'],
+    languageOptions: {
+      globals: {
+        self: 'readonly',
+        caches: 'readonly',
+        fetch: 'readonly',
+        clients: 'readonly',
+        skipWaiting: 'readonly',
+      },
+    },
+  },
+  {
+    // Web Worker files run in a DedicatedWorkerGlobalScope, not window
+    files: ['**/workers/*.worker.ts'],
+    languageOptions: {
+      globals: {
+        self: 'readonly',
+        postMessage: 'readonly',
+        importScripts: 'readonly',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'off',
     },
   },
   prettier,

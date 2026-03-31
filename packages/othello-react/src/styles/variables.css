@@ -24,6 +24,7 @@
   /* Board Colors */
   --color-board-dark: #2c5f2d;
   --color-board-light: #97d077;
+  --color-board-border: #1a3d1a;
   --color-board-bg: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
 
   /* Spacing - Base values */

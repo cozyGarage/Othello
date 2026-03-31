@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { features, toggleFeature, type FeatureFlags } from '../../config/features';
 import { soundEffects } from '../../utils/soundEffects';
 import { TIME_PRESETS } from '../../config/timePresets';
+import { THEMES } from '../../config/themes';
 import type { BotDifficulty } from 'othello-engine';
 import '../../styles/ui.css';
 
@@ -34,6 +35,9 @@ interface SettingsPanelProps {
   // Hints per game
   hintsPerGame?: number;
   onHintsPerGameChange?: (count: number) => void;
+  // Board theme
+  boardTheme?: string;
+  onThemeChange?: (themeId: string) => void;
 }
 
 /**
@@ -75,6 +79,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onSoundVolumeChange,
   hintsPerGame = 3,
   onHintsPerGameChange,
+  boardTheme = 'green',
+  onThemeChange,
 }) => {
   const [localFeatures, setLocalFeatures] = useState<FeatureFlags>({ ...features });
   const [localCustomMinutes, setLocalCustomMinutes] = useState(customInitialMinutes);
@@ -125,7 +131,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   };
 
   return (
-    <div className="settings-overlay" onClick={onClose}>
+    <div className="settings-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Game settings">
       <div
         className="settings-panel shadow border custom-scrollbar"
         onClick={(e) => e.stopPropagation()}
@@ -381,9 +387,44 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
           </div>
 
+          {/* Board Theme Picker */}
+          {onThemeChange && (
+            <div className="settings-section">
+              <h3 className="section-title">🎨 Board Theme</h3>
+              <div className="theme-picker">
+                {THEMES.map((theme) => (
+                  <button
+                    key={theme.id}
+                    className={`theme-option ${boardTheme === theme.id ? 'selected' : ''}`}
+                    onClick={() => onThemeChange(theme.id)}
+                    aria-label={`Select ${theme.name} theme`}
+                  >
+                    <div className="theme-swatch">
+                      <div
+                        className="theme-swatch-half"
+                        style={{
+                          background: theme.vars['--color-board-dark'],
+                          borderRadius: '4px 0 0 4px',
+                        }}
+                      />
+                      <div
+                        className="theme-swatch-half"
+                        style={{
+                          background: theme.vars['--color-board-light'],
+                          borderRadius: '0 4px 4px 0',
+                        }}
+                      />
+                    </div>
+                    <span className="theme-option-name">{theme.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Feature Flags Section */}
           <div className="settings-section">
-            <h3 className="section-title">🎨 Features</h3>
+            <h3 className="section-title">⚙️ Features</h3>
 
             {(Object.keys(featureLabels) as Array<keyof FeatureFlags>).map((feature) => (
               <div key={feature} className="setting-item">

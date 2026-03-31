@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "name": "Othello - Classic Board Game",
+  "short_name": "Othello",
+  "description": "Play Othello (Reversi) with AI opponents, time controls, move history, and game analysis.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -8,8 +9,11 @@
       "type": "image/png"
     }
   ],
-  "start_url": "./index.html",
+  "start_url": "/Othello/",
+  "scope": "/Othello/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "any",
+  "theme_color": "#1a1a2e",
+  "background_color": "#1a1a2e",
+  "categories": ["games", "entertainment"]
 }

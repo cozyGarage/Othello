@@ -17,3 +17,7 @@ export { GameReplay } from './GameReplay';
 export { PositionAnalysis } from './PositionAnalysis';
 export { GameStatistics } from './GameStatistics';
 export { GameResultModal } from './GameResultModal';
+export { ErrorBoundary } from './ErrorBoundary';
+export { ScreenReaderAnnouncer } from './ScreenReaderAnnouncer';
+export { GameModeSelector } from './GameModeSelector';
+export type { GameMode, GameModeConfig } from './GameModeSelector';
