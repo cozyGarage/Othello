@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { OthelloBot, type Board, type Coordinate } from 'othello-engine';
+import { type Board, type Coordinate, CORNER_COORDINATES, getPositionWeight } from 'othello-engine';
+import { aiManager } from '../../utils/aiManager';
 
 /**
  * Props for the PositionAnalysis component
@@ -27,17 +28,6 @@ interface MoveAnalysis {
 }
 
 /**
- * Corner positions (most valuable in Othello)
- * Note: Coordinates are [x, y] = [col, row]
- */
-const CORNERS: Coordinate[] = [
-  [0, 0],
-  [7, 0],
-  [0, 7],
-  [7, 7],
-];
-
-/**
  * Edge positions (valuable in Othello)
  * Note: coord is [x, y] = [col, row]
  */
@@ -45,21 +35,6 @@ const isEdge = (coord: Coordinate): boolean => {
   const [x, y] = coord;
   return x === 0 || x === 7 || y === 0 || y === 7;
 };
-
-/**
- * Position weights for static evaluation
- * Corners: 100, Adjacent to corners (dangerous): -20, Edges: 10, etc.
- */
-const POSITION_WEIGHTS = [
-  [100, -20, 10, 5, 5, 10, -20, 100],
-  [-20, -50, -2, -2, -2, -2, -50, -20],
-  [10, -2, -1, -1, -1, -1, -2, 10],
-  [5, -2, -1, -1, -1, -1, -2, 5],
-  [5, -2, -1, -1, -1, -1, -2, 5],
-  [10, -2, -1, -1, -1, -1, -2, 10],
-  [-20, -50, -2, -2, -2, -2, -50, -20],
-  [100, -20, 10, 5, 5, 10, -20, 100],
-];
 
 /**
  * PositionAnalysis - AI-powered move suggestions and position evaluation
@@ -95,29 +70,14 @@ export const PositionAnalysis: React.FC<PositionAnalysisProps> = ({
   /** Analysis in progress flag */
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
 
-  /** Reference to the bot instance */
-  const botRef = useRef<OthelloBot | null>(null);
+  const analysisRequestRef = useRef(0);
 
-  /**
-   * Calculate position score using static evaluation
-   * Note: coord is [x, y] = [col, row], POSITION_WEIGHTS is [row][col]
-   */
-  const getPositionScore = useCallback((coord: Coordinate): number => {
-    const [col, row] = coord;
-    const weight = POSITION_WEIGHTS[row]?.[col] ?? 0;
-    return weight;
-  }, []);
-
-  /**
-   * Check if a move is a corner
-   * Note: CORNERS are in [x, y] format
-   */
   const isCorner = useCallback((coord: Coordinate): boolean => {
-    return CORNERS.some(([x, y]) => coord[0] === x && coord[1] === y);
+    return CORNER_COORDINATES.some(([x, y]) => coord[0] === x && coord[1] === y);
   }, []);
 
   /**
-   * Analyze all valid moves and determine best move
+   * Analyze all valid moves and determine best move via shared AIManager path.
    */
   const analyzePosition = useCallback(() => {
     if (!enabled || board.tiles.length === 0) {
@@ -126,58 +86,51 @@ export const PositionAnalysis: React.FC<PositionAnalysisProps> = ({
       return;
     }
 
+    const requestId = ++analysisRequestRef.current;
     setIsAnalyzing(true);
 
-    // Initialize bot if needed
-    if (!botRef.current) {
-      botRef.current = new OthelloBot('hard', board.playerTurn);
-    } else {
-      botRef.current.setPlayer(board.playerTurn);
-    }
-
     // Create a clean board for the bot (replace 'P' with 'E')
-    // The annotated board has 'P' for valid moves, but bot needs 'E' empty squares
     const cleanBoard: Board = {
       ...board,
       tiles: board.tiles.map((row) => row.map((cell) => (cell === 'P' ? 'E' : cell)) as typeof row),
     };
 
-    // Get best move from AI using clean board
-    const aiMove = botRef.current.calculateMove(cleanBoard);
-    setBestMove(aiMove);
-
-    // Analyze all valid moves from the annotated board
-    // Note: board.tiles is [row][col], but Coordinate is [x, y] = [col, row]
+    // Static ranking from annotated valid-move markers
     const validMoves = board.tiles
       .flatMap((row, rowIdx) =>
         row.map((cell, colIdx) => ({ cell, coord: [colIdx, rowIdx] as Coordinate }))
       )
-      .filter(({ cell }) => cell === 'P') // 'P' marks valid moves in annotated board
+      .filter(({ cell }) => cell === 'P')
       .map(({ coord }) => coord);
 
-    // Get coordinates from the board's valid moves if available
-    const movesToAnalyze = validMoves.length > 0 ? validMoves : [];
+    aiManager
+      .calculateMove(cleanBoard, 'hard', board.playerTurn, undefined, undefined, 1500)
+      .then((result) => {
+        if (requestId !== analysisRequestRef.current) return;
 
-    const moveAnalysis: MoveAnalysis[] = movesToAnalyze.map((coord) => ({
-      coordinate: coord,
-      score: getPositionScore(coord),
-      isCorner: isCorner(coord),
-      isEdge: isEdge(coord),
-      isBestMove: aiMove !== null && coord[0] === aiMove[0] && coord[1] === aiMove[1],
-    }));
+        const aiMove = result.move;
+        setBestMove(aiMove);
 
-    // Sort by score (best first)
-    moveAnalysis.sort((a, b) => b.score - a.score);
+        const moveAnalysis: MoveAnalysis[] = validMoves.map((coord) => ({
+          coordinate: coord,
+          score: getPositionWeight(coord),
+          isCorner: isCorner(coord),
+          isEdge: isEdge(coord),
+          isBestMove: aiMove !== null && coord[0] === aiMove[0] && coord[1] === aiMove[1],
+        }));
 
-    setAnalysis(moveAnalysis);
-    setIsAnalyzing(false);
-
-    // Notify parent of best move
-    if (onHintMove) {
-      onHintMove(aiMove);
-    }
+        moveAnalysis.sort((a, b) => b.score - a.score);
+        setAnalysis(moveAnalysis);
+        setIsAnalyzing(false);
+        onHintMove?.(aiMove);
+      })
+      .catch(() => {
+        if (requestId !== analysisRequestRef.current) return;
+        setIsAnalyzing(false);
+      });
+    // onHintMove intentionally excluded to prevent infinite loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, board, getPositionScore, isCorner]); // onHintMove intentionally excluded to prevent infinite loop
+  }, [enabled, board, isCorner]);
 
   /**
    * Reference to track if we need to re-analyze

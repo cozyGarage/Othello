@@ -468,4 +468,20 @@ describe('OthelloGameEngine import/timeout hardening', () => {
     expect(gameOver).toBe(true);
     expect(engine.checkTimeout()).toBe(false);
   });
+
+  test('configureTimeControl attaches and removes clocks without losing board', () => {
+    const engine = new OthelloGameEngine();
+    engine.makeMove([3, 2]);
+    const historyLen = engine.getMoveHistory().length;
+
+    engine.configureTimeControl({ initialTime: 60_000, increment: 0 });
+    expect(engine.hasTimeControl()).toBe(true);
+    expect(engine.getTimeRemaining()?.black).toBe(60_000);
+    expect(engine.getMoveHistory().length).toBe(historyLen);
+
+    engine.configureTimeControl(null);
+    expect(engine.hasTimeControl()).toBe(false);
+    expect(engine.getTimeRemaining()).toBeNull();
+    expect(engine.getMoveHistory().length).toBe(historyLen);
+  });
 });

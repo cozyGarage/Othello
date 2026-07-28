@@ -1,5 +1,6 @@
 import { Board, Coordinate, getValidMoves, isGameOver, score, E } from './index';
 import { lookupOpeningBook } from './openingBook';
+import { POSITION_WEIGHTS, CORNER_COORDINATES } from './positionWeights';
 
 /**
  * AI difficulty levels for the Othello bot
@@ -10,38 +11,9 @@ import { lookupOpeningBook } from './openingBook';
 export type BotDifficulty = 'easy' | 'medium' | 'hard';
 
 /**
- * Position evaluation weights for the Minimax algorithm
- *
- * Strategic values for each board position:
- * - Corners (100): Most valuable, cannot be flipped
- * - Edge C-squares (-50): Dangerous, often lead to losing corners
- * - Edge X-squares (-20): Dangerous, adjacent to corners
- * - Edges (10): Moderately valuable, hard to flip
- * - Interior (-1 to 5): Less valuable, easily flipped
- *
- * This heuristic guides the AI towards strong positions and
- * away from weak ones during lookahead search.
- */
-const POSITION_WEIGHTS = [
-  [100, -20, 10, 5, 5, 10, -20, 100],
-  [-20, -50, -2, -2, -2, -2, -50, -20],
-  [10, -2, -1, -1, -1, -1, -2, 10],
-  [5, -2, -1, -1, -1, -1, -2, 5],
-  [5, -2, -1, -1, -1, -1, -2, 5],
-  [10, -2, -1, -1, -1, -1, -2, 10],
-  [-20, -50, -2, -2, -2, -2, -50, -20],
-  [100, -20, 10, 5, 5, 10, -20, 100],
-];
-
-/**
  * Corner coordinates for quick lookup
  */
-const CORNERS: Coordinate[] = [
-  [0, 0],
-  [0, 7],
-  [7, 0],
-  [7, 7],
-];
+const CORNERS: Coordinate[] = CORNER_COORDINATES.map(([x, y]) => [x, y] as Coordinate);
 
 /**
  * X-squares (diagonal to corners) - very dangerous positions

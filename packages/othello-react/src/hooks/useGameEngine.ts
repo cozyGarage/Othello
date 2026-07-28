@@ -19,7 +19,7 @@ import {
   getTimeControlEnabled,
   getSelectedTimePreset,
   getCustomTimeConfig,
-  getSavedTimeState,
+  clearSavedTimeState,
 } from '../utils/timePreferences';
 
 /**
@@ -44,111 +44,74 @@ export interface UseGameEngineConfig {
  * Return type for useGameEngine hook
  */
 export interface UseGameEngineReturn {
-  // Engine instance
   engine: OthelloGameEngine;
-
-  // Core state
   board: BoardType;
   moveHistory: Move[];
   lastMove: Coordinate | null;
   gameOver: boolean;
-
-  // Evaluation tracking
   evaluationHistory: EvaluationPoint[];
-
-  // Time control
   timeRemaining: PlayerTime | null;
   timeControlEnabled: boolean;
   selectedTimePreset: string;
-
-  // Actions
   makeMove: (coord: Coordinate) => void;
   undo: () => boolean;
   redo: () => boolean;
   canUndo: () => boolean;
   canRedo: () => boolean;
   reset: () => void;
-
-  // Time control actions
   setTimeControlEnabled: (enabled: boolean, config?: TimeControlConfig) => void;
   setTimePreset: (presetId: string) => void;
   pauseTime: () => void;
   resumeTime: () => void;
-
-  // State management
   setGameOver: (value: boolean) => void;
   setMoveHistory: (moves: Move[]) => void;
   setLastMove: (move: Coordinate | null) => void;
   setEvaluationHistory: (history: EvaluationPoint[]) => void;
   addEvaluationPoint: (point: EvaluationPoint) => void;
+  setTimeRemaining: (time: PlayerTime | null) => void;
+}
+
+function resolveInitialTimeConfig(): TimeControlConfig | undefined {
+  const savedTimeControlEnabled = getTimeControlEnabled();
+  if (!savedTimeControlEnabled) return undefined;
+
+  const savedTimePreset = getSelectedTimePreset();
+  const savedCustomConfig = getCustomTimeConfig();
+  if (savedTimePreset === 'custom') {
+    return {
+      initialTime: (savedCustomConfig?.initialMinutes ?? 5) * 60 * 1000,
+      increment: (savedCustomConfig?.incrementSeconds ?? 0) * 1000,
+    };
+  }
+  const preset = getPresetById(savedTimePreset) || getDefaultPreset();
+  return preset.config;
 }
 
 /**
- * Custom hook that encapsulates the Othello game engine logic.
- *
- * Handles:
- * - Engine initialization with time control config
- * - Event listeners (move, invalidMove, gameOver, stateChange)
- * - Time state restoration from localStorage
- * - Core state: board, moveHistory, gameOver, lastMove
+ * Encapsulates engine lifecycle + event bridge.
+ * Aligned with audit behavior: does not restore orphaned clock-only state.
  */
 export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineReturn {
   const { onMove, onInvalidMove, onGameOver, onStateChange } = config;
-
-  // Refs for mutable values
   const engineRef = useRef<OthelloGameEngine | null>(null);
 
-  // Initialize engine on first render
   if (!engineRef.current) {
-    // Load time control preferences from localStorage
-    const savedTimeControlEnabled = getTimeControlEnabled();
-    const savedTimePreset = getSelectedTimePreset();
-    const savedCustomConfig = getCustomTimeConfig();
-    const customInitialMinutes = savedCustomConfig?.initialMinutes ?? 5;
-    const customIncrementSeconds = savedCustomConfig?.incrementSeconds ?? 0;
+    // Clock-only saves are unsafe without a matching board snapshot
+    clearSavedTimeState();
+    engineRef.current = new OthelloGameEngine(
+      undefined,
+      undefined,
+      undefined,
+      resolveInitialTimeConfig()
+    );
 
-    // Determine the time config to use
-    let timeConfig: TimeControlConfig | undefined;
-    if (savedTimeControlEnabled) {
-      if (savedTimePreset === 'custom') {
-        timeConfig = {
-          initialTime: customInitialMinutes * 60 * 1000,
-          increment: customIncrementSeconds * 1000,
-        };
-      } else {
-        const preset = getPresetById(savedTimePreset) || getDefaultPreset();
-        timeConfig = preset.config;
-      }
-    }
-
-    // Create the engine
-    engineRef.current = new OthelloGameEngine(undefined, undefined, undefined, timeConfig);
-
-    // Restore saved time state if applicable
-    const savedTimeState = getSavedTimeState();
-    if (savedTimeControlEnabled && savedTimeState && savedTimeState.presetId === savedTimePreset) {
-      const engineWithRestore = engineRef.current as OthelloGameEngine & {
-        restoreTimeState?: (blackTime: number, whiteTime: number, currentPlayer: 'B' | 'W') => void;
-      };
-      engineWithRestore.restoreTimeState?.(
-        savedTimeState.blackTime,
-        savedTimeState.whiteTime,
-        savedTimeState.currentPlayer
-      );
-    }
-
-    // Expose engine to window for console testing (42 School requirement)
     if (typeof window !== 'undefined') {
       (window as { engine?: OthelloGameEngine }).engine = engineRef.current;
     }
   }
 
-  if (!engineRef.current) {
-    throw new Error('Engine not initialized');
-  }
   const engine = engineRef.current;
 
-  // State
   const [board, setBoard] = useState<BoardType>(() => engine.getState().board);
   const [moveHistory, setMoveHistory] = useState<Move[]>([]);
   const [lastMove, setLastMove] = useState<Coordinate | null>(null);
@@ -156,22 +119,10 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
   const [evaluationHistory, setEvaluationHistory] = useState<EvaluationPoint[]>([
     { move: 0, evaluation: 0 },
   ]);
-  const [timeRemaining] = useState<PlayerTime | null>(() => {
-    const savedTimeState = getSavedTimeState();
-    const savedTimeControlEnabled = getTimeControlEnabled();
-    const savedTimePreset = getSelectedTimePreset();
-    if (savedTimeControlEnabled && savedTimeState && savedTimeState.presetId === savedTimePreset) {
-      return {
-        black: savedTimeState.blackTime,
-        white: savedTimeState.whiteTime,
-      };
-    }
-    return null;
-  });
+  const [timeRemaining, setTimeRemaining] = useState<PlayerTime | null>(null);
   const [timeControlEnabled, setTimeControlEnabledState] = useState(getTimeControlEnabled);
   const [selectedTimePreset, setSelectedTimePresetState] = useState(getSelectedTimePreset);
 
-  // Event handlers (using refs to avoid stale closures)
   const onMoveRef = useRef(onMove);
   const onInvalidMoveRef = useRef(onInvalidMove);
   const onGameOverRef = useRef(onGameOver);
@@ -184,25 +135,18 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
     onStateChangeRef.current = onStateChange;
   });
 
-  // Subscribe to engine events
   useEffect(() => {
     const handleMoveEvent = (event: GameEvent) => {
       const { move, state } = event.data as MoveEventData;
       const history = engine.getMoveHistory();
-
-      // Check if opponent had to pass (same player moves again)
       const passedOpponent = state.currentPlayer === move.player;
 
-      // Update state
       setBoard(state.board);
       setMoveHistory(history);
       setLastMove(move.coordinate);
 
-      // Add evaluation point
       const evaluation = engine.evaluatePosition();
       setEvaluationHistory((prev) => [...prev, { move: history.length, evaluation }]);
-
-      // Notify callback
       onMoveRef.current?.(move, passedOpponent);
     };
 
@@ -213,12 +157,9 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
 
     const handleGameOverEvent = (event: GameEvent) => {
       const { winner } = event.data as GameOverEventData;
-
-      // Check if game ended due to timeout
       const time = engine.getTimeRemaining();
       const isTimeout =
         time && ((winner === W && time.black <= 0) || (winner === B && time.white <= 0));
-
       setGameOver(true);
       onGameOverRef.current?.(winner, isTimeout ?? false);
     };
@@ -226,6 +167,7 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
     const handleStateChangeEvent = (event: GameEvent) => {
       const { state } = event.data as StateChangeEventData;
       setBoard(state.board);
+      setTimeRemaining(engine.getTimeRemaining());
       onStateChangeRef.current?.();
     };
 
@@ -242,7 +184,6 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
     };
   }, [engine]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (typeof window !== 'undefined') {
@@ -251,12 +192,9 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
     };
   }, []);
 
-  // Actions
   const makeMove = useCallback(
     (coord: Coordinate) => {
-      if (!gameOver) {
-        engine.makeMove(coord);
-      }
+      if (!gameOver) engine.makeMove(coord);
     },
     [engine, gameOver]
   );
@@ -298,28 +236,28 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
     setLastMove(null);
     setGameOver(false);
     setEvaluationHistory([{ move: 0, evaluation: 0 }]);
+    setTimeRemaining(engine.getTimeRemaining());
   }, [engine]);
 
-  const setTimeControlEnabled = useCallback((enabled: boolean, _config?: TimeControlConfig) => {
-    setTimeControlEnabledState(enabled);
-    // Note: Engine recreation would be handled by the parent component
-    // The _config parameter is available for future use
-  }, []);
+  const setTimeControlEnabled = useCallback(
+    (enabled: boolean, config?: TimeControlConfig) => {
+      setTimeControlEnabledState(enabled);
+      engine.configureTimeControl(enabled ? (config ?? resolveInitialTimeConfig() ?? null) : null);
+      setTimeRemaining(engine.getTimeRemaining());
+    },
+    [engine]
+  );
 
   const setTimePreset = useCallback((presetId: string) => {
     setSelectedTimePresetState(presetId);
   }, []);
 
   const pauseTime = useCallback(() => {
-    if (engine.hasTimeControl()) {
-      engine.pauseTime();
-    }
+    if (engine.hasTimeControl()) engine.pauseTime();
   }, [engine]);
 
   const resumeTime = useCallback(() => {
-    if (engine.hasTimeControl()) {
-      engine.resumeTime();
-    }
+    if (engine.hasTimeControl()) engine.resumeTime();
   }, [engine]);
 
   const addEvaluationPoint = useCallback((point: EvaluationPoint) => {
@@ -351,5 +289,6 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
     setLastMove,
     setEvaluationHistory,
     addEvaluationPoint,
+    setTimeRemaining,
   };
 }

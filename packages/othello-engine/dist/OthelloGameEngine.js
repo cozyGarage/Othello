@@ -1,23 +1,6 @@
-import { createBoard, takeTurn, getValidMoves, isGameOver, getWinner, score, getAnnotatedBoard, B, W, E, } from './index';
+import { createBoard, createStartingTiles, takeTurn, getValidMoves, isGameOver, getWinner, score, getAnnotatedBoard, B, W, } from './index';
 import { TimeControlManager } from './TimeControlManager';
-/**
- * Position weights for board evaluation (same as OthelloBot)
- * Corners: +100 (most valuable)
- * X-squares (diagonal to corners): -50 (dangerous)
- * C-squares (adjacent to corners): -10 (risky)
- * Edges: +10 (stable)
- * Interior: -1 to +5 (less important)
- */
-const POSITION_WEIGHTS = [
-    [100, -10, 10, 5, 5, 10, -10, 100],
-    [-10, -50, -1, -1, -1, -1, -50, -10],
-    [10, -1, 5, 1, 1, 5, -1, 10],
-    [5, -1, 1, 0, 0, 1, -1, 5],
-    [5, -1, 1, 0, 0, 1, -1, 5],
-    [10, -1, 5, 1, 1, 5, -1, 10],
-    [-10, -50, -1, -1, -1, -1, -50, -10],
-    [100, -10, 10, 5, 5, 10, -10, 100],
-];
+import { POSITION_WEIGHTS } from './positionWeights';
 /**
  * OthelloGameEngine - A framework-agnostic game engine for Othello/Reversi
  *
@@ -68,16 +51,7 @@ export class OthelloGameEngine {
             this.timeControl = new TimeControlManager(timeControlConfig);
         }
         // Initialize with standard Othello starting position
-        const startingBoard = initialBoard || [
-            [E, E, E, E, E, E, E, E],
-            [E, E, E, E, E, E, E, E],
-            [E, E, E, E, E, E, E, E],
-            [E, E, E, W, B, E, E, E],
-            [E, E, E, B, W, E, E, E],
-            [E, E, E, E, E, E, E, E],
-            [E, E, E, E, E, E, E, E],
-            [E, E, E, E, E, E, E, E],
-        ];
+        const startingBoard = initialBoard || createStartingTiles();
         this.board = createBoard(startingBoard, initialPlayerTurn);
         // Start the current player's clock if time control is enabled
         if (this.timeControl) {
@@ -431,6 +405,26 @@ export class OthelloGameEngine {
         return !!this.timeControl;
     }
     /**
+     * Attach, replace, or remove time control without recreating the engine.
+     * Preserves the current board and move history.
+     *
+     * @param config - Time control config, or null/undefined to disable clocks
+     */
+    configureTimeControl(config) {
+        this.timeoutDeclared = false;
+        this.timeControlConfig = config ?? undefined;
+        if (config) {
+            this.timeControl = new TimeControlManager(config);
+            if (!isGameOver(this.board)) {
+                this.timeControl.startClock(this.board.playerTurn);
+            }
+        }
+        else {
+            this.timeControl = undefined;
+        }
+        this.emit('stateChange', { state: this.getState() });
+    }
+    /**
      * Restore time state (for page refresh recovery)
      * @param blackTime - Time remaining for black in milliseconds
      * @param whiteTime - Time remaining for white in milliseconds
@@ -477,17 +471,7 @@ export class OthelloGameEngine {
      * Reset the game to its initial state
      */
     reset() {
-        const startingBoard = [
-            [E, E, E, E, E, E, E, E],
-            [E, E, E, E, E, E, E, E],
-            [E, E, E, E, E, E, E, E],
-            [E, E, E, W, B, E, E, E],
-            [E, E, E, B, W, E, E, E],
-            [E, E, E, E, E, E, E, E],
-            [E, E, E, E, E, E, E, E],
-            [E, E, E, E, E, E, E, E],
-        ];
-        this.board = createBoard(startingBoard);
+        this.board = createBoard(createStartingTiles());
         this.moveHistory = [];
         this.timeoutDeclared = false;
         // Clear undo/redo stacks

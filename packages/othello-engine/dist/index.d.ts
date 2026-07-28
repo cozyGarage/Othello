@@ -14,6 +14,7 @@ export { TimeControlManager } from './TimeControlManager';
 export type { TimeControlConfig, PlayerTime, TimeControlState } from './TimeControlManager';
 export { lookupOpeningBook, getOpeningName, buildSequenceKey, moveToNotation, notationToMove, OPENING_BOOK, } from './openingBook';
 export type { OpeningBook, OpeningMove } from './openingBook';
+export { POSITION_WEIGHTS, CORNER_COORDINATES, getPositionWeight } from './positionWeights';
 /**
  * Tile value types
  * - 'W': White disc
@@ -273,4 +274,18 @@ export declare const getWinner: (board: Board) => "W" | "B" | null;
  * ```
  */
 export declare const getAnnotatedBoard: (board: Board) => Board;
+/**
+ * Standard Othello starting tiles (no playerTurn wrapper).
+ */
+export declare const createStartingTiles: () => TileValue[][];
+/**
+ * Reconstruct board tiles after applying moves[0..targetIndex] via engine rules.
+ * Pass handling matches takeTurn (opponent with no moves is skipped).
+ *
+ * @param moves - Chronological move list (only coordinate is required)
+ * @param targetIndex - Inclusive end index; use -1 for the starting position
+ */
+export declare const reconstructBoardAt: (moves: Array<{
+    coordinate: Coordinate;
+}>, targetIndex: number) => TileValue[][];
 //# sourceMappingURL=index.d.ts.map
