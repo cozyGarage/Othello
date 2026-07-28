@@ -51,12 +51,14 @@ export class OthelloGameEngine {
      * @param initialBoard - Optional initial board state (for loading saved games)
      * @param timeControlConfig - Optional time control configuration
      */
-    constructor(blackPlayerId, whitePlayerId, initialBoard, timeControlConfig) {
+    constructor(blackPlayerId, whitePlayerId, initialBoard, timeControlConfig, initialPlayerTurn = B) {
         this.moveHistory = [];
         this.listeners = new Map();
         // Undo/Redo stacks
         this.undoStack = [];
         this.redoStack = [];
+        /** True once a timeout loss has been declared (board may still look unfinished) */
+        this.timeoutDeclared = false;
         this.blackPlayerId = blackPlayerId;
         this.whitePlayerId = whitePlayerId;
         // Store time control config for reset
@@ -76,10 +78,10 @@ export class OthelloGameEngine {
             [E, E, E, E, E, E, E, E],
             [E, E, E, E, E, E, E, E],
         ];
-        this.board = createBoard(startingBoard);
-        // Start black's clock if time control is enabled
+        this.board = createBoard(startingBoard, initialPlayerTurn);
+        // Start the current player's clock if time control is enabled
         if (this.timeControl) {
-            this.timeControl.startClock('B');
+            this.timeControl.startClock(initialPlayerTurn);
         }
     }
     /**
@@ -164,13 +166,11 @@ export class OthelloGameEngine {
             // Check for timeout if time control is enabled
             if (this.timeControl) {
                 if (this.timeControl.isTimeOut(currentPlayer)) {
+                    this.handleTimeoutLoss(currentPlayer);
                     this.emit('invalidMove', {
                         coordinate,
                         error: `${currentPlayer === 'B' ? 'Black' : 'White'} ran out of time!`,
                     });
-                    // Emit game over due to timeout
-                    const winner = currentPlayer === 'B' ? W : B;
-                    this.emit('gameOver', { winner, state: this.getState() });
                     return false;
                 }
             }
@@ -444,6 +444,36 @@ export class OthelloGameEngine {
         this.timeControl.startClock(currentPlayer);
     }
     /**
+     * If the active player's clock has expired, end the game on timeout.
+     * Safe to call from UI tick intervals; no-ops when already over or time remains.
+     * @returns true if a timeout loss was declared
+     */
+    checkTimeout() {
+        if (!this.timeControl || this.timeoutDeclared || isGameOver(this.board)) {
+            return false;
+        }
+        const currentPlayer = this.board.playerTurn;
+        if (!this.timeControl.isTimeOut(currentPlayer)) {
+            return false;
+        }
+        this.handleTimeoutLoss(currentPlayer);
+        return true;
+    }
+    /**
+     * Stop clocks and emit gameOver for a timeout loss by the given player.
+     */
+    handleTimeoutLoss(timedOutPlayer) {
+        if (this.timeoutDeclared) {
+            return;
+        }
+        this.timeoutDeclared = true;
+        if (this.timeControl) {
+            this.timeControl.stopClock();
+        }
+        const winner = timedOutPlayer === 'B' ? W : B;
+        this.emit('gameOver', { winner, state: this.getState() });
+    }
+    /**
      * Reset the game to its initial state
      */
     reset() {
@@ -459,6 +489,7 @@ export class OthelloGameEngine {
         ];
         this.board = createBoard(startingBoard);
         this.moveHistory = [];
+        this.timeoutDeclared = false;
         // Clear undo/redo stacks
         this.undoStack = [];
         this.redoStack = [];
@@ -492,13 +523,50 @@ export class OthelloGameEngine {
     /**
      * Import a saved game state
      * @param stateJson - JSON string from exportState()
+     * @throws Error if JSON is invalid or board shape is illegal
      */
     importState(stateJson) {
-        const state = JSON.parse(stateJson);
-        this.board = state.board;
-        this.moveHistory = state.moveHistory;
-        this.blackPlayerId = state.blackPlayerId;
-        this.whitePlayerId = state.whitePlayerId;
+        let state;
+        try {
+            state = JSON.parse(stateJson);
+        }
+        catch {
+            throw new Error('Invalid game state: malformed JSON');
+        }
+        if (!state || typeof state !== 'object') {
+            throw new Error('Invalid game state: expected an object');
+        }
+        const parsed = state;
+        if (!this.isValidImportedBoard(parsed.board)) {
+            throw new Error('Invalid game state: board must be an 8x8 grid with B/W/E tiles');
+        }
+        if (parsed.moveHistory !== undefined && !Array.isArray(parsed.moveHistory)) {
+            throw new Error('Invalid game state: moveHistory must be an array');
+        }
+        this.board = {
+            playerTurn: parsed.board.playerTurn,
+            tiles: parsed.board.tiles.map((row) => [...row]),
+        };
+        this.moveHistory = Array.isArray(parsed.moveHistory) ? parsed.moveHistory : [];
+        this.blackPlayerId =
+            typeof parsed.blackPlayerId === 'string' ? parsed.blackPlayerId : undefined;
+        this.whitePlayerId =
+            typeof parsed.whitePlayerId === 'string' ? parsed.whitePlayerId : undefined;
+        this.undoStack = [];
+        this.redoStack = [];
+        this.timeoutDeclared = false;
         this.emit('stateChange', { state: this.getState() });
+    }
+    isValidImportedBoard(board) {
+        if (!board || (board.playerTurn !== 'B' && board.playerTurn !== 'W')) {
+            return false;
+        }
+        if (!Array.isArray(board.tiles) || board.tiles.length !== 8) {
+            return false;
+        }
+        const validTiles = new Set(['B', 'W', 'E']);
+        return board.tiles.every((row) => Array.isArray(row) &&
+            row.length === 8 &&
+            row.every((cell) => typeof cell === 'string' && validTiles.has(cell)));
     }
 }

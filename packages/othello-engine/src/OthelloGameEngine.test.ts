@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { OthelloGameEngine } from './OthelloGameEngine';
+import { E } from './index';
 
 describe('OthelloGameEngine', () => {
   test('initializes with correct starting state', () => {
@@ -402,5 +403,69 @@ describe('Undo/Redo Functionality', () => {
 
     expect(result).toBe(false);
     expect(engine.canUndo()).toBe(false);
+  });
+});
+
+describe('OthelloGameEngine import/timeout hardening', () => {
+  test('importState rejects malformed JSON and illegal boards', () => {
+    const engine = new OthelloGameEngine();
+    expect(() => engine.importState('not-json')).toThrow('malformed JSON');
+    expect(() => engine.importState('{"board":null}')).toThrow('board must be');
+    expect(() =>
+      engine.importState(
+        JSON.stringify({
+          board: { playerTurn: 'B', tiles: [[]] },
+          moveHistory: [],
+        })
+      )
+    ).toThrow('board must be');
+  });
+
+  test('importState accepts a valid export and clears undo stacks', () => {
+    const engine = new OthelloGameEngine();
+    engine.makeMove([3, 2]);
+    expect(engine.canUndo()).toBe(true);
+
+    const exported = engine.exportState();
+    const other = new OthelloGameEngine();
+    other.makeMove([2, 3]);
+    other.importState(exported);
+
+    expect(other.getState().moveHistory.length).toBe(1);
+    expect(other.canUndo()).toBe(false);
+    expect(other.canRedo()).toBe(false);
+  });
+
+  test('constructor respects initialPlayerTurn for puzzles', () => {
+    const tiles = [
+      [E, E, E, E, E, E, E, E],
+      [E, E, E, E, E, E, E, E],
+      [E, E, E, E, E, E, E, E],
+      [E, E, E, W, B, E, E, E],
+      [E, E, E, B, W, E, E, E],
+      [E, E, E, E, E, E, E, E],
+      [E, E, E, E, E, E, E, E],
+      [E, E, E, E, E, E, E, E],
+    ];
+    const engine = new OthelloGameEngine('b', 'w', tiles, undefined, 'W');
+    expect(engine.getState().currentPlayer).toBe('W');
+  });
+
+  test('checkTimeout ends the game when the active clock expires', async () => {
+    const engine = new OthelloGameEngine(undefined, undefined, undefined, {
+      initialTime: 50,
+      increment: 0,
+    });
+
+    await new Promise((r) => setTimeout(r, 80));
+
+    let gameOver = false;
+    engine.on('gameOver', () => {
+      gameOver = true;
+    });
+
+    expect(engine.checkTimeout()).toBe(true);
+    expect(gameOver).toBe(true);
+    expect(engine.checkTimeout()).toBe(false);
   });
 });

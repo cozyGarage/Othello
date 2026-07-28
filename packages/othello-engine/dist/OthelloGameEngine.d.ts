@@ -85,6 +85,8 @@ export declare class OthelloGameEngine {
     private timeControlConfig?;
     private undoStack;
     private redoStack;
+    /** True once a timeout loss has been declared (board may still look unfinished) */
+    private timeoutDeclared;
     /**
      * Creates a new Othello game engine
      * @param blackPlayerId - Optional ID for the black player
@@ -92,7 +94,7 @@ export declare class OthelloGameEngine {
      * @param initialBoard - Optional initial board state (for loading saved games)
      * @param timeControlConfig - Optional time control configuration
      */
-    constructor(blackPlayerId?: string, whitePlayerId?: string, initialBoard?: TileValue[][], timeControlConfig?: TimeControlConfig);
+    constructor(blackPlayerId?: string, whitePlayerId?: string, initialBoard?: TileValue[][], timeControlConfig?: TimeControlConfig, initialPlayerTurn?: 'B' | 'W');
     /**
      * Create a deep clone of the board for snapshot
      */
@@ -222,6 +224,16 @@ export declare class OthelloGameEngine {
      */
     restoreTimeState(blackTime: number, whiteTime: number, currentPlayer: 'B' | 'W'): void;
     /**
+     * If the active player's clock has expired, end the game on timeout.
+     * Safe to call from UI tick intervals; no-ops when already over or time remains.
+     * @returns true if a timeout loss was declared
+     */
+    checkTimeout(): boolean;
+    /**
+     * Stop clocks and emit gameOver for a timeout loss by the given player.
+     */
+    private handleTimeoutLoss;
+    /**
      * Reset the game to its initial state
      */
     reset(): void;
@@ -239,8 +251,10 @@ export declare class OthelloGameEngine {
     /**
      * Import a saved game state
      * @param stateJson - JSON string from exportState()
+     * @throws Error if JSON is invalid or board shape is illegal
      */
     importState(stateJson: string): void;
+    private isValidImportedBoard;
 }
 export {};
 //# sourceMappingURL=OthelloGameEngine.d.ts.map

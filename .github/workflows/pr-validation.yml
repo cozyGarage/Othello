@@ -43,12 +43,16 @@ jobs:
 
       - name: Check bundle size
         run: |
-          # Simple bundle size check
-          if [ -f "packages/othello-react/dist/assets/index-*.js" ]; then
-            BUNDLE_SIZE=$(stat -c%s packages/othello-react/dist/assets/index-*.js | head -1)
+          # Simple bundle size check (unquoted glob so the shell expands it)
+          shopt -s nullglob
+          bundles=(packages/othello-react/dist/assets/index-*.js)
+          if [ ${#bundles[@]} -gt 0 ]; then
+            BUNDLE_SIZE=$(stat -c%s "${bundles[0]}")
             echo "Bundle size: $BUNDLE_SIZE bytes"
             # Warn if bundle exceeds 1MB
             if [ "$BUNDLE_SIZE" -gt 1048576 ]; then
               echo "::warning::Bundle size ($BUNDLE_SIZE bytes) exceeds 1MB"
             fi
+          else
+            echo "::warning::No bundle file matched packages/othello-react/dist/assets/index-*.js"
           fi

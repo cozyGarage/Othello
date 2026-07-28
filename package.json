@@ -16,8 +16,8 @@
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "type-check": "cd packages/othello-react && bun run type-check && cd ../othello-engine && bun run type-check",
-    "validate": "bun run format:check && bun run lint && bun run test",
+    "type-check": "cd packages/othello-engine && bun run build && bun run type-check && cd ../othello-react && bun run type-check",
+    "validate": "bun run format:check && bun run lint && bun run type-check && bun run test",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -89,11 +89,13 @@ export const Puzzles: React.FC<PuzzlesProps> = ({ isVisible, onClose }) => {
     const puzzle = puzzles[currentPuzzleIndex];
     if (!puzzle) return;
 
-    // Create a new engine with the puzzle's board state
+    // Create a new engine with the puzzle's board state and side to move
     const newEngine = new OthelloGameEngine(
       'puzzle-player-black',
       'puzzle-player-white',
-      puzzle.board
+      puzzle.board,
+      undefined,
+      puzzle.currentPlayer
     );
 
     setEngine(newEngine);

@@ -1,2 +1,3 @@
-# Commit message validation removed for solo development
-# Feel free to write commit messages in your own style
+#!/usr/bin/env sh
+# Keep local commit messages aligned with PR commitlint (pr-validation.yml)
+npx --no -- commitlint --edit "$1"

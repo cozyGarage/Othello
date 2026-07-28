@@ -18,6 +18,7 @@ interface SidebarProps {
   message?: string | null;
   gameOver: boolean;
   timeRemaining?: PlayerTime | null;
+  onTimeOut?: () => void;
   // Hints feature
   onHintRequest?: () => void;
   hintsRemaining?: number;
@@ -48,6 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   message,
   gameOver,
   timeRemaining,
+  onTimeOut,
   // Hints feature
   onHintRequest,
   hintsRemaining = 0,
@@ -237,7 +239,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 timeRemaining={timeRemaining.black}
                 playerColor="black"
                 isActive={currentPlayer === 'black' && !gameOver}
-                onTimeOut={() => {}}
+                onTimeOut={onTimeOut}
               />
             )}
           </div>
@@ -265,7 +267,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 timeRemaining={timeRemaining.white}
                 playerColor="white"
                 isActive={currentPlayer === 'white' && !gameOver}
-                onTimeOut={() => {}}
+                onTimeOut={onTimeOut}
               />
             )}
           </div>

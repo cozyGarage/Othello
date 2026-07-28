@@ -31,7 +31,6 @@ import {
   setSoundVolume,
   getCustomTimeConfig,
   setCustomTimeConfig,
-  getSavedTimeState,
   saveTimeState,
   clearSavedTimeState,
 } from './utils/timePreferences';
@@ -200,26 +199,9 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     // Initialize the game engine (with time control if enabled in preferences)
     this.engine = new OthelloGameEngine(undefined, undefined, undefined, timeConfig);
 
-    // Phase 3.5: Check for saved time state to restore
-    const savedTimeState = getSavedTimeState();
-    let restoredTimeRemaining: PlayerTime | null = null;
-
-    if (savedTimeControlEnabled && savedTimeState && savedTimeState.presetId === savedTimePreset) {
-      // Restore the saved time state
-      // Use type assertion since the method was added to the engine
-      const engineWithRestore = this.engine as OthelloGameEngine & {
-        restoreTimeState?: (blackTime: number, whiteTime: number, currentPlayer: 'B' | 'W') => void;
-      };
-      engineWithRestore.restoreTimeState?.(
-        savedTimeState.blackTime,
-        savedTimeState.whiteTime,
-        savedTimeState.currentPlayer
-      );
-      restoredTimeRemaining = {
-        black: savedTimeState.blackTime,
-        white: savedTimeState.whiteTime,
-      };
-    }
+    // Phase 3.5: Clock-only saves are unsafe without a matching board snapshot.
+    // Clear orphaned time state so refresh does not restore mid-game clocks onto a new board.
+    clearSavedTimeState();
 
     const initialState = this.engine.getState();
     const savedHintsPerGame = getHintsPerGame();
@@ -240,7 +222,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       // Phase 3: Initialize from localStorage (user's saved preferences)
       timeControlEnabled: savedTimeControlEnabled,
       selectedTimePreset: savedTimePreset,
-      timeRemaining: restoredTimeRemaining,
+      timeRemaining: null,
       // Phase 3: Initialize time warning flags
       blackTimeWarningPlayed: false,
       whiteTimeWarningPlayed: false,
@@ -319,6 +301,11 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     // Also checks for low time warnings and plays sound alerts
     this.timeUpdateInterval = window.setInterval(() => {
       if (this.engine.hasTimeControl() && !this.state.gameOver) {
+        // End the game as soon as a clock expires (do not wait for a move attempt)
+        if (this.engine.checkTimeout()) {
+          return;
+        }
+
         const timeRemaining = this.engine.getTimeRemaining();
         this.setState({ timeRemaining });
 
@@ -373,6 +360,9 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     // Clean up window.engine reference
     delete window.engine;
 
+    // Cancel in-flight AI work and release the worker
+    aiManager.dispose();
+
     // Clean up bot timeout
     if (this.botMoveTimeout !== null) {
       clearTimeout(this.botMoveTimeout);
@@ -387,6 +377,12 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       clearTimeout(this.blogMessageTimeout);
     }
   }
+
+  handleTimeOut = (): void => {
+    if (!this.state.gameOver) {
+      this.engine.checkTimeout();
+    }
+  };
 
   scrollToGame = (): void => {
     document.getElementById('play-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1384,6 +1380,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
                       message={this.state.message}
                       gameOver={this.state.gameOver}
                       timeRemaining={this.state.timeRemaining}
+                      onTimeOut={this.handleTimeOut}
                       // Hints feature
                       onHintRequest={this.handleHintRequest}
                       hintsRemaining={this.state.hintsRemaining}
