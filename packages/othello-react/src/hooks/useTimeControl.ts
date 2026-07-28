@@ -102,6 +102,13 @@ export function useTimeControl(config: UseTimeControlConfig): UseTimeControlRetu
     }
 
     const interval = window.setInterval(() => {
+      // Auto-end when a clock expires (do not wait for a move attempt)
+      if (engine.checkTimeout()) {
+        const state = engine.getState();
+        onTimeoutRef.current?.(state.currentPlayer);
+        return;
+      }
+
       const time = engine.getTimeRemaining();
       setTimeRemaining(time);
 
@@ -118,13 +125,11 @@ export function useTimeControl(config: UseTimeControlConfig): UseTimeControlRetu
 
       // Check for low time warnings
       if (time) {
-        // Black player warning
         if (time.black < LOW_TIME_THRESHOLD && time.black > 0 && !blackTimeWarningPlayed) {
           onTimeWarningRef.current?.('B');
           setBlackTimeWarningPlayed(true);
         }
 
-        // White player warning
         if (time.white < LOW_TIME_THRESHOLD && time.white > 0 && !whiteTimeWarningPlayed) {
           onTimeWarningRef.current?.('W');
           setWhiteTimeWarningPlayed(true);
@@ -150,29 +155,70 @@ export function useTimeControl(config: UseTimeControlConfig): UseTimeControlRetu
     return preset.config;
   }, [timeControlEnabled, selectedTimePreset, customInitialMinutes, customIncrementSeconds]);
 
-  // Actions
-  const setTimeControlEnabled = useCallback((enabled: boolean) => {
-    setTimeControlEnabledState(enabled);
-    persistTimeControlEnabled(enabled);
-    clearSavedTimeState();
+  // Actions — configure clocks in-place (no engine recreate)
+  const setTimeControlEnabled = useCallback(
+    (enabled: boolean) => {
+      setTimeControlEnabledState(enabled);
+      persistTimeControlEnabled(enabled);
+      clearSavedTimeState();
 
-    if (!enabled) {
-      setTimeRemaining(null);
-    }
-  }, []);
+      if (!enabled) {
+        engine.configureTimeControl(null);
+        setTimeRemaining(null);
+        return;
+      }
 
-  const setTimePreset = useCallback((presetId: string) => {
-    setSelectedTimePresetState(presetId);
-    persistSelectedTimePreset(presetId);
-    clearSavedTimeState();
-  }, []);
+      const config =
+        selectedTimePreset === 'custom'
+          ? {
+              initialTime: customInitialMinutes * 60 * 1000,
+              increment: customIncrementSeconds * 1000,
+            }
+          : (getPresetById(selectedTimePreset) || getDefaultPreset()).config;
+      engine.configureTimeControl(config);
+      setTimeRemaining(engine.getTimeRemaining());
+    },
+    [engine, selectedTimePreset, customInitialMinutes, customIncrementSeconds]
+  );
 
-  const setCustomTime = useCallback((initialMinutes: number, incrementSeconds: number) => {
-    setCustomInitialMinutes(initialMinutes);
-    setCustomIncrementSeconds(incrementSeconds);
-    persistCustomTimeConfig({ initialMinutes, incrementSeconds });
-    clearSavedTimeState();
-  }, []);
+  const setTimePreset = useCallback(
+    (presetId: string) => {
+      setSelectedTimePresetState(presetId);
+      persistSelectedTimePreset(presetId);
+      clearSavedTimeState();
+
+      if (!timeControlEnabled) return;
+
+      const config =
+        presetId === 'custom'
+          ? {
+              initialTime: customInitialMinutes * 60 * 1000,
+              increment: customIncrementSeconds * 1000,
+            }
+          : (getPresetById(presetId) || getDefaultPreset()).config;
+      engine.configureTimeControl(config);
+      setTimeRemaining(engine.getTimeRemaining());
+    },
+    [engine, timeControlEnabled, customInitialMinutes, customIncrementSeconds]
+  );
+
+  const setCustomTime = useCallback(
+    (initialMinutes: number, incrementSeconds: number) => {
+      setCustomInitialMinutes(initialMinutes);
+      setCustomIncrementSeconds(incrementSeconds);
+      persistCustomTimeConfig({ initialMinutes, incrementSeconds });
+      clearSavedTimeState();
+
+      if (timeControlEnabled && selectedTimePreset === 'custom') {
+        engine.configureTimeControl({
+          initialTime: initialMinutes * 60 * 1000,
+          increment: incrementSeconds * 1000,
+        });
+        setTimeRemaining(engine.getTimeRemaining());
+      }
+    },
+    [engine, timeControlEnabled, selectedTimePreset]
+  );
 
   const setMuteTimeSounds = useCallback((muted: boolean) => {
     persistMuteTimeSounds(muted);

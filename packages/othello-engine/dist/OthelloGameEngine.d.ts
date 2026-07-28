@@ -217,6 +217,13 @@ export declare class OthelloGameEngine {
      */
     hasTimeControl(): boolean;
     /**
+     * Attach, replace, or remove time control without recreating the engine.
+     * Preserves the current board and move history.
+     *
+     * @param config - Time control config, or null/undefined to disable clocks
+     */
+    configureTimeControl(config: TimeControlConfig | null | undefined): void;
+    /**
      * Restore time state (for page refresh recovery)
      * @param blackTime - Time remaining for black in milliseconds
      * @param whiteTime - Time remaining for white in milliseconds

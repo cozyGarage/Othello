@@ -39,6 +39,9 @@ export {
 } from './openingBook';
 export type { OpeningBook, OpeningMove } from './openingBook';
 
+// Shared evaluation constants
+export { POSITION_WEIGHTS, CORNER_COORDINATES, getPositionWeight } from './positionWeights';
+
 /**
  * Tile value types
  * - 'W': White disc
@@ -630,3 +633,43 @@ export const getAnnotatedBoard = (board: Board): Board => ({
   ...board,
   tiles: board.tiles.map((row, y) => row.map((square, x) => annotateSquare(square, board, [x, y]))),
 });
+
+/**
+ * Standard Othello starting tiles (no playerTurn wrapper).
+ */
+export const createStartingTiles = (): TileValue[][] => [
+  [E, E, E, E, E, E, E, E],
+  [E, E, E, E, E, E, E, E],
+  [E, E, E, E, E, E, E, E],
+  [E, E, E, W, B, E, E, E],
+  [E, E, E, B, W, E, E, E],
+  [E, E, E, E, E, E, E, E],
+  [E, E, E, E, E, E, E, E],
+  [E, E, E, E, E, E, E, E],
+];
+
+/**
+ * Reconstruct board tiles after applying moves[0..targetIndex] via engine rules.
+ * Pass handling matches takeTurn (opponent with no moves is skipped).
+ *
+ * @param moves - Chronological move list (only coordinate is required)
+ * @param targetIndex - Inclusive end index; use -1 for the starting position
+ */
+export const reconstructBoardAt = (
+  moves: Array<{ coordinate: Coordinate }>,
+  targetIndex: number
+): TileValue[][] => {
+  const board = createBoard(createStartingTiles());
+
+  for (let i = 0; i <= targetIndex && i < moves.length; i++) {
+    const move = moves[i];
+    if (!move) continue;
+    try {
+      takeTurn(board, move.coordinate);
+    } catch {
+      break;
+    }
+  }
+
+  return board.tiles.map((row) => [...row]);
+};

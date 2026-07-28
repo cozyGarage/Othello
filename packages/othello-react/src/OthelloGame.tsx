@@ -36,15 +36,13 @@ import {
 } from './utils/timePreferences';
 // Hints preferences
 import { getHintsPerGame, setHintsPerGame } from './utils/hintPreferences';
-// AI Manager (Web Worker)
-import { aiManager } from './utils/aiManager';
 // Theme system
 import { applyTheme, getSavedThemeId } from './config/themes';
 // Phase 4: Import game statistics
 import { saveGameRecord } from './utils/gameStatistics';
+import { AIGameplayController } from './services/aiGameplay';
 import {
   OthelloGameEngine,
-  OthelloBot,
   type Board as BoardType,
   type Coordinate,
   type GameEvent,
@@ -156,10 +154,7 @@ interface OthelloGameState {
  */
 class OthelloGame extends Component<{}, OthelloGameState> {
   private engine: OthelloGameEngine;
-  // Spectator mode bots (AI vs AI) — run on main thread
-  private spectatorBotBlack: OthelloBot | null = null;
-  private spectatorBotWhite: OthelloBot | null = null;
-  private botMoveTimeout: number | null = null;
+  private readonly aiGameplay = new AIGameplayController();
   private timeUpdateInterval: number | null = null;
   private blogMessageTimeout: number | null = null;
   // Swipe gesture tracking
@@ -361,12 +356,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     delete window.engine;
 
     // Cancel in-flight AI work and release the worker
-    aiManager.dispose();
-
-    // Clean up bot timeout
-    if (this.botMoveTimeout !== null) {
-      clearTimeout(this.botMoveTimeout);
-    }
+    this.aiGameplay.dispose();
 
     // Clean up time update interval
     if (this.timeUpdateInterval !== null) {
@@ -764,21 +754,16 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     this.setState({ aiEnabled: enabled });
 
     if (enabled) {
-      // Check if AI should move immediately
       setTimeout(() => this.checkAndMakeAIMove(), 500);
     } else {
-      // Cancel any pending AI computation
-      aiManager.cancel();
-      if (this.botMoveTimeout !== null) {
-        clearTimeout(this.botMoveTimeout);
-        this.botMoveTimeout = null;
-      }
-      this.setState({ aiThinking: false });
+      this.aiGameplay.cancel();
+      this.setState({ aiThinking: false, aiThinkingDepth: 0, aiThinkingNodes: 0 });
     }
   };
 
   handleAiDifficultyChange = (difficulty: BotDifficulty): void => {
     this.setState({ aiDifficulty: difficulty });
+    this.aiGameplay.updateSpectatorDifficulty(difficulty);
   };
 
   handleAiPlayerChange = (player: 'W' | 'B'): void => {
@@ -788,57 +773,44 @@ class OthelloGame extends Component<{}, OthelloGameState> {
     setTimeout(() => this.checkAndMakeAIMove(), 500);
   };
 
+  /** Resolve the active time-control config from UI prefs (or undefined when disabled). */
+  private resolveTimeConfig(
+    enabled: boolean = this.state.timeControlEnabled,
+    presetId: string = this.state.selectedTimePreset,
+    initialMinutes: number = this.state.customInitialMinutes,
+    incrementSeconds: number = this.state.customIncrementSeconds
+  ): TimeControlConfig | undefined {
+    if (!enabled) return undefined;
+    if (presetId === 'custom') {
+      return {
+        initialTime: initialMinutes * 60 * 1000,
+        increment: incrementSeconds * 1000,
+      };
+    }
+    const preset = getPresetById(presetId) || getDefaultPreset();
+    return preset.config;
+  }
+
+  /** Apply clock config in-place — no engine recreate / event re-subscribe. */
+  private applyTimeControl(config: TimeControlConfig | undefined): void {
+    this.engine.configureTimeControl(config ?? null);
+    this.setState({ timeRemaining: this.engine.getTimeRemaining() });
+  }
+
   handleTimeControlToggle = (enabled: boolean): void => {
     this.setState({ timeControlEnabled: enabled });
-
-    // Phase 3: Save preference to localStorage
     setTimeControlEnabled(enabled);
-
-    // Phase 3.5: Clear saved time state when toggling time control
     clearSavedTimeState();
-
-    if (enabled) {
-      // Create new engine with time control
-      let config: TimeControlConfig;
-      if (this.state.selectedTimePreset === 'custom') {
-        config = {
-          initialTime: this.state.customInitialMinutes * 60 * 1000,
-          increment: this.state.customIncrementSeconds * 1000,
-        };
-      } else {
-        const preset = getPresetById(this.state.selectedTimePreset) || getDefaultPreset();
-        config = preset.config;
-      }
-      this.recreateEngineWithTimeControl(config);
-    } else {
-      // Create new engine without time control
-      this.recreateEngineWithoutTimeControl();
-    }
+    this.applyTimeControl(this.resolveTimeConfig(enabled));
   };
 
   handleTimePresetChange = (presetId: string): void => {
     this.setState({ selectedTimePreset: presetId });
-
-    // Phase 3: Save preference to localStorage
     setSelectedTimePreset(presetId);
-
-    // Phase 3.5: Clear saved time state when changing preset
     clearSavedTimeState();
 
     if (this.state.timeControlEnabled) {
-      if (presetId === 'custom') {
-        // Use custom time config
-        const config: TimeControlConfig = {
-          initialTime: this.state.customInitialMinutes * 60 * 1000,
-          increment: this.state.customIncrementSeconds * 1000,
-        };
-        this.recreateEngineWithTimeControl(config);
-      } else {
-        const preset = getPresetById(presetId);
-        if (preset) {
-          this.recreateEngineWithTimeControl(preset.config);
-        }
-      }
+      this.applyTimeControl(this.resolveTimeConfig(true, presetId));
     }
   };
 
@@ -847,203 +819,47 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       customInitialMinutes: initialMinutes,
       customIncrementSeconds: incrementSeconds,
     });
-
-    // Phase 3.5: Save custom config to localStorage
     setCustomTimeConfig({ initialMinutes, incrementSeconds });
-
-    // Phase 3.5: Clear saved time state when changing custom config
     clearSavedTimeState();
 
-    // If currently using custom preset, update the engine
     if (this.state.timeControlEnabled && this.state.selectedTimePreset === 'custom') {
-      const config: TimeControlConfig = {
-        initialTime: initialMinutes * 60 * 1000,
-        increment: incrementSeconds * 1000,
-      };
-      this.recreateEngineWithTimeControl(config);
+      this.applyTimeControl(
+        this.resolveTimeConfig(true, 'custom', initialMinutes, incrementSeconds)
+      );
     }
   };
 
   handleMuteTimeSoundsToggle = (muted: boolean): void => {
-    // Phase 3: Save mute preference to localStorage
     setMuteTimeSounds(muted);
     soundEffects.setMuteTimeSounds(muted);
   };
 
-  recreateEngineWithTimeControl = (config: TimeControlConfig): void => {
-    // Save current game state
-    const currentState = this.engine.exportState();
-
-    // Unsubscribe from old engine
-    this.engine.off('move', this.handleMoveEvent);
-    this.engine.off('invalidMove', this.handleInvalidMoveEvent);
-    this.engine.off('gameOver', this.handleGameOverEvent);
-    this.engine.off('stateChange', this.handleStateChangeEvent);
-
-    // Create new engine with time control
-    this.engine = new OthelloGameEngine(undefined, undefined, undefined, config);
-
-    // Restore game state (without time control state)
-    this.engine.importState(currentState);
-
-    // Subscribe to new engine
-    this.engine.on('move', this.handleMoveEvent);
-    this.engine.on('invalidMove', this.handleInvalidMoveEvent);
-    this.engine.on('gameOver', this.handleGameOverEvent);
-    this.engine.on('stateChange', this.handleStateChangeEvent);
-
-    // Update window.engine reference for console testing
-    window.engine = this.engine;
-
-    // Update time remaining
-    const timeRemaining = this.engine.getTimeRemaining();
-    this.setState({ timeRemaining });
-  };
-
-  recreateEngineWithoutTimeControl = (): void => {
-    // Save current game state
-    const currentState = this.engine.exportState();
-
-    // Unsubscribe from old engine
-    this.engine.off('move', this.handleMoveEvent);
-    this.engine.off('invalidMove', this.handleInvalidMoveEvent);
-    this.engine.off('gameOver', this.handleGameOverEvent);
-    this.engine.off('stateChange', this.handleStateChangeEvent);
-
-    // Create new engine without time control
-    this.engine = new OthelloGameEngine();
-
-    // Restore game state
-    this.engine.importState(currentState);
-
-    // Subscribe to new engine
-    this.engine.on('move', this.handleMoveEvent);
-    this.engine.on('invalidMove', this.handleInvalidMoveEvent);
-    this.engine.on('gameOver', this.handleGameOverEvent);
-    this.engine.on('stateChange', this.handleStateChangeEvent);
-
-    // Update window.engine reference for console testing
-    window.engine = this.engine;
-
-    // Clear time remaining
-    this.setState({ timeRemaining: null });
-  };
-
   checkAndMakeAIMove = (): void => {
-    const { aiEnabled, aiPlayer, spectatorMode, gameOver } = this.state;
-
-    // Don't make AI move if game is over
-    if (gameOver) {
-      return;
-    }
-
-    const state = this.engine.getState();
-    const currentPlayer = state.currentPlayer;
-
-    // Spectator mode: both players are AI
-    if (spectatorMode) {
-      const bot = currentPlayer === 'B' ? this.spectatorBotBlack : this.spectatorBotWhite;
-
-      if (!bot) {
-        return;
-      }
-
-      // Add a small delay for better UX
-      this.botMoveTimeout = window.setTimeout(() => {
-        if (!this.state.spectatorMode || this.state.gameOver) {
-          return;
-        }
-
-        const currentState = this.engine.getState();
-        const currentBot =
-          currentState.currentPlayer === 'B' ? this.spectatorBotBlack : this.spectatorBotWhite;
-
-        if (!currentBot) return;
-
-        const move = currentBot.calculateMove(currentState.board);
-        if (move) {
-          this.engine.makeMove(move);
-        }
-      }, 800);
-      return;
-    }
-
-    // Single AI mode
-    if (!aiEnabled) {
-      return;
-    }
-
-    // Only make AI move if it's the AI's turn
-    if (currentPlayer !== aiPlayer) {
-      return;
-    }
-
-    // Use Web Worker via AIManager for non-blocking AI computation
-    this.setState({ aiThinking: true, aiThinkingDepth: 0, aiThinkingNodes: 0 });
-
-    this.botMoveTimeout = window.setTimeout(() => {
-      if (!this.state.aiEnabled || this.state.gameOver) {
-        this.setState({ aiThinking: false });
-        return;
-      }
-
-      const currentState = this.engine.getState();
-      if (currentState.currentPlayer !== this.state.aiPlayer) {
-        this.setState({ aiThinking: false });
-        return;
-      }
-
-      const moveHistory = this.engine.getMoveHistory().map((m) => ({ coordinate: m.coordinate }));
-
-      aiManager
-        .calculateMove(
-          currentState.board,
-          this.state.aiDifficulty,
-          this.state.aiPlayer,
-          moveHistory,
-          (progress) => {
-            this.setState({
-              aiThinkingDepth: progress.depth,
-              aiThinkingNodes: progress.nodesSearched,
-            });
-          },
-          this.state.aiDifficulty === 'hard' ? 3000 : undefined
-        )
-        .then((result) => {
-          this.setState({ aiThinking: false, aiThinkingDepth: 0, aiThinkingNodes: 0 });
-          if (result.move && !this.state.gameOver) {
-            this.engine.makeMove(result.move);
-          }
-        })
-        .catch(() => {
-          this.setState({ aiThinking: false, aiThinkingDepth: 0, aiThinkingNodes: 0 });
+    const { aiEnabled, aiPlayer, aiDifficulty, spectatorMode, gameOver } = this.state;
+    this.aiGameplay.checkAndMakeAIMove({
+      engine: this.engine,
+      gameOver,
+      aiEnabled,
+      aiPlayer,
+      aiDifficulty,
+      spectatorMode,
+      onThinkingChange: (thinking) => {
+        this.setState({
+          aiThinking: thinking.isThinking,
+          aiThinkingDepth: thinking.depth,
+          aiThinkingNodes: thinking.nodesSearched,
         });
-    }, 300);
+      },
+    });
   };
 
   handleSpectatorToggle = (enabled: boolean): void => {
-    this.setState({ spectatorMode: enabled });
+    this.setState({ spectatorMode: enabled, aiEnabled: enabled ? false : this.state.aiEnabled });
+    this.aiGameplay.cancel();
+    this.aiGameplay.setSpectatorBots(enabled, this.state.aiDifficulty);
 
     if (enabled) {
-      // Disable regular AI when entering spectator mode
-      this.setState({ aiEnabled: false });
-      aiManager.cancel();
-
-      // Initialize bots for both players
-      this.spectatorBotBlack = new OthelloBot(this.state.aiDifficulty, 'B');
-      this.spectatorBotWhite = new OthelloBot(this.state.aiDifficulty, 'W');
-
-      // Start the AI vs AI game
       setTimeout(() => this.checkAndMakeAIMove(), 500);
-    } else {
-      // Clean up spectator bots
-      this.spectatorBotBlack = null;
-      this.spectatorBotWhite = null;
-
-      if (this.botMoveTimeout !== null) {
-        clearTimeout(this.botMoveTimeout);
-        this.botMoveTimeout = null;
-      }
     }
   };
 
@@ -1152,12 +968,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
       this.engine.pauseTime();
     }
 
-    // Cancel any pending AI move
-    if (this.botMoveTimeout !== null) {
-      clearTimeout(this.botMoveTimeout);
-      this.botMoveTimeout = null;
-    }
-
+    this.aiGameplay.cancel();
     this.setState({ settingsOpen: true });
   };
 
@@ -1188,6 +999,7 @@ class OthelloGame extends Component<{}, OthelloGameState> {
 
     // Apply AI settings from the config
     if (config.mode === 'ai') {
+      this.aiGameplay.setSpectatorBots(false, config.aiDifficulty);
       this.setState({
         aiEnabled: true,
         aiDifficulty: config.aiDifficulty,
@@ -1195,16 +1007,16 @@ class OthelloGame extends Component<{}, OthelloGameState> {
         spectatorMode: false,
       });
     } else if (config.mode === 'spectator') {
+      this.aiGameplay.setSpectatorBots(true, config.aiDifficulty);
       this.setState({
         aiEnabled: false,
         spectatorMode: true,
         aiDifficulty: config.aiDifficulty,
       });
-      this.spectatorBotBlack = new OthelloBot(config.aiDifficulty, 'B');
-      this.spectatorBotWhite = new OthelloBot(config.aiDifficulty, 'W');
     } else {
+      this.aiGameplay.cancel();
+      this.aiGameplay.setSpectatorBots(false, config.aiDifficulty);
       this.setState({ aiEnabled: false, spectatorMode: false });
-      aiManager.cancel();
     }
 
     this.handleRestart();

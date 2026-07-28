@@ -1,10 +1,9 @@
 /**
- * Custom hooks for the Othello game
+ * Custom Hooks
  *
- * These hooks extract reusable logic from OthelloGame component:
- * - useGameEngine: Engine initialization, events, core state
- * - useAIPlayer: Bot logic, spectator mode
- * - useTimeControl: Timer updates, warnings, persistence
+ * Core gameplay hooks (useGameEngine / useAIPlayer / useTimeControl) stay in
+ * sync with OthelloGame audit behavior and share AIGameplayController.
+ * Animation hooks are used by Board/Score UI today.
  */
 
 export { useGameEngine } from './useGameEngine';
@@ -16,6 +15,5 @@ export type { UseAIPlayerConfig, UseAIPlayerReturn } from './useAIPlayer';
 export { useTimeControl } from './useTimeControl';
 export type { UseTimeControlConfig, UseTimeControlReturn } from './useTimeControl';
 
-// Re-export existing hooks
 export { useFlipAnimation } from './useFlipAnimation';
 export { useScoreAnimation } from './useScoreAnimation';

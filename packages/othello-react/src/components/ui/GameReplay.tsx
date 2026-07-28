@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { type Move, type Coordinate, type TileValue, E, B, W } from 'othello-engine';
+import {
+  type Move,
+  type Coordinate,
+  type TileValue,
+  B,
+  reconstructBoardAt as engineReconstructBoardAt,
+} from 'othello-engine';
 
 /**
  * Props for the GameReplay component
@@ -25,34 +31,6 @@ const PLAYBACK_SPEEDS = [
   { label: '2x', ms: 250 },
   { label: '4x', ms: 125 },
 ] as const;
-
-/**
- * Standard Othello starting position
- */
-const INITIAL_BOARD: TileValue[][] = [
-  [E, E, E, E, E, E, E, E],
-  [E, E, E, E, E, E, E, E],
-  [E, E, E, E, E, E, E, E],
-  [E, E, E, W, B, E, E, E],
-  [E, E, E, B, W, E, E, E],
-  [E, E, E, E, E, E, E, E],
-  [E, E, E, E, E, E, E, E],
-  [E, E, E, E, E, E, E, E],
-];
-
-/**
- * Directions for flip calculation (8 directions: N, NE, E, SE, S, SW, W, NW)
- */
-const DIRECTIONS: [number, number][] = [
-  [-1, 0],
-  [-1, 1],
-  [0, 1],
-  [1, 1],
-  [1, 0],
-  [1, -1],
-  [0, -1],
-  [-1, -1],
-];
 
 /**
  * GameReplay - Interactive replay system for reviewing completed games
@@ -100,49 +78,7 @@ export const GameReplay: React.FC<GameReplayProps> = ({
    * @returns The board state at that move
    */
   const reconstructBoardAt = useCallback(
-    (targetIndex: number): TileValue[][] => {
-      // Start with the initial board (deep copy)
-      const board: TileValue[][] = INITIAL_BOARD.map((row) => [...row]);
-
-      // Apply each move up to targetIndex
-      for (let i = 0; i <= targetIndex && i < moves.length; i++) {
-        const move = moves[i];
-        if (!move) continue;
-
-        const [row, col] = move.coordinate;
-        const player = move.player;
-        const opponent = player === B ? W : B;
-
-        // Place the disc
-        const boardRow = board[row];
-        if (!boardRow) continue;
-        boardRow[col] = player;
-
-        // Find and flip captured discs in all directions
-        for (const [dr, dc] of DIRECTIONS) {
-          const toFlip: Coordinate[] = [];
-          let r = row + dr;
-          let c = col + dc;
-
-          // Collect opponent discs in this direction
-          while (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r]?.[c] === opponent) {
-            toFlip.push([r, c]);
-            r += dr;
-            c += dc;
-          }
-
-          // If we ended on our own disc, flip all collected discs
-          if (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r]?.[c] === player && toFlip.length > 0) {
-            for (const [flipR, flipC] of toFlip) {
-              const flipRow = board[flipR];
-              if (flipRow) flipRow[flipC] = player;
-            }
-          }
-        }
-      }
-
-      return board;
-    },
+    (targetIndex: number): TileValue[][] => engineReconstructBoardAt(moves, targetIndex),
     [moves]
   );
 
@@ -306,9 +242,9 @@ export const GameReplay: React.FC<GameReplayProps> = ({
    * Format coordinate to algebraic notation (e.g., "d5")
    */
   const formatCoordinate = (coord: Coordinate): string => {
-    const [row, col] = coord;
-    const column = String.fromCharCode(97 + col); // a-h
-    const rowNum = 8 - row; // 8-1
+    const [x, y] = coord; // [col, row]
+    const column = String.fromCharCode(97 + x); // a-h
+    const rowNum = 8 - y; // 8-1
     return `${column}${rowNum}`;
   };
 
