@@ -92,16 +92,19 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
             <div className="mode-option-group">
               <label className="mode-option-label">Difficulty</label>
               <div className="difficulty-chips">
-                {(['easy', 'medium', 'hard'] as BotDifficulty[]).map((d) => (
-                  <button
-                    key={d}
-                    className={`difficulty-chip ${difficulty === d ? 'selected' : ''}`}
-                    onClick={() => setDifficulty(d)}
-                  >
-                    <span className="chip-label">{DIFFICULTY_LABELS[d].label}</span>
-                    <span className="chip-desc">{DIFFICULTY_LABELS[d].desc}</span>
-                  </button>
-                ))}
+                {(['easy', 'medium', 'hard'] as const).map((d) => {
+                  const meta = DIFFICULTY_LABELS[d];
+                  return (
+                    <button
+                      key={d}
+                      className={`difficulty-chip ${difficulty === d ? 'selected' : ''}`}
+                      onClick={() => setDifficulty(d)}
+                    >
+                      <span className="chip-label">{meta.label}</span>
+                      <span className="chip-desc">{meta.desc}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

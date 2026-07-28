@@ -790,4 +790,28 @@ describe('OthelloBot', () => {
       }
     });
   });
+
+  describe('Pass handling in search', () => {
+    test('hard bot returns a valid move when a forcing-pass line exists', () => {
+      // Position where Black's move at [7,7] forces White to pass
+      const board = createBoard([
+        [B, B, B, B, B, B, B, B],
+        [B, B, B, B, B, B, B, B],
+        [B, B, B, B, B, B, B, B],
+        [B, B, B, B, B, B, B, B],
+        [B, B, B, B, B, B, W, E],
+        [B, B, B, B, B, B, W, E],
+        [B, B, B, B, B, B, W, E],
+        [B, B, B, B, B, B, B, E],
+      ]);
+
+      const bot = new OthelloBot('hard', 'B');
+      const move = bot.calculateMove(board);
+      expect(move).not.toBeNull();
+      if (move) {
+        const validMoves = getValidMoves(board);
+        expect(validMoves.some(([x, y]) => x === move[0] && y === move[1])).toBe(true);
+      }
+    });
+  });
 });

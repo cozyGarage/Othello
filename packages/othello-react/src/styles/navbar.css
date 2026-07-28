@@ -30,7 +30,7 @@
       transparent 80px
     ),
     /* Base wood color gradient */
-      linear-gradient(
+    linear-gradient(
         180deg,
         var(--color-wood-light) 0%,
         var(--color-wood-base) 50%,

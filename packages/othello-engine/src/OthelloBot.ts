@@ -1,4 +1,4 @@
-import { Board, Coordinate, getValidMoves, score, E } from './index';
+import { Board, Coordinate, getValidMoves, isGameOver, score, E } from './index';
 import { lookupOpeningBook } from './openingBook';
 
 /**
@@ -894,7 +894,11 @@ export class OthelloBot {
       }
     }
 
-    // Switch player
+    // Switch player (mirror engine takeTurn pass handling)
     board.playerTurn = opponent;
+    if (getValidMoves(board).length === 0 && !isGameOver(board)) {
+      // Opponent must pass — switch back to the player who just moved
+      board.playerTurn = currentPlayer;
+    }
   }
 }

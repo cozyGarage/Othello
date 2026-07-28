@@ -108,7 +108,8 @@ export const P: 'P' = 'P';
  * Creates a new game board with the specified tiles
  *
  * @param tiles - 8x8 grid of tile values
- * @returns Board object with Black player starting first
+ * @param playerTurn - Whose turn it is (defaults to Black)
+ * @returns Board object with the given player to move
  *
  * @example
  * ```typescript
@@ -118,8 +119,8 @@ export const P: 'P' = 'P';
  * ]);
  * ```
  */
-export const createBoard = (tiles: TileValue[][]): Board => ({
-  playerTurn: B,
+export const createBoard = (tiles: TileValue[][], playerTurn: 'B' | 'W' = B): Board => ({
+  playerTurn,
   tiles,
 });
 

@@ -138,10 +138,11 @@ export class AIManager {
    * Cancel any in-progress calculation.
    */
   cancel(): void {
-    if (this.pendingReject) {
-      this.pendingReject = null;
-    }
+    const reject = this.pendingReject;
+    this.pendingReject = null;
     this.cleanup();
+    // Reject after cleanup so callers can clear "thinking" UI
+    reject?.(new Error('AI calculation cancelled'));
   }
 
   private cleanup(): void {
