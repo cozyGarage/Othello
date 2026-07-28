@@ -95,6 +95,15 @@ export function useTimeControl(config: UseTimeControlConfig): UseTimeControlRetu
     onTimeoutRef.current = onTimeout;
   });
 
+  // Sync clock display as soon as the engine has time control
+  useEffect(() => {
+    if (engine.hasTimeControl()) {
+      setTimeRemaining(engine.getTimeRemaining());
+    } else {
+      setTimeRemaining(null);
+    }
+  }, [engine, timeControlEnabled, selectedTimePreset]);
+
   // Time update interval
   useEffect(() => {
     if (!engine.hasTimeControl() || gameOver) {

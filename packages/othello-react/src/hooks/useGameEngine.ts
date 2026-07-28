@@ -146,7 +146,9 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
       setLastMove(move.coordinate);
 
       const evaluation = engine.evaluatePosition();
-      setEvaluationHistory((prev) => [...prev, { move: history.length, evaluation }]);
+      const newEvalPoint = { move: history.length, evaluation };
+      // Slice so undo+branch overwrites future evaluation points
+      setEvaluationHistory((prev) => [...prev.slice(0, history.length), newEvalPoint]);
       onMoveRef.current?.(move, passedOpponent);
     };
 
@@ -208,6 +210,7 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
       setMoveHistory(history);
       setLastMove(history.length > 0 ? (history[history.length - 1]?.coordinate ?? null) : null);
       setGameOver(false);
+      setEvaluationHistory((prev) => prev.slice(0, history.length + 1));
     }
     return success;
   }, [engine]);
@@ -221,6 +224,11 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
       setMoveHistory(history);
       setLastMove(history.length > 0 ? (history[history.length - 1]?.coordinate ?? null) : null);
       setGameOver(state.isGameOver);
+      const evaluation = engine.evaluatePosition();
+      setEvaluationHistory((prev) => {
+        if (prev.length > history.length) return prev;
+        return [...prev, { move: history.length, evaluation }];
+      });
     }
     return success;
   }, [engine]);

@@ -1,7 +1,9 @@
-import { Component, type TouchEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type TouchEvent } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import Board from './components/layout/Board';
+import { LandingHero } from './components/landing/LandingHero';
+import { GameActionBar } from './components/game/GameActionBar';
 import {
   LoadingScreen,
   SettingsPanel,
@@ -18,50 +20,30 @@ import {
 } from './components/ui';
 import { hasLoadingScreen, hasSoundEffects } from './config/features';
 import { soundEffects } from './utils/soundEffects';
-import { getDefaultPreset, getPresetById } from './config/timePresets';
-// Phase 3: Import localStorage helpers
+import { getPresetById } from './config/timePresets';
 import {
-  getTimeControlEnabled,
-  setTimeControlEnabled,
-  getSelectedTimePreset,
-  setSelectedTimePreset,
   getMuteTimeSounds,
-  setMuteTimeSounds,
   getSoundVolume,
   setSoundVolume,
-  getCustomTimeConfig,
-  setCustomTimeConfig,
-  saveTimeState,
   clearSavedTimeState,
+  getSelectedTimePreset,
 } from './utils/timePreferences';
-// Hints preferences
 import { getHintsPerGame, setHintsPerGame } from './utils/hintPreferences';
-// Theme system
 import { applyTheme, getSavedThemeId } from './config/themes';
-// Phase 4: Import game statistics
 import { saveGameRecord } from './utils/gameStatistics';
-import { AIGameplayController } from './services/aiGameplay';
+import { useGameEngine, useAIPlayer, useTimeControl } from './hooks';
 import {
   OthelloGameEngine,
-  type Board as BoardType,
-  type Coordinate,
-  type GameEvent,
-  type Move,
-  type MoveEventData,
-  type InvalidMoveEventData,
-  type GameOverEventData,
-  type StateChangeEventData,
   type BotDifficulty,
-  type PlayerTime,
-  type TimeControlConfig,
+  type Coordinate,
+  type Move,
   type TileValue,
   B,
   W,
 } from 'othello-engine';
 
-// Import new modular CSS
 import './styles/variables.css';
-import './styles/utilities.css'; // DRY: reusable patterns
+import './styles/utilities.css';
 import './styles/layout.css';
 import './styles/animations.css';
 import './styles/navbar.css';
@@ -69,1273 +51,698 @@ import './styles/board.css';
 import './styles/sidebar.css';
 import './styles/ui.css';
 import './styles/landing.css';
-// Import EvaluationGraph component
 import EvaluationGraph from './components/ui/EvaluationGraph';
 import { BlogSection } from './components/layout/BlogSection';
 import { blogPosts, type BlogPost } from './config/blogPosts';
 
 /**
- * Extend the Window interface to expose the game engine for browser console testing.
- * This is required by the 42 School evaluation criteria for state serialization testing.
- * @see docs/42_SCHOOL_EVALUATION.md - Section 1.4 "State Serialization"
+ * Functional shell: gameplay hooks + chrome orchestration.
+ * window.engine is exposed by useGameEngine for 42 School console testing.
  */
-declare global {
-  interface Window {
-    engine?: OthelloGameEngine;
-  }
-}
+function OthelloGame() {
+  const [message, setMessage] = useState<string | null>(null);
+  const [srAnnouncement, setSrAnnouncement] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(hasLoadingScreen);
+  const [soundVolume, setSoundVolumeState] = useState(() => {
+    const saved = getSoundVolume();
+    soundEffects.setVolume(saved);
+    return saved;
+  });
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [replayOpen, setReplayOpen] = useState(false);
+  const [replayBoard, setReplayBoard] = useState<TileValue[][] | null>(null);
+  const [historyReplayMoves, setHistoryReplayMoves] = useState<Move[] | null>(null);
+  const [hintsEnabled, setHintsEnabled] = useState(false);
+  const [hintMove, setHintMove] = useState<Coordinate | null>(null);
+  const [hintsPerGame, setHintsPerGameState] = useState(getHintsPerGame);
+  const [hintsRemaining, setHintsRemaining] = useState(() => {
+    const count = getHintsPerGame();
+    return count === 0 ? 999 : count;
+  });
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [puzzlesOpen, setPuzzlesOpen] = useState(false);
+  const [modeSelectorOpen, setModeSelectorOpen] = useState(false);
+  const [resultModalOpen, setResultModalOpen] = useState(false);
+  const [gameWinner, setGameWinner] = useState<'B' | 'W' | null>(null);
+  const [endedByTimeout, setEndedByTimeout] = useState(false);
+  const [gameStartTime, setGameStartTime] = useState(() => Date.now());
+  const [moveTimestamps, setMoveTimestamps] = useState<number[]>([]);
+  const [graphVisible, setGraphVisible] = useState(true);
+  const [boardTheme, setBoardTheme] = useState(getSavedThemeId);
 
-interface OthelloGameState {
-  board: BoardType;
-  message: string | null;
-  gameOver: boolean;
-  lastMove: Coordinate | null;
-  isLoading: boolean;
-  moveHistory: Move[];
-  settingsOpen: boolean;
-  soundVolume: number;
-  aiEnabled: boolean;
-  aiDifficulty: BotDifficulty;
-  aiPlayer: 'W' | 'B';
-  // Spectator mode - both players are AI
-  spectatorMode: boolean;
-  // Time control
-  timeControlEnabled: boolean;
-  selectedTimePreset: string;
-  timeRemaining: PlayerTime | null;
-  // Phase 3: Time warning tracking (prevent repeated warnings)
-  blackTimeWarningPlayed: boolean;
-  whiteTimeWarningPlayed: boolean;
-  // Phase 3.5: Custom time control
-  customInitialMinutes: number;
-  customIncrementSeconds: number;
-  // Phase 4: Level 2 Bonuses
-  replayOpen: boolean;
-  replayBoard: TileValue[][] | null;
-  hintsEnabled: boolean;
-  hintMove: Coordinate | null;
-  statsOpen: boolean;
-  puzzlesOpen: boolean;
-  // Track game start time for statistics
-  gameStartTime: number;
-  moveTimestamps: number[];
-  // Hints per game limit
-  hintsPerGame: number;
-  hintsRemaining: number;
-  // Game result modal
-  resultModalOpen: boolean;
-  gameWinner: 'B' | 'W' | null;
-  endedByTimeout: boolean;
-  // History replay - moves from saved game record
-  historyReplayMoves: Move[] | null;
-  // Evaluation graph
-  evaluationHistory: Array<{ move: number; evaluation: number }>;
-  graphVisible: boolean;
-  // Accessibility
-  srAnnouncement: string | null;
-  // AI thinking indicator
-  aiThinking: boolean;
-  aiThinkingDepth: number;
-  aiThinkingNodes: number;
-  // Game mode selector
-  modeSelectorOpen: boolean;
-  // Board theme
-  boardTheme: string;
-}
+  const blogMessageTimeout = useRef<number | null>(null);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const engineRef = useRef<OthelloGameEngine | null>(null);
+  const aiRef = useRef<{ checkAndMakeAIMove: () => void; cancelPendingAIMove: () => void } | null>(
+    null
+  );
 
-/**
- * OthelloGame - Clean Chess.com inspired layout
- *
- * Structure:
- * - Navbar (top)
- * - Game Container (grid: board + sidebar)
- *   - Board Area (left, 80vh)
- *   - Sidebar (right, fixed width)
- */
-class OthelloGame extends Component<{}, OthelloGameState> {
-  private engine: OthelloGameEngine;
-  private readonly aiGameplay = new AIGameplayController();
-  private timeUpdateInterval: number | null = null;
-  private blogMessageTimeout: number | null = null;
-  // Swipe gesture tracking
-  private touchStartX: number = 0;
-  private touchStartY: number = 0;
+  // Stable refs for engine callbacks (avoid closing over hook return before assignment)
+  const statsRef = useRef({
+    moveTimestamps,
+    gameStartTime,
+    aiEnabled: false,
+    aiDifficulty: 'medium' as BotDifficulty,
+    aiPlayer: 'W' as 'B' | 'W',
+    spectatorMode: false,
+    timeControlEnabled: false,
+    selectedTimePreset: getSelectedTimePreset(),
+  });
 
-  constructor(props: {}) {
-    super(props);
+  const showTimedMessage = useCallback((text: string, ms = 2000) => {
+    setMessage(text);
+    window.setTimeout(() => setMessage(null), ms);
+  }, []);
 
-    // Phase 3: Load time control preferences from localStorage
-    const savedTimeControlEnabled = getTimeControlEnabled();
-    const savedTimePreset = getSelectedTimePreset();
-
-    // Phase 3.5: Load sound volume preference
-    const savedVolume = getSoundVolume();
-    soundEffects.setVolume(savedVolume);
-
-    // Phase 3.5: Load custom time config
-    const savedCustomConfig = getCustomTimeConfig();
-    const customInitialMinutes = savedCustomConfig?.initialMinutes ?? 5;
-    const customIncrementSeconds = savedCustomConfig?.incrementSeconds ?? 0;
-
-    // Determine the time config to use
-    let timeConfig: TimeControlConfig | undefined;
-    if (savedTimeControlEnabled) {
-      if (savedTimePreset === 'custom') {
-        timeConfig = {
-          initialTime: customInitialMinutes * 60 * 1000,
-          increment: customIncrementSeconds * 1000,
-        };
-      } else {
-        const preset = getPresetById(savedTimePreset) || getDefaultPreset();
-        timeConfig = preset.config;
+  const saveGameStatistics = useCallback(
+    (
+      winner: 'B' | 'W' | null,
+      isTimeout: boolean,
+      opts: {
+        engine: OthelloGameEngine;
+        aiEnabled: boolean;
+        aiDifficulty: BotDifficulty;
+        aiPlayer: 'B' | 'W';
+        spectatorMode: boolean;
+        timeControlEnabled: boolean;
+        moveTimestamps: number[];
+        gameStartTime: number;
       }
-    }
+    ) => {
+      const {
+        engine,
+        aiEnabled,
+        aiDifficulty,
+        aiPlayer,
+        spectatorMode,
+        timeControlEnabled,
+        moveTimestamps: stamps,
+        gameStartTime: start,
+      } = opts;
+      const state = engine.getState();
 
-    // Initialize the game engine (with time control if enabled in preferences)
-    this.engine = new OthelloGameEngine(undefined, undefined, undefined, timeConfig);
+      let avgMoveTime = 0;
+      if (stamps.length > 1) {
+        let totalTime = 0;
+        for (let i = 1; i < stamps.length; i++) {
+          const prevTime = stamps[i - 1];
+          const currTime = stamps[i];
+          if (prevTime !== undefined && currTime !== undefined) {
+            totalTime += currTime - prevTime;
+          }
+        }
+        avgMoveTime = totalTime / (stamps.length - 1);
+      }
 
-    // Phase 3.5: Clock-only saves are unsafe without a matching board snapshot.
-    // Clear orphaned time state so refresh does not restore mid-game clocks onto a new board.
-    clearSavedTimeState();
+      let humanPlayer: 'B' | 'W' | null = null;
+      if (aiEnabled && !spectatorMode) {
+        humanPlayer = aiPlayer === 'B' ? 'W' : 'B';
+      }
 
-    const initialState = this.engine.getState();
-    const savedHintsPerGame = getHintsPerGame();
-    this.state = {
-      board: initialState.board,
-      message: null,
-      gameOver: false,
-      lastMove: null,
-      isLoading: hasLoadingScreen(),
-      moveHistory: [],
-      settingsOpen: false,
-      soundVolume: savedVolume,
-      aiEnabled: false,
-      aiDifficulty: 'medium',
-      aiPlayer: 'W',
-      // Spectator mode - both players are AI
-      spectatorMode: false,
-      // Phase 3: Initialize from localStorage (user's saved preferences)
-      timeControlEnabled: savedTimeControlEnabled,
-      selectedTimePreset: savedTimePreset,
-      timeRemaining: null,
-      // Phase 3: Initialize time warning flags
-      blackTimeWarningPlayed: false,
-      whiteTimeWarningPlayed: false,
-      // Phase 3.5: Custom time control
-      customInitialMinutes,
-      customIncrementSeconds,
-      // Phase 4: Level 2 Bonuses
-      replayOpen: false,
-      replayBoard: null,
-      hintsEnabled: false,
-      hintMove: null,
-      statsOpen: false,
-      puzzlesOpen: false,
-      gameStartTime: Date.now(),
-      moveTimestamps: [],
-      // Hints per game
-      hintsPerGame: savedHintsPerGame,
-      hintsRemaining: savedHintsPerGame === 0 ? 999 : savedHintsPerGame,
-      // Game result modal
-      resultModalOpen: false,
-      gameWinner: null,
-      endedByTimeout: false,
-      // History replay
-      historyReplayMoves: null,
-      // Evaluation graph - start with initial position evaluation
-      evaluationHistory: [{ move: 0, evaluation: 0 }],
-      graphVisible: true,
-      srAnnouncement: null,
-      aiThinking: false,
-      aiThinkingDepth: 0,
-      aiThinkingNodes: 0,
-      modeSelectorOpen: false,
-      boardTheme: getSavedThemeId(),
+      saveGameRecord({
+        winner,
+        humanPlayer,
+        aiDifficulty: aiEnabled ? aiDifficulty : null,
+        spectatorMode,
+        finalScore: state.score,
+        totalMoves: state.moveHistory.length,
+        avgMoveTime,
+        gameDuration: Date.now() - start,
+        timeControlEnabled,
+        endedByTimeout: isTimeout,
+        moves: state.moveHistory.map((move) => ({
+          player: move.player,
+          coordinate: move.coordinate as [number, number],
+        })),
+      });
+    },
+    []
+  );
+
+  const game = useGameEngine({
+    onMove: (move, passedOpponent) => {
+      const engine = engineRef.current;
+      if (!engine) return;
+
+      const now = Date.now();
+      setMoveTimestamps((prev) => {
+        const next = [...prev, now];
+        statsRef.current.moveTimestamps = next;
+        return next;
+      });
+
+      if (hasSoundEffects()) {
+        soundEffects.playFlip();
+        if (statsRef.current.timeControlEnabled) {
+          const preset = getPresetById(statsRef.current.selectedTimePreset);
+          if (preset && preset.config.increment > 0) {
+            window.setTimeout(() => soundEffects.playTimeIncrement(), 150);
+          }
+        }
+      }
+
+      const [col, row] = move.coordinate;
+      const colLabel = String.fromCharCode(97 + col);
+      const rowLabel = 8 - row;
+      const playerName = move.player === 'B' ? 'Black' : 'White';
+      const state = engine.getState();
+
+      if (passedOpponent) {
+        const opponentName = state.currentPlayer === 'B' ? 'White' : 'Black';
+        showTimedMessage(`${opponentName} has no valid moves and must pass!`, 2500);
+        setSrAnnouncement(
+          `${playerName} played ${colLabel}${rowLabel}. ${opponentName} must pass. Score: Black ${state.score.black}, White ${state.score.white}.`
+        );
+      } else {
+        const nextPlayer = state.currentPlayer === 'B' ? 'Black' : 'White';
+        setSrAnnouncement(
+          `${playerName} played ${colLabel}${rowLabel}. ${nextPlayer}'s turn. Score: Black ${state.score.black}, White ${state.score.white}.`
+        );
+      }
+    },
+    onInvalidMove: (error) => {
+      if (hasSoundEffects()) soundEffects.playInvalidMove();
+      showTimedMessage(error, 2000);
+    },
+    onGameOver: (winner, isTimeout) => {
+      const engine = engineRef.current;
+      if (!engine) return;
+
+      clearSavedTimeState();
+      saveGameStatistics(winner, isTimeout, {
+        engine,
+        aiEnabled: statsRef.current.aiEnabled,
+        aiDifficulty: statsRef.current.aiDifficulty,
+        aiPlayer: statsRef.current.aiPlayer,
+        spectatorMode: statsRef.current.spectatorMode,
+        timeControlEnabled: statsRef.current.timeControlEnabled,
+        moveTimestamps: statsRef.current.moveTimestamps,
+        gameStartTime: statsRef.current.gameStartTime,
+      });
+      if (hasSoundEffects()) {
+        if (isTimeout) soundEffects.playTimeout();
+        else soundEffects.playGameOver();
+      }
+      setResultModalOpen(true);
+      setGameWinner(winner);
+      setEndedByTimeout(isTimeout);
+      setMessage(null);
+    },
+    onStateChange: () => {
+      const engine = engineRef.current;
+      if (!engine) return;
+      const state = engine.getState();
+      if (!state.isGameOver && state.validMoves.length === 0) {
+        const nextPlayerName = state.currentPlayer === B ? 'Black' : 'White';
+        showTimedMessage(`No valid moves. ${nextPlayerName}'s turn!`, 2000);
+      }
+      aiRef.current?.checkAndMakeAIMove();
+    },
+  });
+
+  engineRef.current = game.engine;
+
+  const time = useTimeControl({
+    engine: game.engine,
+    gameOver: game.gameOver,
+    onTimeWarning: () => {
+      if (hasSoundEffects()) soundEffects.playTimeWarning();
+    },
+  });
+
+  const ai = useAIPlayer({
+    engine: game.engine,
+    gameOver: game.gameOver,
+  });
+
+  aiRef.current = {
+    checkAndMakeAIMove: ai.checkAndMakeAIMove,
+    cancelPendingAIMove: ai.cancelPendingAIMove,
+  };
+
+  // Keep statsRef in sync for engine callbacks / game-over persistence
+  useEffect(() => {
+    statsRef.current = {
+      moveTimestamps,
+      gameStartTime,
+      aiEnabled: ai.aiEnabled,
+      aiDifficulty: ai.aiDifficulty,
+      aiPlayer: ai.aiPlayer,
+      spectatorMode: ai.spectatorMode,
+      timeControlEnabled: time.timeControlEnabled,
+      selectedTimePreset: time.selectedTimePreset,
     };
+  }, [
+    moveTimestamps,
+    gameStartTime,
+    ai.aiEnabled,
+    ai.aiDifficulty,
+    ai.aiPlayer,
+    ai.spectatorMode,
+    time.timeControlEnabled,
+    time.selectedTimePreset,
+  ]);
 
-    // Phase 3: Load and apply mute time sounds preference
-    const savedMuteTimeSounds = getMuteTimeSounds();
-    soundEffects.setMuteTimeSounds(savedMuteTimeSounds);
-  }
+  // Theme, loading, sounds, mute restore
+  useEffect(() => {
+    applyTheme(boardTheme);
+    soundEffects.setMuteTimeSounds(getMuteTimeSounds());
+    soundEffects.setEnabled(hasSoundEffects());
 
-  componentDidMount(): void {
-    // Apply saved board theme
-    applyTheme(this.state.boardTheme);
-
-    // Subscribe to engine events
-    this.engine.on('move', this.handleMoveEvent);
-    this.engine.on('invalidMove', this.handleInvalidMoveEvent);
-    this.engine.on('gameOver', this.handleGameOverEvent);
-    this.engine.on('stateChange', this.handleStateChangeEvent);
-
-    // Expose the engine to the global window object for browser console testing
-    // This is required by 42 School evaluation for state serialization testing:
-    // window.engine.exportState() and window.engine.importState(state)
-    window.engine = this.engine;
-
-    // Add keyboard shortcuts for undo/redo
-    document.addEventListener('keydown', this.handleKeyDown);
-
-    // Simulate loading for better UX
-    if (hasLoadingScreen()) {
-      setTimeout(() => {
-        this.setState({ isLoading: false });
-      }, 1500);
-    }
-
-    // Initialize sound effects
     const initSound = () => {
       soundEffects.resume();
       document.removeEventListener('click', initSound);
     };
     document.addEventListener('click', initSound, { once: true });
 
-    soundEffects.setEnabled(hasSoundEffects());
-
-    // Phase 3: Start time update interval (updates every 100ms for smooth display)
-    // Also checks for low time warnings and plays sound alerts
-    this.timeUpdateInterval = window.setInterval(() => {
-      if (this.engine.hasTimeControl() && !this.state.gameOver) {
-        // End the game as soon as a clock expires (do not wait for a move attempt)
-        if (this.engine.checkTimeout()) {
-          return;
-        }
-
-        const timeRemaining = this.engine.getTimeRemaining();
-        this.setState({ timeRemaining });
-
-        // Phase 3.5: Save time state periodically for refresh recovery
-        const engineState = this.engine.getState();
-        if (timeRemaining && !engineState.isGameOver) {
-          saveTimeState({
-            blackTime: timeRemaining.black,
-            whiteTime: timeRemaining.white,
-            currentPlayer: engineState.currentPlayer,
-            presetId: this.state.selectedTimePreset,
-          });
-        }
-
-        // Check for low time warning (< 10 seconds = 10000ms)
-        // Only play warning sound ONCE per player when they drop below threshold
-        const LOW_TIME_THRESHOLD = 10000; // 10 seconds
-
-        if (timeRemaining && hasSoundEffects()) {
-          // Check black player time
-          if (
-            timeRemaining.black < LOW_TIME_THRESHOLD &&
-            timeRemaining.black > 0 &&
-            !this.state.blackTimeWarningPlayed
-          ) {
-            soundEffects.playTimeWarning();
-            this.setState({ blackTimeWarningPlayed: true });
-          }
-
-          // Check white player time
-          if (
-            timeRemaining.white < LOW_TIME_THRESHOLD &&
-            timeRemaining.white > 0 &&
-            !this.state.whiteTimeWarningPlayed
-          ) {
-            soundEffects.playTimeWarning();
-            this.setState({ whiteTimeWarningPlayed: true });
-          }
-        }
-      }
-    }, 100);
-  }
-
-  componentWillUnmount(): void {
-    // Clean up event listeners
-    this.engine.off('move', this.handleMoveEvent);
-    this.engine.off('invalidMove', this.handleInvalidMoveEvent);
-    this.engine.off('gameOver', this.handleGameOverEvent);
-    this.engine.off('stateChange', this.handleStateChangeEvent);
-    document.removeEventListener('keydown', this.handleKeyDown);
-
-    // Clean up window.engine reference
-    delete window.engine;
-
-    // Cancel in-flight AI work and release the worker
-    this.aiGameplay.dispose();
-
-    // Clean up time update interval
-    if (this.timeUpdateInterval !== null) {
-      clearInterval(this.timeUpdateInterval);
+    if (hasLoadingScreen()) {
+      const t = window.setTimeout(() => setIsLoading(false), 1500);
+      return () => {
+        clearTimeout(t);
+        document.removeEventListener('click', initSound);
+      };
     }
+    setIsLoading(false);
+    return () => document.removeEventListener('click', initSound);
+  }, [boardTheme]);
 
-    if (this.blogMessageTimeout !== null) {
-      clearTimeout(this.blogMessageTimeout);
-    }
-  }
+  const handleRestart = useCallback(() => {
+    clearSavedTimeState();
+    game.reset();
+    time.resetTimeWarnings();
+    setMessage(null);
+    setGameStartTime(Date.now());
+    setMoveTimestamps([]);
+    setReplayOpen(false);
+    setReplayBoard(null);
+    setHintMove(null);
+    setHintsEnabled(false);
+    setHintsRemaining(hintsPerGame === 0 ? 999 : hintsPerGame);
+    setResultModalOpen(false);
+    setGameWinner(null);
+    setEndedByTimeout(false);
+    setHistoryReplayMoves(null);
+    window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
+  }, [game, time, ai, hintsPerGame]);
 
-  handleTimeOut = (): void => {
-    if (!this.state.gameOver) {
-      this.engine.checkTimeout();
-    }
-  };
-
-  scrollToGame = (): void => {
+  const scrollToGame = useCallback(() => {
     document.getElementById('play-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+  }, []);
 
-  handleHeroPlayClick = (): void => {
-    this.handleRestart();
-    this.scrollToGame();
-  };
+  const handleHeroPlayClick = useCallback(() => {
+    handleRestart();
+    scrollToGame();
+  }, [handleRestart, scrollToGame]);
 
-  handleBlogOpen = (post: BlogPost): void => {
-    if (this.blogMessageTimeout) {
-      clearTimeout(this.blogMessageTimeout);
-    }
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')
+      ) {
+        return;
+      }
 
-    this.setState({ message: `${post.title} draft is coming soon.` });
-    this.blogMessageTimeout = window.setTimeout(() => {
-      this.setState({ message: null });
-    }, 2200);
-  };
+      if (event.key === 'Escape') {
+        if (settingsOpen) setSettingsOpen(false);
+        else if (statsOpen) setStatsOpen(false);
+        else if (puzzlesOpen) setPuzzlesOpen(false);
+        else if (replayOpen) {
+          setReplayOpen(false);
+          setReplayBoard(null);
+          setHistoryReplayMoves(null);
+        } else if (modeSelectorOpen) setModeSelectorOpen(false);
+        else if (resultModalOpen) setResultModalOpen(false);
+        return;
+      }
 
-  handleKeyDown = (event: KeyboardEvent): void => {
-    // Don't handle shortcuts when typing in an input
-    const target = event.target as HTMLElement;
-    if (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
-      target.tagName === 'SELECT'
-    ) {
-      return;
-    }
-
-    // Ctrl+Z or Cmd+Z for undo
-    if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
-      event.preventDefault();
-      this.handleUndo();
-      return;
-    }
-
-    // Ctrl+Y or Cmd+Shift+Z for redo
-    if (
-      ((event.ctrlKey || event.metaKey) && event.key === 'y') ||
-      ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'z')
-    ) {
-      event.preventDefault();
-      this.handleRedo();
-      return;
-    }
-
-    // N for new game (without modifiers)
-    if (event.key === 'n' && !event.ctrlKey && !event.metaKey && !event.altKey) {
-      event.preventDefault();
-      this.handleRestart();
-      return;
-    }
-
-    // S for settings (without modifiers)
-    if (event.key === 's' && !event.ctrlKey && !event.metaKey && !event.altKey) {
-      event.preventDefault();
-      this.handleOpenSettings();
-      return;
-    }
-
-    // Escape to close settings
-    if (event.key === 'Escape') {
-      if (this.state.settingsOpen) {
+      if (event.key === 'n' || event.key === 'N') {
         event.preventDefault();
-        this.handleCloseSettings();
+        setModeSelectorOpen(true);
+        return;
       }
-      return;
-    }
-
-    // ? or H for help (show keyboard shortcuts)
-    if ((event.key === '?' || event.key === 'h') && !event.ctrlKey && !event.metaKey) {
-      event.preventDefault();
-      this.setState({
-        message: '⌨️ Shortcuts: N=New, S=Settings, Z=Undo, Y=Redo, Esc=Close',
-      });
-      setTimeout(() => this.setState({ message: null }), 4000);
-      return;
-    }
-  };
-
-  handleMoveEvent = (event: GameEvent): void => {
-    const { move, state } = event.data as MoveEventData;
-
-    // Phase 4: Track move timestamps for statistics
-    const now = Date.now();
-    const moveTimestamps = [...this.state.moveTimestamps, now];
-
-    // Phase 3: Play move sound and increment sound (if time control active)
-    if (hasSoundEffects()) {
-      soundEffects.playFlip();
-
-      // Play increment sound if time control is enabled and has increment
-      if (this.state.timeControlEnabled) {
-        const preset = getPresetById(this.state.selectedTimePreset);
-        if (preset && preset.config.increment > 0) {
-          // Small delay so increment sound doesn't overlap with flip sound
-          setTimeout(() => {
-            soundEffects.playTimeIncrement();
-          }, 150);
+      if (event.key === 's' || event.key === 'S') {
+        event.preventDefault();
+        if (game.engine.hasTimeControl() && !game.gameOver) game.pauseTime();
+        ai.cancelPendingAIMove();
+        setSettingsOpen(true);
+        return;
+      }
+      if ((event.key === 'z' || event.key === 'Z') && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault();
+        if (game.undo()) {
+          setMessage(null);
+          window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
         }
+        return;
       }
-    }
-
-    const moveHistory = this.engine.getMoveHistory();
-
-    // Check if the turn stayed with the same player (opponent had to pass)
-    const currentPlayer = state.currentPlayer;
-    const previousPlayer = move.player;
-
-    if (currentPlayer === previousPlayer) {
-      // Opponent had no valid moves and had to pass
-      const opponentName = currentPlayer === 'B' ? 'White' : 'Black';
-      // Track evaluation after move
-      const evaluation = this.engine.evaluatePosition();
-      const newEvalPoint = { move: moveHistory.length, evaluation };
-      const colLabel = String.fromCharCode(97 + move.coordinate[0]);
-      const rowLabel = 8 - move.coordinate[1];
-      const playerName = move.player === 'B' ? 'Black' : 'White';
-      this.setState((prev) => ({
-        lastMove: move.coordinate,
-        moveHistory,
-        moveTimestamps,
-        message: `${opponentName} has no valid moves and must pass!`,
-        srAnnouncement: `${playerName} played ${colLabel}${rowLabel}. ${opponentName} must pass. Score: Black ${state.score.black}, White ${state.score.white}.`,
-        // Slice to ensure we overwrite any future history if we branched
-        evaluationHistory: [...prev.evaluationHistory.slice(0, moveHistory.length), newEvalPoint],
-      }));
-      setTimeout(() => this.setState({ message: null }), 2500);
-    } else {
-      // Track evaluation after move
-      const evaluation = this.engine.evaluatePosition();
-      const newEvalPoint = { move: moveHistory.length, evaluation };
-      const colLabel = String.fromCharCode(97 + move.coordinate[0]);
-      const rowLabel = 8 - move.coordinate[1];
-      const playerName = move.player === 'B' ? 'Black' : 'White';
-      const nextPlayer = currentPlayer === 'B' ? 'Black' : 'White';
-      this.setState((prev) => ({
-        lastMove: move.coordinate,
-        moveHistory,
-        moveTimestamps,
-        srAnnouncement: `${playerName} played ${colLabel}${rowLabel}. ${nextPlayer}'s turn. Score: Black ${state.score.black}, White ${state.score.white}.`,
-        // Slice to ensure we overwrite any future history if we branched
-        evaluationHistory: [...prev.evaluationHistory.slice(0, moveHistory.length), newEvalPoint],
-      }));
-    }
-  };
-
-  handleInvalidMoveEvent = (event: GameEvent): void => {
-    const { error } = event.data as InvalidMoveEventData;
-
-    if (hasSoundEffects()) {
-      soundEffects.playInvalidMove();
-    }
-
-    this.setState({ message: error });
-    setTimeout(() => this.setState({ message: null }), 2000);
-  };
-
-  handleGameOverEvent = (event: GameEvent): void => {
-    const { winner } = event.data as GameOverEventData;
-
-    // Phase 3.5: Clear saved time state when game ends
-    clearSavedTimeState();
-
-    // Check if game ended due to timeout
-    const timeRemaining = this.engine.getTimeRemaining();
-    const isTimeout =
-      timeRemaining &&
-      ((winner === W && timeRemaining.black <= 0) || (winner === B && timeRemaining.white <= 0));
-
-    // Phase 4: Save game statistics
-    this.saveGameStatistics(winner, isTimeout ?? false);
-
-    // Phase 3: Play appropriate sound (timeout alarm or normal game over)
-    if (hasSoundEffects()) {
-      if (isTimeout) {
-        soundEffects.playTimeout(); // Urgent alarm sound for timeout
-      } else {
-        soundEffects.playGameOver(); // Normal victory fanfare
-      }
-    }
-
-    // Show result modal instead of just a message
-    this.setState({
-      gameOver: true,
-      message: null,
-      resultModalOpen: true,
-      gameWinner: winner,
-      endedByTimeout: isTimeout ?? false,
-    });
-  };
-
-  handleStateChangeEvent = (event: GameEvent): void => {
-    const { state } = event.data as StateChangeEventData;
-    this.setState({ board: state.board });
-
-    // Check if current player has no valid moves
-    if (!state.isGameOver && state.validMoves.length === 0) {
-      const nextPlayerName = state.currentPlayer === B ? 'Black' : 'White';
-      this.setState({
-        message: `No valid moves. ${nextPlayerName}'s turn!`,
-      });
-      setTimeout(() => this.setState({ message: null }), 2000);
-    }
-
-    // Trigger AI move if it's the AI's turn
-    this.checkAndMakeAIMove();
-  };
-
-  handlePlayerTurn = (coord: Coordinate): void => {
-    if (this.state.gameOver) {
-      return;
-    }
-    this.engine.makeMove(coord);
-  };
-
-  /**
-   * Save game statistics when game ends
-   * Calculates average move time and duration, then persists to localStorage
-   */
-  saveGameStatistics = (winner: 'B' | 'W' | null, endedByTimeout: boolean): void => {
-    const { moveTimestamps, gameStartTime, aiEnabled, aiDifficulty, aiPlayer, spectatorMode } =
-      this.state;
-    const state = this.engine.getState();
-
-    // Calculate average move time
-    let avgMoveTime = 0;
-    if (moveTimestamps.length > 1) {
-      let totalTime = 0;
-      for (let i = 1; i < moveTimestamps.length; i++) {
-        const prevTime = moveTimestamps[i - 1];
-        const currTime = moveTimestamps[i];
-        if (prevTime !== undefined && currTime !== undefined) {
-          totalTime += currTime - prevTime;
+      if ((event.key === 'y' || event.key === 'Y') && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault();
+        if (game.redo()) {
+          setMessage(null);
+          window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
         }
+        return;
       }
-      avgMoveTime = totalTime / (moveTimestamps.length - 1);
-    }
+      if (event.key === '?' || (event.shiftKey && event.key === '/')) {
+        event.preventDefault();
+        showTimedMessage('⌨️ Shortcuts: N=New, S=Settings, Z=Undo, Y=Redo, Esc=Close', 4000);
+      }
+    };
 
-    // Calculate game duration
-    const gameDuration = Date.now() - gameStartTime;
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [
+    settingsOpen,
+    statsOpen,
+    puzzlesOpen,
+    replayOpen,
+    modeSelectorOpen,
+    resultModalOpen,
+    game,
+    ai,
+    showTimedMessage,
+  ]);
 
-    // Determine human player (if vs AI)
-    let humanPlayer: 'B' | 'W' | null = null;
-    if (aiEnabled && !spectatorMode) {
-      humanPlayer = aiPlayer === 'B' ? 'W' : 'B';
-    }
+  useEffect(() => {
+    return () => {
+      if (blogMessageTimeout.current !== null) clearTimeout(blogMessageTimeout.current);
+    };
+  }, []);
 
-    // Save moves for replay functionality
-    const movesForReplay = state.moveHistory.map((move) => ({
-      player: move.player,
-      coordinate: move.coordinate as [number, number],
-    }));
-
-    saveGameRecord({
-      winner,
-      humanPlayer,
-      aiDifficulty: aiEnabled ? aiDifficulty : null,
-      spectatorMode,
-      finalScore: state.score,
-      totalMoves: state.moveHistory.length,
-      avgMoveTime,
-      gameDuration,
-      timeControlEnabled: this.state.timeControlEnabled,
-      endedByTimeout,
-      moves: movesForReplay,
-    });
+  const handleBlogOpen = (_post: BlogPost) => {
+    if (blogMessageTimeout.current) clearTimeout(blogMessageTimeout.current);
+    setMessage('📝 Blog posts coming soon! Stay tuned for strategy guides and updates.');
+    blogMessageTimeout.current = window.setTimeout(() => setMessage(null), 4000);
   };
 
-  handleRestart = (): void => {
-    this.engine.reset();
-
-    // Phase 3.5: Clear saved time state when starting new game
-    clearSavedTimeState();
-
-    const initialState = this.engine.getState();
-    this.setState({
-      board: initialState.board,
-      message: null,
-      gameOver: false,
-      lastMove: null,
-      moveHistory: [],
-      // Phase 3: Reset time warning flags when starting new game
-      blackTimeWarningPlayed: false,
-      whiteTimeWarningPlayed: false,
-      // Phase 4: Reset game statistics tracking
-      gameStartTime: Date.now(),
-      moveTimestamps: [],
-      replayOpen: false,
-      replayBoard: null,
-      hintMove: null,
-      hintsEnabled: false,
-      // Reset hints for new game
-      hintsRemaining: this.state.hintsPerGame === 0 ? 999 : this.state.hintsPerGame,
-      // Close result modal
-      resultModalOpen: false,
-      gameWinner: null,
-      endedByTimeout: false,
-      // Clear history replay
-      historyReplayMoves: null,
-      // Reset evaluation graph
-      evaluationHistory: [{ move: 0, evaluation: 0 }],
-    });
-
-    // Check if AI should make the first move
-    setTimeout(() => this.checkAndMakeAIMove(), 500);
-  };
-
-  handleUndo = (): void => {
-    const success = this.engine.undo();
-
-    if (success) {
-      const state = this.engine.getState();
-      const lastMoveCoord =
-        state.moveHistory.length > 0
-          ? (state.moveHistory[state.moveHistory.length - 1]?.coordinate ?? null)
-          : null;
-
-      this.setState((prev) => ({
-        board: state.board,
-        moveHistory: state.moveHistory,
-        lastMove: lastMoveCoord,
-        gameOver: false,
-        message: null,
-        // Slice evaluation history to match new move history length + 1 (for initial state)
-        evaluationHistory: prev.evaluationHistory.slice(0, state.moveHistory.length + 1),
-      }));
-
-      // Check if AI should move after undo
-      setTimeout(() => this.checkAndMakeAIMove(), 500);
+  const handleUndo = () => {
+    if (game.undo()) {
+      setMessage(null);
+      window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
     }
   };
 
-  handleRedo = (): void => {
-    const success = this.engine.redo();
-
-    if (success) {
-      const state = this.engine.getState();
-      const lastMoveCoord =
-        state.moveHistory.length > 0
-          ? (state.moveHistory[state.moveHistory.length - 1]?.coordinate ?? null)
-          : null;
-
-      // Evaluate position for graph
-      const evaluation = this.engine.evaluatePosition();
-      const newEvalPoint = { move: state.moveHistory.length, evaluation };
-
-      this.setState((prev) => ({
-        board: state.board,
-        moveHistory: state.moveHistory,
-        lastMove: lastMoveCoord,
-        gameOver: state.isGameOver,
-        message: state.isGameOver
+  const handleRedo = () => {
+    if (game.redo()) {
+      const state = game.engine.getState();
+      setMessage(
+        state.isGameOver
           ? state.winner === B
             ? 'Game Over! Black wins!'
             : state.winner === W
               ? 'Game Over! White wins!'
               : "Game Over! It's a tie!"
-          : null,
-        // Append new evaluation point
-        evaluationHistory: [...prev.evaluationHistory, newEvalPoint],
-      }));
-
-      // Check if AI should move after redo
-      setTimeout(() => this.checkAndMakeAIMove(), 500);
-    }
-  };
-
-  handleVolumeChange = (volume: number): void => {
-    soundEffects.setVolume(volume);
-    setSoundVolume(volume); // Phase 3.5: Save to localStorage
-    this.setState({ soundVolume: volume });
-  };
-
-  handleAiToggle = (enabled: boolean): void => {
-    this.setState({ aiEnabled: enabled });
-
-    if (enabled) {
-      setTimeout(() => this.checkAndMakeAIMove(), 500);
-    } else {
-      this.aiGameplay.cancel();
-      this.setState({ aiThinking: false, aiThinkingDepth: 0, aiThinkingNodes: 0 });
-    }
-  };
-
-  handleAiDifficultyChange = (difficulty: BotDifficulty): void => {
-    this.setState({ aiDifficulty: difficulty });
-    this.aiGameplay.updateSpectatorDifficulty(difficulty);
-  };
-
-  handleAiPlayerChange = (player: 'W' | 'B'): void => {
-    this.setState({ aiPlayer: player });
-
-    // Check if AI should move immediately
-    setTimeout(() => this.checkAndMakeAIMove(), 500);
-  };
-
-  /** Resolve the active time-control config from UI prefs (or undefined when disabled). */
-  private resolveTimeConfig(
-    enabled: boolean = this.state.timeControlEnabled,
-    presetId: string = this.state.selectedTimePreset,
-    initialMinutes: number = this.state.customInitialMinutes,
-    incrementSeconds: number = this.state.customIncrementSeconds
-  ): TimeControlConfig | undefined {
-    if (!enabled) return undefined;
-    if (presetId === 'custom') {
-      return {
-        initialTime: initialMinutes * 60 * 1000,
-        increment: incrementSeconds * 1000,
-      };
-    }
-    const preset = getPresetById(presetId) || getDefaultPreset();
-    return preset.config;
-  }
-
-  /** Apply clock config in-place — no engine recreate / event re-subscribe. */
-  private applyTimeControl(config: TimeControlConfig | undefined): void {
-    this.engine.configureTimeControl(config ?? null);
-    this.setState({ timeRemaining: this.engine.getTimeRemaining() });
-  }
-
-  handleTimeControlToggle = (enabled: boolean): void => {
-    this.setState({ timeControlEnabled: enabled });
-    setTimeControlEnabled(enabled);
-    clearSavedTimeState();
-    this.applyTimeControl(this.resolveTimeConfig(enabled));
-  };
-
-  handleTimePresetChange = (presetId: string): void => {
-    this.setState({ selectedTimePreset: presetId });
-    setSelectedTimePreset(presetId);
-    clearSavedTimeState();
-
-    if (this.state.timeControlEnabled) {
-      this.applyTimeControl(this.resolveTimeConfig(true, presetId));
-    }
-  };
-
-  handleCustomTimeChange = (initialMinutes: number, incrementSeconds: number): void => {
-    this.setState({
-      customInitialMinutes: initialMinutes,
-      customIncrementSeconds: incrementSeconds,
-    });
-    setCustomTimeConfig({ initialMinutes, incrementSeconds });
-    clearSavedTimeState();
-
-    if (this.state.timeControlEnabled && this.state.selectedTimePreset === 'custom') {
-      this.applyTimeControl(
-        this.resolveTimeConfig(true, 'custom', initialMinutes, incrementSeconds)
+          : null
       );
+      window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
     }
   };
 
-  handleMuteTimeSoundsToggle = (muted: boolean): void => {
-    setMuteTimeSounds(muted);
-    soundEffects.setMuteTimeSounds(muted);
+  const handleOpenSettings = () => {
+    if (game.engine.hasTimeControl() && !game.gameOver) game.pauseTime();
+    ai.cancelPendingAIMove();
+    setSettingsOpen(true);
   };
 
-  checkAndMakeAIMove = (): void => {
-    const { aiEnabled, aiPlayer, aiDifficulty, spectatorMode, gameOver } = this.state;
-    this.aiGameplay.checkAndMakeAIMove({
-      engine: this.engine,
-      gameOver,
-      aiEnabled,
-      aiPlayer,
-      aiDifficulty,
-      spectatorMode,
-      onThinkingChange: (thinking) => {
-        this.setState({
-          aiThinking: thinking.isThinking,
-          aiThinkingDepth: thinking.depth,
-          aiThinkingNodes: thinking.nodesSearched,
-        });
-      },
-    });
+  const handleCloseSettings = () => {
+    if (game.engine.hasTimeControl() && !game.gameOver) game.resumeTime();
+    setSettingsOpen(false);
+    if (!game.gameOver) window.setTimeout(() => ai.checkAndMakeAIMove(), 300);
   };
 
-  handleSpectatorToggle = (enabled: boolean): void => {
-    this.setState({ spectatorMode: enabled, aiEnabled: enabled ? false : this.state.aiEnabled });
-    this.aiGameplay.cancel();
-    this.aiGameplay.setSpectatorBots(enabled, this.state.aiDifficulty);
+  const handleModeStart = (config: GameModeConfig) => {
+    setModeSelectorOpen(false);
+    if (config.mode === 'ai') {
+      ai.setSpectatorMode(false);
+      ai.setAIDifficulty(config.aiDifficulty);
+      ai.setAIPlayer(config.aiPlaysAs);
+      ai.setAIEnabled(true);
+    } else if (config.mode === 'spectator') {
+      ai.setAIEnabled(false);
+      ai.setAIDifficulty(config.aiDifficulty);
+      ai.setSpectatorMode(true);
+    } else {
+      ai.setAIEnabled(false);
+      ai.setSpectatorMode(false);
+    }
+    handleRestart();
+  };
 
-    if (enabled) {
-      setTimeout(() => this.checkAndMakeAIMove(), 500);
+  const handleTouchStart = (e: TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    touchStartX.current = touch.clientX;
+    touchStartY.current = touch.clientY;
+  };
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    const dx = touch.clientX - touchStartX.current;
+    const dy = touch.clientY - touchStartY.current;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      if (dx > 0) handleUndo();
+      else handleRedo();
     }
   };
 
-  // Phase 4: Replay handlers
-  handleReplayToggle = (): void => {
-    this.setState((prev) => ({
-      replayOpen: !prev.replayOpen,
-      replayBoard: null, // Reset to actual board when closing
-      resultModalOpen: false, // Close result modal when opening replay
-      historyReplayMoves: null, // Clear history replay when toggling current game replay
-    }));
+  const handleGraphMoveClick = (moveNumber: number) => {
+    const undoCount = game.moveHistory.length - moveNumber;
+    if (undoCount <= 0) return;
+    for (let i = 0; i < undoCount; i++) {
+      if (!game.undo()) break;
+    }
+    setMessage(null);
   };
 
-  // Replay a game from history (with stored moves)
-  handleReplayFromHistory = (
-    moves: Array<{ player: 'B' | 'W'; coordinate: [number, number] }>
-  ): void => {
-    // Convert stored moves to the Move type expected by GameReplay
-    // GameReplay only needs player and coordinate - it recalculates board state
-    const replayMoves: Move[] = moves.map((m) => ({
-      player: m.player,
-      coordinate: m.coordinate,
-      // Add placeholder values for required fields (GameReplay doesn't use these)
-      timestamp: 0,
-      scoreAfter: { black: 0, white: 0 },
-    }));
-
-    this.setState({
-      historyReplayMoves: replayMoves,
-      replayOpen: true,
-      replayBoard: null,
-      statsOpen: false, // Close stats when opening replay
-    });
-  };
-
-  handleReplayMoveChange = (_moveIndex: number, board: TileValue[][]): void => {
-    this.setState({ replayBoard: board });
-  };
-
-  // Phase 4: Hints handlers - request a hint (uses one hint from allowance)
-  handleHintRequest = (): void => {
-    if (this.state.hintsRemaining <= 0 || this.state.gameOver) return;
-
-    this.setState((prev) => ({
-      hintsEnabled: true,
-      hintsRemaining: prev.hintsRemaining - 1,
-    }));
-
-    // Auto-disable hint after 5 seconds
-    setTimeout(() => {
-      this.setState({ hintsEnabled: false, hintMove: null });
+  const handleHintRequest = () => {
+    if (hintsRemaining <= 0 || game.gameOver) return;
+    setHintsEnabled(true);
+    setHintsRemaining((prev) => prev - 1);
+    window.setTimeout(() => {
+      setHintsEnabled(false);
+      setHintMove(null);
     }, 5000);
   };
 
-  handleHintMoveChange = (move: Coordinate | null): void => {
-    this.setState({ hintMove: move });
-  };
+  const engineState = game.engine.getState();
+  const currentPlayer = engineState.currentPlayer === B ? 'black' : 'white';
+  const blackScore = engineState.score.black;
+  const whiteScore = engineState.score.white;
+  const displayBoard = replayBoard
+    ? { ...game.engine.getAnnotatedBoard(), tiles: replayBoard }
+    : game.engine.getAnnotatedBoard();
 
-  // Hints per game setting change
-  handleHintsPerGameChange = (count: number): void => {
-    setHintsPerGame(count);
-    this.setState({
-      hintsPerGame: count,
-      hintsRemaining: count === 0 ? 999 : count,
-    });
-  };
+  return (
+    <div className="OthelloGame page-shell">
+      <LoadingScreen isLoading={isLoading} />
+      <ScreenReaderAnnouncer message={srAnnouncement} />
 
-  // Evaluation Graph handlers
-  handleGraphToggle = (): void => {
-    this.setState((prev) => ({ graphVisible: !prev.graphVisible }));
-  };
+      {!isLoading && (
+        <div className="content-layer">
+          <Navbar onPlayClick={handleHeroPlayClick} onStatsClick={() => setStatsOpen(true)} />
 
-  handleGraphMoveClick = (moveNumber: number): void => {
-    // Navigate to the specified move in history using undo
-    const currentMoveCount = this.state.moveHistory.length;
-    const undoCount = currentMoveCount - moveNumber;
+          <LandingHero onPlay={handleHeroPlayClick} onJumpToBoard={scrollToGame} />
 
-    if (undoCount > 0) {
-      // Undo moves to get to the target position
-      for (let i = 0; i < undoCount; i++) {
-        this.engine.undo();
-      }
-      // Update state
-      const state = this.engine.getState();
-      this.setState({
-        moveHistory: state.moveHistory,
-        lastMove: state.moveHistory[state.moveHistory.length - 1]?.coordinate || null,
-      });
-    }
-  };
-
-  // Phase 4: Statistics handlers
-  handleStatsToggle = (): void => {
-    this.setState((prev) => ({ statsOpen: !prev.statsOpen }));
-  };
-
-  // Phase 4: Puzzles handlers
-  handlePuzzlesToggle = (): void => {
-    this.setState((prev) => ({ puzzlesOpen: !prev.puzzlesOpen }));
-  };
-
-  // Settings panel handlers - pause game while settings open
-  handleOpenSettings = (): void => {
-    // Pause time control if active
-    if (this.engine.hasTimeControl() && !this.state.gameOver) {
-      this.engine.pauseTime();
-    }
-
-    this.aiGameplay.cancel();
-    this.setState({ settingsOpen: true });
-  };
-
-  handleCloseSettings = (): void => {
-    // Resume time control if it was active
-    if (this.engine.hasTimeControl() && !this.state.gameOver) {
-      this.engine.resumeTime();
-    }
-
-    this.setState({ settingsOpen: false });
-
-    // Resume AI move check after settings closed (if AI's turn)
-    if (!this.state.gameOver) {
-      setTimeout(() => this.checkAndMakeAIMove(), 300);
-    }
-  };
-
-  // Game mode selector handlers
-  handleOpenModeSelector = (): void => {
-    if (this.engine.hasTimeControl() && !this.state.gameOver) {
-      this.engine.pauseTime();
-    }
-    this.setState({ modeSelectorOpen: true });
-  };
-
-  handleModeStart = (config: GameModeConfig): void => {
-    this.setState({ modeSelectorOpen: false });
-
-    // Apply AI settings from the config
-    if (config.mode === 'ai') {
-      this.aiGameplay.setSpectatorBots(false, config.aiDifficulty);
-      this.setState({
-        aiEnabled: true,
-        aiDifficulty: config.aiDifficulty,
-        aiPlayer: config.aiPlaysAs,
-        spectatorMode: false,
-      });
-    } else if (config.mode === 'spectator') {
-      this.aiGameplay.setSpectatorBots(true, config.aiDifficulty);
-      this.setState({
-        aiEnabled: false,
-        spectatorMode: true,
-        aiDifficulty: config.aiDifficulty,
-      });
-    } else {
-      this.aiGameplay.cancel();
-      this.aiGameplay.setSpectatorBots(false, config.aiDifficulty);
-      this.setState({ aiEnabled: false, spectatorMode: false });
-    }
-
-    this.handleRestart();
-  };
-
-  // Theme handler
-  handleThemeChange = (themeId: string): void => {
-    applyTheme(themeId);
-    this.setState({ boardTheme: themeId });
-  };
-
-  // Swipe gesture handlers (mobile undo/redo)
-  handleTouchStart = (e: TouchEvent): void => {
-    const touch = e.touches[0];
-    if (!touch) return;
-    this.touchStartX = touch.clientX;
-    this.touchStartY = touch.clientY;
-  };
-
-  handleTouchEnd = (e: TouchEvent): void => {
-    const touch = e.changedTouches[0];
-    if (!touch) return;
-    const dx = touch.clientX - this.touchStartX;
-    const dy = touch.clientY - this.touchStartY;
-    // Only handle horizontal swipes (dx dominates, threshold 60px)
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60) {
-      if (dx < 0) {
-        this.handleUndo();
-      } else {
-        this.handleRedo();
-      }
-    }
-  };
-
-  // Result modal handlers
-  handleResultModalClose = (): void => {
-    this.setState({ resultModalOpen: false });
-  };
-
-  handleResultPlayAgain = (): void => {
-    this.handleRestart();
-  };
-
-  handleResultReplay = (): void => {
-    this.setState({ resultModalOpen: false, replayOpen: true });
-  };
-
-  render() {
-    const state = this.engine.getState();
-    const currentPlayer = state.currentPlayer === B ? 'black' : 'white';
-    const blackScore = state.score.black;
-    const whiteScore = state.score.white;
-
-    // Use replay board if in replay mode, otherwise use actual board
-    const displayBoard = this.state.replayBoard
-      ? { ...this.engine.getAnnotatedBoard(), tiles: this.state.replayBoard }
-      : this.engine.getAnnotatedBoard();
-
-    return (
-      <div className="OthelloGame page-shell">
-        <LoadingScreen isLoading={this.state.isLoading} />
-        <ScreenReaderAnnouncer message={this.state.srAnnouncement} />
-
-        {!this.state.isLoading && (
-          <div className="content-layer">
-            <Navbar onPlayClick={this.handleHeroPlayClick} onStatsClick={this.handleStatsToggle} />
-
-            {/* LANDING SECTION - hero CTA only */}
-            <section className="landing-section">
-              <div className="hero" id="learn">
-                <div className="hero-panel">
-                  <div className="meta-strip">
-                    <span className="meta-chip">Deployment fixed</span>
-                    <span className="meta-chip">Fresh UI</span>
-                    <span className="meta-chip">Blog drafts</span>
-                  </div>
-                  <h1>Focus on the fight, let the interface disappear.</h1>
-                  <p>
-                    A calmer board, richer sidebar, and quicker actions tuned for blitz or
-                    thoughtful play. Stay in flow while the evaluation graph and stats keep you
-                    informed.
-                  </p>
-                  <div className="hero-actions">
-                    <button className="hero-btn primary" onClick={this.handleHeroPlayClick}>
-                      Start a match
-                    </button>
-                    <button className="hero-btn" onClick={this.scrollToGame}>
-                      Jump to board
-                    </button>
-                    <button
-                      className="hero-btn"
-                      onClick={() =>
-                        document.getElementById('blog')?.scrollIntoView({ behavior: 'smooth' })
-                      }
-                    >
-                      Read updates
-                    </button>
-                  </div>
-                  <div className="info-badges" style={{ marginTop: 12 }}>
-                    <span className="info-badge">Evaluation graph</span>
-                    <span className="info-badge">Time controls</span>
-                    <span className="info-badge">Replay + stats</span>
-                  </div>
+          <div className="game-wrapper" id="play-area">
+            <ErrorBoundary onReset={handleRestart}>
+              <div
+                className="game-container"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
+                <div className="board-area">
+                  <EvaluationBar
+                    evaluation={blackScore - whiteScore}
+                    currentPlayer={currentPlayer}
+                  />
+                  <Board
+                    board={displayBoard}
+                    onPlayerTurn={game.makeMove}
+                    lastMove={game.lastMove}
+                    gameOver={game.gameOver}
+                    hintMove={hintMove}
+                  />
                 </div>
 
-                <div className="secondary-panel">
-                  <h3>Playing rhythm</h3>
-                  <div className="insight-grid">
-                    <div className="insight-card">
-                      <strong>Sharper board</strong>
-                      <span>
-                        Elevated contrast on tiles and stones for faster scanning mid-game.
-                      </span>
-                    </div>
-                    <div className="insight-card">
-                      <strong>Smarter pacing</strong>
-                      <span>
-                        Action bar and keyboard shortcuts keep you moving; spectator bots stay
-                        ready.
-                      </span>
-                    </div>
-                    <div className="insight-card">
-                      <strong>Game analysis</strong>
-                      <span>Evaluation graph, move replay, and position hints as you learn.</span>
-                    </div>
-                  </div>
+                <div className="sidebar-area">
+                  {hintsEnabled && !game.gameOver && (
+                    <PositionAnalysis
+                      board={game.engine.getAnnotatedBoard()}
+                      enabled={hintsEnabled}
+                      onHintMove={setHintMove}
+                      showPanel={true}
+                    />
+                  )}
+
+                  <Sidebar
+                    currentPlayer={currentPlayer}
+                    blackScore={blackScore}
+                    whiteScore={whiteScore}
+                    onUndo={handleUndo}
+                    onRedo={handleRedo}
+                    canUndo={game.canUndo()}
+                    canRedo={game.canRedo()}
+                    moves={game.moveHistory}
+                    message={message}
+                    gameOver={game.gameOver}
+                    timeRemaining={time.timeRemaining}
+                    onTimeOut={() => {
+                      if (!game.gameOver) game.engine.checkTimeout();
+                    }}
+                    onHintRequest={handleHintRequest}
+                    hintsRemaining={hintsRemaining}
+                    hintsEnabled={hintsEnabled}
+                    aiThinking={ai.thinkingState.isThinking}
+                    aiThinkingDepth={ai.thinkingState.depth}
+                    aiThinkingNodes={ai.thinkingState.nodesSearched}
+                  />
+
+                  <EvaluationGraph
+                    history={game.evaluationHistory}
+                    currentMove={game.moveHistory.length}
+                    onMoveClick={handleGraphMoveClick}
+                    isVisible={graphVisible}
+                    onToggle={() => setGraphVisible((v) => !v)}
+                  />
                 </div>
               </div>
-            </section>
 
-            {/* GAME SECTION - dedicated play area */}
-            <div className="game-wrapper" id="play-area">
-              <ErrorBoundary onReset={this.handleRestart}>
-                <div
-                  className="game-container"
-                  onTouchStart={this.handleTouchStart}
-                  onTouchEnd={this.handleTouchEnd}
-                >
-                  <div className="board-area">
-                    <EvaluationBar
-                      evaluation={blackScore - whiteScore}
-                      currentPlayer={currentPlayer}
-                    />
-                    <Board
-                      board={displayBoard}
-                      onPlayerTurn={this.handlePlayerTurn}
-                      lastMove={this.state.lastMove}
-                      gameOver={this.state.gameOver}
-                      hintMove={this.state.hintMove}
-                    />
-                  </div>
+              <GameActionBar
+                onNewGame={() => {
+                  if (game.engine.hasTimeControl() && !game.gameOver) game.pauseTime();
+                  setModeSelectorOpen(true);
+                }}
+                onSettings={handleOpenSettings}
+                onStats={() => setStatsOpen(true)}
+                onReplay={() =>
+                  setReplayOpen((open) => {
+                    if (open) {
+                      setReplayBoard(null);
+                      setHistoryReplayMoves(null);
+                      setResultModalOpen(false);
+                    }
+                    return !open;
+                  })
+                }
+                onPuzzles={() => setPuzzlesOpen((v) => !v)}
+              />
+            </ErrorBoundary>
+          </div>
 
-                  <div className="sidebar-area">
-                    {/* Position Analysis (hints) - shown when hint is active */}
-                    {this.state.hintsEnabled && !this.state.gameOver && (
-                      <PositionAnalysis
-                        board={this.engine.getAnnotatedBoard()}
-                        enabled={this.state.hintsEnabled}
-                        onHintMove={this.handleHintMoveChange}
-                        showPanel={true}
-                      />
-                    )}
+          <div className="below-fold">
+            <BlogSection posts={blogPosts} onRead={handleBlogOpen} />
+          </div>
 
-                    <Sidebar
-                      currentPlayer={currentPlayer}
-                      blackScore={blackScore}
-                      whiteScore={whiteScore}
-                      onUndo={this.handleUndo}
-                      onRedo={this.handleRedo}
-                      canUndo={this.engine.canUndo()}
-                      canRedo={this.engine.canRedo()}
-                      moves={this.state.moveHistory}
-                      message={this.state.message}
-                      gameOver={this.state.gameOver}
-                      timeRemaining={this.state.timeRemaining}
-                      onTimeOut={this.handleTimeOut}
-                      // Hints feature
-                      onHintRequest={this.handleHintRequest}
-                      hintsRemaining={this.state.hintsRemaining}
-                      hintsEnabled={this.state.hintsEnabled}
-                      // AI thinking indicator
-                      aiThinking={this.state.aiThinking}
-                      aiThinkingDepth={this.state.aiThinkingDepth}
-                      aiThinkingNodes={this.state.aiThinkingNodes}
-                    />
+          <SettingsPanel
+            isOpen={settingsOpen}
+            onClose={handleCloseSettings}
+            aiEnabled={ai.aiEnabled}
+            aiDifficulty={ai.aiDifficulty}
+            aiPlayer={ai.aiPlayer}
+            onAiToggle={ai.setAIEnabled}
+            onAiDifficultyChange={ai.setAIDifficulty}
+            onAiPlayerChange={ai.setAIPlayer}
+            spectatorMode={ai.spectatorMode}
+            onSpectatorToggle={ai.setSpectatorMode}
+            timeControlEnabled={time.timeControlEnabled}
+            selectedTimePreset={time.selectedTimePreset}
+            onTimeControlToggle={time.setTimeControlEnabled}
+            onTimePresetChange={time.setTimePreset}
+            muteTimeSounds={soundEffects.getMuteTimeSounds()}
+            onMuteTimeSoundsToggle={(muted) => {
+              time.setMuteTimeSounds(muted);
+              soundEffects.setMuteTimeSounds(muted);
+            }}
+            customInitialMinutes={time.customInitialMinutes}
+            customIncrementSeconds={time.customIncrementSeconds}
+            onCustomTimeChange={time.setCustomTime}
+            soundVolume={soundVolume}
+            onSoundVolumeChange={(volume) => {
+              soundEffects.setVolume(volume);
+              setSoundVolume(volume);
+              setSoundVolumeState(volume);
+            }}
+            hintsPerGame={hintsPerGame}
+            onHintsPerGameChange={(count) => {
+              setHintsPerGame(count);
+              setHintsPerGameState(count);
+              setHintsRemaining(count === 0 ? 999 : count);
+            }}
+            boardTheme={boardTheme}
+            onThemeChange={(themeId) => {
+              applyTheme(themeId);
+              setBoardTheme(themeId);
+            }}
+          />
 
-                    {/* Evaluation Graph - Egaroucid-style */}
-                    <EvaluationGraph
-                      history={this.state.evaluationHistory}
-                      currentMove={this.state.moveHistory.length}
-                      onMoveClick={this.handleGraphMoveClick}
-                      isVisible={this.state.graphVisible}
-                      onToggle={this.handleGraphToggle}
-                    />
-                  </div>
-                </div>
+          <GameStatistics
+            isVisible={statsOpen}
+            onClose={() => setStatsOpen(false)}
+            currentGameMoves={game.moveHistory}
+            onOpenCurrentReplay={() => setReplayOpen(true)}
+            onReplayGame={(moves) => {
+              setHistoryReplayMoves(
+                moves.map((m) => ({
+                  player: m.player,
+                  coordinate: m.coordinate,
+                  timestamp: 0,
+                  scoreAfter: { black: 0, white: 0 },
+                }))
+              );
+              setReplayOpen(true);
+              setReplayBoard(null);
+              setStatsOpen(false);
+            }}
+          />
 
-                {/* Action Bar - New Game, Settings, Stats */}
-                <div className="action-bar">
-                  <button className="action-bar-btn primary" onClick={this.handleOpenModeSelector}>
-                    <span className="btn-icon">🔄</span>
-                    <span className="btn-text">New Game</span>
-                  </button>
-                  <button className="action-bar-btn" onClick={this.handleOpenSettings}>
-                    <span className="btn-icon">⚙️</span>
-                    <span className="btn-text">Settings</span>
-                  </button>
-                  <button className="action-bar-btn" onClick={this.handleStatsToggle}>
-                    <span className="btn-icon">📊</span>
-                    <span className="btn-text">Stats</span>
-                  </button>
-                  <button className="action-bar-btn" onClick={this.handleReplayToggle}>
-                    <span className="btn-icon">📽️</span>
-                    <span className="btn-text">Replay</span>
-                  </button>
-                  <button className="action-bar-btn" onClick={this.handlePuzzlesToggle}>
-                    <span className="btn-icon">🧩</span>
-                    <span className="btn-text">Puzzles</span>
-                  </button>
-                </div>
-              </ErrorBoundary>
-            </div>
+          <Puzzles isVisible={puzzlesOpen} onClose={() => setPuzzlesOpen(false)} />
 
-            <div className="below-fold">
-              <BlogSection posts={blogPosts} onRead={this.handleBlogOpen} />
-            </div>
-
-            <SettingsPanel
-              isOpen={this.state.settingsOpen}
-              onClose={this.handleCloseSettings}
-              aiEnabled={this.state.aiEnabled}
-              aiDifficulty={this.state.aiDifficulty}
-              aiPlayer={this.state.aiPlayer}
-              onAiToggle={this.handleAiToggle}
-              onAiDifficultyChange={this.handleAiDifficultyChange}
-              onAiPlayerChange={this.handleAiPlayerChange}
-              spectatorMode={this.state.spectatorMode}
-              onSpectatorToggle={this.handleSpectatorToggle}
-              timeControlEnabled={this.state.timeControlEnabled}
-              selectedTimePreset={this.state.selectedTimePreset}
-              onTimeControlToggle={this.handleTimeControlToggle}
-              onTimePresetChange={this.handleTimePresetChange}
-              muteTimeSounds={soundEffects.getMuteTimeSounds()}
-              onMuteTimeSoundsToggle={this.handleMuteTimeSoundsToggle}
-              customInitialMinutes={this.state.customInitialMinutes}
-              customIncrementSeconds={this.state.customIncrementSeconds}
-              onCustomTimeChange={this.handleCustomTimeChange}
-              soundVolume={this.state.soundVolume}
-              onSoundVolumeChange={this.handleVolumeChange}
-              hintsPerGame={this.state.hintsPerGame}
-              onHintsPerGameChange={this.handleHintsPerGameChange}
-              boardTheme={this.state.boardTheme}
-              onThemeChange={this.handleThemeChange}
-            />
-
-            {/* Game Statistics Modal (accessed from navbar) */}
-            <GameStatistics
-              isVisible={this.state.statsOpen}
-              onClose={() => this.setState({ statsOpen: false })}
-              currentGameMoves={this.state.moveHistory}
-              onOpenCurrentReplay={this.handleReplayToggle}
-              onReplayGame={this.handleReplayFromHistory}
-            />
-
-            {/* Puzzles Modal - Tactical training system */}
-            <Puzzles
-              isVisible={this.state.puzzlesOpen}
-              onClose={() => this.setState({ puzzlesOpen: false })}
-            />
-
-            {/* Game Replay (when opened from Stats, result modal, or history) */}
-            {this.state.replayOpen &&
-              (this.state.moveHistory.length > 0 || this.state.historyReplayMoves) && (
-                <GameReplay
-                  moves={this.state.historyReplayMoves || this.state.moveHistory}
-                  isVisible={this.state.replayOpen}
-                  onMoveChange={this.handleReplayMoveChange}
-                  onClose={() =>
-                    this.setState({
-                      replayOpen: false,
-                      replayBoard: null,
-                      historyReplayMoves: null,
-                    })
-                  }
-                />
-              )}
-
-            {/* Game Result Modal */}
-            <GameResultModal
-              isOpen={this.state.resultModalOpen}
-              winner={this.state.gameWinner}
-              blackScore={blackScore}
-              whiteScore={whiteScore}
-              endedByTimeout={this.state.endedByTimeout}
-              onPlayAgain={this.handleResultPlayAgain}
-              onReplay={this.handleResultReplay}
-              onClose={this.handleResultModalClose}
-            />
-
-            {/* Game Mode Selector */}
-            <GameModeSelector
-              isOpen={this.state.modeSelectorOpen}
-              onStart={this.handleModeStart}
-              onClose={() => this.setState({ modeSelectorOpen: false })}
-              currentConfig={{
-                mode: this.state.spectatorMode
-                  ? 'spectator'
-                  : this.state.aiEnabled
-                    ? 'ai'
-                    : 'human',
-                aiDifficulty: this.state.aiDifficulty,
-                aiPlaysAs: this.state.aiPlayer,
+          {replayOpen && (game.moveHistory.length > 0 || historyReplayMoves) && (
+            <GameReplay
+              moves={historyReplayMoves || game.moveHistory}
+              isVisible={replayOpen}
+              onMoveChange={(_idx, board) => setReplayBoard(board)}
+              onClose={() => {
+                setReplayOpen(false);
+                setReplayBoard(null);
+                setHistoryReplayMoves(null);
               }}
             />
-          </div>
-        )}
-      </div>
-    );
-  }
+          )}
+
+          <GameResultModal
+            isOpen={resultModalOpen}
+            winner={gameWinner}
+            blackScore={blackScore}
+            whiteScore={whiteScore}
+            endedByTimeout={endedByTimeout}
+            onPlayAgain={handleRestart}
+            onReplay={() => {
+              setResultModalOpen(false);
+              setReplayOpen(true);
+            }}
+            onClose={() => setResultModalOpen(false)}
+          />
+
+          <GameModeSelector
+            isOpen={modeSelectorOpen}
+            onStart={handleModeStart}
+            onClose={() => setModeSelectorOpen(false)}
+            currentConfig={{
+              mode: ai.spectatorMode ? 'spectator' : ai.aiEnabled ? 'ai' : 'human',
+              aiDifficulty: ai.aiDifficulty,
+              aiPlaysAs: ai.aiPlayer,
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default OthelloGame;
