@@ -161,7 +161,6 @@ export const getAggregatedStats = (): AggregatedStats => {
   };
 
   // Calculate winning streaks
-  let currentStreak = 0;
   let longestWinStreak = 0;
   let tempStreak = 0;
 
@@ -207,7 +206,7 @@ export const getAggregatedStats = (): AggregatedStats => {
   }
 
   // Calculate current streak (from most recent games)
-  currentStreak = 0;
+  let currentStreak = 0;
   for (const record of humanGames) {
     const humanWon = record.winner === record.humanPlayer;
     if (humanWon) {

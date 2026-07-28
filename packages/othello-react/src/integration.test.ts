@@ -71,5 +71,7 @@ describe('Integration Tests - Game Engine Integration', () => {
     engine.makeMove(whiteMoves[0]!); // White makes first valid move
 
     state = engine.getState();
+    expect(state.currentPlayer).toBe(B);
+    expect(state.moveHistory.length).toBe(2);
   });
 });
