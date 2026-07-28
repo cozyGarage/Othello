@@ -61,7 +61,7 @@
       transparent 60px
     ),
     /* Wood grain pattern - subtle vertical accents */
-      repeating-linear-gradient(
+    repeating-linear-gradient(
         0deg,
         transparent,
         transparent 40px,
@@ -69,7 +69,7 @@
         var(--color-wood-grain-dark) 41px
       ),
     /* Base wood color gradient */
-      linear-gradient(
+    linear-gradient(
         135deg,
         var(--color-wood-light) 0%,
         var(--color-wood-base) 30%,

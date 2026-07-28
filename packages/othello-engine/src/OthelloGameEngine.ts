@@ -88,10 +88,7 @@ export interface StateChangeEventData {
 }
 
 export type GameEventData =
-  | MoveEventData
-  | GameOverEventData
-  | InvalidMoveEventData
-  | StateChangeEventData;
+  MoveEventData | GameOverEventData | InvalidMoveEventData | StateChangeEventData;
 
 export interface GameEvent {
   type: GameEventType;

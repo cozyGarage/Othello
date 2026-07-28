@@ -34,10 +34,7 @@ The issue stemmed from TypeScript's strict type checking on union types:
 
    ```typescript
    export type GameEventData =
-     | MoveEventData
-     | GameOverEventData
-     | InvalidMoveEventData
-     | StateChangeEventData;
+     MoveEventData | GameOverEventData | InvalidMoveEventData | StateChangeEventData;
    ```
 
 2. **Unsafe Property Access**: Event handlers were destructuring properties directly from `event.data` without type narrowing, causing TypeScript to reject the code since it couldn't guarantee which properties would be available.
