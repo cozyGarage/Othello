@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { OthelloGameEngine } from './OthelloGameEngine';
-import { E } from './index';
+import { E, W, B } from './index';
 
 describe('OthelloGameEngine', () => {
   test('initializes with correct starting state', () => {
