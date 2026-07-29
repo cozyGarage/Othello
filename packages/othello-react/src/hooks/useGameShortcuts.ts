@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { resolveGameShortcut } from '../utils/gameChromeHelpers';
 
 export interface GameShortcutHandlers {
   onNewGame: () => void;
@@ -22,49 +23,21 @@ export function useGameShortcuts(handlers: GameShortcutHandlers): void {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')
-      ) {
-        return;
-      }
+      const action = resolveGameShortcut(event);
+      if (!action) return;
 
       const h = handlersRef.current;
-
-      if (event.key === 'Escape') {
+      if (action === 'escape') {
         h.onEscape();
         return;
       }
 
-      if (event.key === 'n' || event.key === 'N') {
-        event.preventDefault();
-        h.onNewGame();
-        return;
-      }
-
-      if (event.key === 's' || event.key === 'S') {
-        event.preventDefault();
-        h.onOpenSettings();
-        return;
-      }
-
-      if ((event.key === 'z' || event.key === 'Z') && !event.ctrlKey && !event.metaKey) {
-        event.preventDefault();
-        h.onUndo();
-        return;
-      }
-
-      if ((event.key === 'y' || event.key === 'Y') && !event.ctrlKey && !event.metaKey) {
-        event.preventDefault();
-        h.onRedo();
-        return;
-      }
-
-      if (event.key === '?' || (event.shiftKey && event.key === '/')) {
-        event.preventDefault();
-        h.onShowHelp();
-      }
+      event.preventDefault();
+      if (action === 'newGame') h.onNewGame();
+      else if (action === 'openSettings') h.onOpenSettings();
+      else if (action === 'undo') h.onUndo();
+      else if (action === 'redo') h.onRedo();
+      else if (action === 'help') h.onShowHelp();
     };
 
     document.addEventListener('keydown', handleKeyDown);

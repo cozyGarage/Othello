@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { getHintsPerGame, setHintsPerGame as persistHintsPerGame } from '../utils/hintPreferences';
+import { initialHintsRemaining } from '../utils/gameChromeHelpers';
 import type { Coordinate } from 'othello-engine';
 
 /**
@@ -7,17 +8,16 @@ import type { Coordinate } from 'othello-engine';
  */
 export function useHints() {
   const [hintsPerGame, setHintsPerGameState] = useState(getHintsPerGame);
-  const [hintsRemaining, setHintsRemaining] = useState(() => {
-    const count = getHintsPerGame();
-    return count === 0 ? 999 : count;
-  });
+  const [hintsRemaining, setHintsRemaining] = useState(() =>
+    initialHintsRemaining(getHintsPerGame())
+  );
   const [hintsEnabled, setHintsEnabled] = useState(false);
   const [hintMove, setHintMove] = useState<Coordinate | null>(null);
 
   const resetHintsForNewGame = useCallback(() => {
     setHintMove(null);
     setHintsEnabled(false);
-    setHintsRemaining(hintsPerGame === 0 ? 999 : hintsPerGame);
+    setHintsRemaining(initialHintsRemaining(hintsPerGame));
   }, [hintsPerGame]);
 
   const requestHint = useCallback(
@@ -36,7 +36,7 @@ export function useHints() {
   const setHintsPerGame = useCallback((count: number) => {
     persistHintsPerGame(count);
     setHintsPerGameState(count);
-    setHintsRemaining(count === 0 ? 999 : count);
+    setHintsRemaining(initialHintsRemaining(count));
   }, []);
 
   return {
