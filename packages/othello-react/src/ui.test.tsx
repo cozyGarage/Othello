@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'vitest';
-import { score, B, W, E, P } from '../../othello-engine/src/index.ts';
+import { score, B, W, E, P, OthelloGameEngine } from '../../othello-engine/src/index.ts';
+import {
+  features,
+  hasMoveHistory,
+  hasGlassGlare,
+  hasAnimations,
+  toggleFeature,
+} from './config/features';
+import { soundEffects } from './utils/soundEffects';
 
 describe('UI Components', () => {
   describe('Board Layout', () => {
@@ -99,7 +107,6 @@ describe('UI Components', () => {
     });
 
     test('move history should be conditionally rendered', () => {
-      const { hasMoveHistory } = require('./config/features');
       const isEnabled = hasMoveHistory();
       expect(typeof isEnabled).toBe('boolean');
     });
@@ -108,7 +115,6 @@ describe('UI Components', () => {
   describe('Game Controls', () => {
     test('should have restart functionality', () => {
       // Test that restart returns game to initial state
-      const { OthelloGameEngine } = require('../../othello-engine/src/index.ts');
       const engine = new OthelloGameEngine();
 
       // Make some moves
@@ -150,17 +156,14 @@ describe('UI Components', () => {
 
   describe('Animation States', () => {
     test('glass glare should be disabled by default', () => {
-      const { hasGlassGlare } = require('./config/features');
       expect(hasGlassGlare()).toBe(false);
     });
 
     test('animations should be enabled by default', () => {
-      const { hasAnimations } = require('./config/features');
       expect(hasAnimations()).toBe(true);
     });
 
     test('animations can be disabled', () => {
-      const { toggleFeature, features } = require('./config/features');
       const original = features.animations;
 
       toggleFeature('animations', false);
@@ -198,7 +201,6 @@ describe('Move History Component', () => {
   });
 
   test('move history includes all required data', () => {
-    const { OthelloGameEngine } = require('../../othello-engine/src/index.ts');
     const engine = new OthelloGameEngine();
 
     engine.makeMove([2, 3]);
@@ -220,8 +222,6 @@ describe('Move History Component', () => {
 
 describe('Settings Panel', () => {
   test('settings should control feature flags', () => {
-    const { features } = require('./config/features');
-
     expect(features).toHaveProperty('soundEffects');
     expect(features).toHaveProperty('animations');
     expect(typeof features.soundEffects).toBe('boolean');
@@ -229,8 +229,6 @@ describe('Settings Panel', () => {
   });
 
   test('sound effects can be toggled', () => {
-    const { soundEffects } = require('./utils/soundEffects');
-
     soundEffects.setEnabled(false);
     expect(() => soundEffects.playFlip()).not.toThrow();
 

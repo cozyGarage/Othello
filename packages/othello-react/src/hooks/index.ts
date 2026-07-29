@@ -20,5 +20,7 @@ export type { GameShortcutHandlers } from './useGameShortcuts';
 
 export { useHints } from './useHints';
 
+export { useGameOverlays } from './useGameOverlays';
+
 export { useFlipAnimation } from './useFlipAnimation';
 export { useScoreAnimation } from './useScoreAnimation';
