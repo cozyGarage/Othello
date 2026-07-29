@@ -265,3 +265,73 @@ export const formatDate = (timestamp: number): string => {
     return date.toLocaleDateString();
   }
 };
+
+/**
+ * Persist a completed game from live engine + session metadata.
+ * Keeps OthelloGame free of averaging / human-player bookkeeping.
+ */
+export function persistCompletedGame(opts: {
+  winner: 'B' | 'W' | null;
+  isTimeout: boolean;
+  moveTimestamps: number[];
+  gameStartTime: number;
+  aiEnabled: boolean;
+  aiDifficulty: GameRecord['aiDifficulty'];
+  aiPlayer: 'B' | 'W';
+  spectatorMode: boolean;
+  timeControlEnabled: boolean;
+  finalScore: { black: number; white: number };
+  moveHistory: Array<{
+    player: 'B' | 'W';
+    coordinate: [number, number] | readonly [number, number];
+  }>;
+}): void {
+  const {
+    winner,
+    isTimeout,
+    moveTimestamps: stamps,
+    gameStartTime: start,
+    aiEnabled,
+    aiDifficulty,
+    aiPlayer,
+    spectatorMode,
+    timeControlEnabled,
+    finalScore,
+    moveHistory,
+  } = opts;
+
+  let avgMoveTime = 0;
+  if (stamps.length > 1) {
+    let totalTime = 0;
+    for (let i = 1; i < stamps.length; i++) {
+      const prevTime = stamps[i - 1];
+      const currTime = stamps[i];
+      if (prevTime !== undefined && currTime !== undefined) {
+        totalTime += currTime - prevTime;
+      }
+    }
+    avgMoveTime = totalTime / (stamps.length - 1);
+  }
+
+  let humanPlayer: 'B' | 'W' | null = null;
+  if (aiEnabled && !spectatorMode) {
+    humanPlayer = aiPlayer === 'B' ? 'W' : 'B';
+  }
+
+  saveGameRecord({
+    winner,
+    humanPlayer,
+    aiDifficulty: aiEnabled ? aiDifficulty : null,
+    spectatorMode,
+    finalScore,
+    totalMoves: moveHistory.length,
+    avgMoveTime,
+    gameDuration: Date.now() - start,
+    timeControlEnabled,
+    endedByTimeout: isTimeout,
+    moves: moveHistory.map((move) => ({
+      player: move.player,
+      coordinate: move.coordinate as [number, number],
+    })),
+  });
+}
