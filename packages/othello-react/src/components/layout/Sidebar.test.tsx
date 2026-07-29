@@ -12,6 +12,7 @@
 
 import { describe, expect, test } from 'vitest';
 import { B, W, type Move } from '../../../../othello-engine/src/index.ts';
+import { features } from '../../config/features';
 
 describe('Sidebar Component Logic', () => {
   describe('Score Change Detection', () => {
@@ -215,15 +216,11 @@ describe('Sidebar Component Logic', () => {
 
   describe('Feature Flag Integration', () => {
     test('should respect moveHistory feature flag', () => {
-      const { features } = require('../../config/features');
-
       // Sidebar should check features.moveHistory
       expect(typeof features.moveHistory).toBe('boolean');
     });
 
     test('should respect scoreAnimations feature flag', () => {
-      const { features } = require('../../config/features');
-
       // Sidebar should check features.scoreAnimations
       expect(typeof features.scoreAnimations).toBe('boolean');
     });

@@ -1,18 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navbar } from './components/layout/Navbar';
-import { Sidebar } from './components/layout/Sidebar';
-import Board from './components/layout/Board';
 import { LandingHero } from './components/landing/LandingHero';
-import { GameActionBar } from './components/game/GameActionBar';
+import { PlayArea } from './components/game/PlayArea';
 import { GameOverlays } from './components/game/GameOverlays';
-import {
-  LoadingScreen,
-  PositionAnalysis,
-  ErrorBoundary,
-  ScreenReaderAnnouncer,
-  type GameModeConfig,
-  EvaluationBar,
-} from './components/ui';
+import { LoadingScreen, ScreenReaderAnnouncer, type GameModeConfig } from './components/ui';
 import { hasLoadingScreen, hasSoundEffects } from './config/features';
 import { soundEffects } from './utils/soundEffects';
 import { getPresetById } from './config/timePresets';
@@ -25,15 +16,16 @@ import {
 } from './utils/timePreferences';
 import { applyTheme, getSavedThemeId } from './config/themes';
 import { persistCompletedGame } from './utils/gameStatistics';
-import { useGameEngine, useAIPlayer, useTimeControl, useGameShortcuts, useHints } from './hooks';
+import { buildGameOverMessage, buildMoveAnnouncement } from './utils/moveAnnouncements';
 import {
-  OthelloGameEngine,
-  type BotDifficulty,
-  type Move,
-  type TileValue,
-  B,
-  W,
-} from 'othello-engine';
+  useGameEngine,
+  useAIPlayer,
+  useTimeControl,
+  useGameShortcuts,
+  useHints,
+  useGameOverlays,
+} from './hooks';
+import { OthelloGameEngine, type BotDifficulty, B } from 'othello-engine';
 
 import './styles/variables.css';
 import './styles/utilities.css';
@@ -44,7 +36,6 @@ import './styles/board.css';
 import './styles/sidebar.css';
 import './styles/ui.css';
 import './styles/landing.css';
-import EvaluationGraph from './components/ui/EvaluationGraph';
 import { BlogSection } from './components/layout/BlogSection';
 import { blogPosts, type BlogPost } from './config/blogPosts';
 
@@ -61,16 +52,6 @@ function OthelloGame() {
     soundEffects.setVolume(saved);
     return saved;
   });
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [replayOpen, setReplayOpen] = useState(false);
-  const [replayBoard, setReplayBoard] = useState<TileValue[][] | null>(null);
-  const [historyReplayMoves, setHistoryReplayMoves] = useState<Move[] | null>(null);
-  const [statsOpen, setStatsOpen] = useState(false);
-  const [puzzlesOpen, setPuzzlesOpen] = useState(false);
-  const [modeSelectorOpen, setModeSelectorOpen] = useState(false);
-  const [resultModalOpen, setResultModalOpen] = useState(false);
-  const [gameWinner, setGameWinner] = useState<'B' | 'W' | null>(null);
-  const [endedByTimeout, setEndedByTimeout] = useState(false);
   const [gameStartTime, setGameStartTime] = useState(() => Date.now());
   const [moveTimestamps, setMoveTimestamps] = useState<number[]>([]);
   const [graphVisible, setGraphVisible] = useState(true);
@@ -86,9 +67,26 @@ function OthelloGame() {
     requestHint,
     setHintsPerGame: setHintsPerGameSetting,
   } = useHints();
+
+  const overlays = useGameOverlays();
+  const {
+    resetOverlaysForNewGame,
+    setSettingsOpen,
+    setModeSelectorOpen,
+    setStatsOpen,
+    setPuzzlesOpen,
+    setReplayOpen,
+    setResultModalOpen,
+    setReplayBoard,
+    closeTopOverlay,
+    closeReplay,
+    toggleReplay,
+    startHistoryReplay,
+  } = overlays;
+  const overlaysRef = useRef(overlays);
+  overlaysRef.current = overlays;
+
   const blogMessageTimeout = useRef<number | null>(null);
-  const touchStartX = useRef(0);
-  const touchStartY = useRef(0);
   const engineRef = useRef<OthelloGameEngine | null>(null);
   const aiRef = useRef<{ checkAndMakeAIMove: () => void; cancelPendingAIMove: () => void } | null>(
     null
@@ -132,24 +130,16 @@ function OthelloGame() {
         }
       }
 
-      const [col, row] = move.coordinate;
-      const colLabel = String.fromCharCode(97 + col);
-      const rowLabel = 8 - row;
-      const playerName = move.player === 'B' ? 'Black' : 'White';
       const state = engine.getState();
-
-      if (passedOpponent) {
-        const opponentName = state.currentPlayer === 'B' ? 'White' : 'Black';
-        showTimedMessage(`${opponentName} has no valid moves and must pass!`, 2500);
-        setSrAnnouncement(
-          `${playerName} played ${colLabel}${rowLabel}. ${opponentName} must pass. Score: Black ${state.score.black}, White ${state.score.white}.`
-        );
-      } else {
-        const nextPlayer = state.currentPlayer === 'B' ? 'Black' : 'White';
-        setSrAnnouncement(
-          `${playerName} played ${colLabel}${rowLabel}. ${nextPlayer}'s turn. Score: Black ${state.score.black}, White ${state.score.white}.`
-        );
+      const announcement = buildMoveAnnouncement(move, {
+        passedOpponent,
+        currentPlayer: state.currentPlayer,
+        score: state.score,
+      });
+      if (announcement.timedMessage) {
+        showTimedMessage(announcement.timedMessage, announcement.timedMessageMs);
       }
+      setSrAnnouncement(announcement.srAnnouncement);
     },
     onInvalidMove: (error) => {
       if (hasSoundEffects()) soundEffects.playInvalidMove();
@@ -181,9 +171,7 @@ function OthelloGame() {
         if (isTimeout) soundEffects.playTimeout();
         else soundEffects.playGameOver();
       }
-      setResultModalOpen(true);
-      setGameWinner(winner);
-      setEndedByTimeout(isTimeout);
+      overlaysRef.current.openResult(winner, isTimeout);
       setMessage(null);
     },
     onStateChange: () => {
@@ -269,15 +257,10 @@ function OthelloGame() {
     setMessage(null);
     setGameStartTime(Date.now());
     setMoveTimestamps([]);
-    setReplayOpen(false);
-    setReplayBoard(null);
     resetHintsForNewGame();
-    setResultModalOpen(false);
-    setGameWinner(null);
-    setEndedByTimeout(false);
-    setHistoryReplayMoves(null);
+    resetOverlaysForNewGame();
     window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
-  }, [game, time, ai, resetHintsForNewGame]);
+  }, [game, time, ai, resetHintsForNewGame, resetOverlaysForNewGame]);
 
   const scrollToGame = useCallback(() => {
     document.getElementById('play-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -298,15 +281,7 @@ function OthelloGame() {
   const handleRedo = useCallback(() => {
     if (game.redo()) {
       const state = game.engine.getState();
-      setMessage(
-        state.isGameOver
-          ? state.winner === B
-            ? 'Game Over! Black wins!'
-            : state.winner === W
-              ? 'Game Over! White wins!'
-              : "Game Over! It's a tie!"
-          : null
-      );
+      setMessage(state.isGameOver ? buildGameOverMessage(state.winner) : null);
       window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
     }
   }, [game, ai]);
@@ -315,13 +290,13 @@ function OthelloGame() {
     if (game.engine.hasTimeControl() && !game.gameOver) game.pauseTime();
     ai.cancelPendingAIMove();
     setSettingsOpen(true);
-  }, [game, ai]);
+  }, [game, ai, setSettingsOpen]);
 
   const handleCloseSettings = useCallback(() => {
     if (game.engine.hasTimeControl() && !game.gameOver) game.resumeTime();
     setSettingsOpen(false);
     if (!game.gameOver) window.setTimeout(() => ai.checkAndMakeAIMove(), 300);
-  }, [game, ai]);
+  }, [game, ai, setSettingsOpen]);
 
   const handleModeStart = useCallback(
     (config: GameModeConfig) => {
@@ -341,20 +316,8 @@ function OthelloGame() {
       }
       handleRestart();
     },
-    [ai, handleRestart]
+    [ai, handleRestart, setModeSelectorOpen]
   );
-
-  const closeTopOverlay = useCallback(() => {
-    if (settingsOpen) setSettingsOpen(false);
-    else if (statsOpen) setStatsOpen(false);
-    else if (puzzlesOpen) setPuzzlesOpen(false);
-    else if (replayOpen) {
-      setReplayOpen(false);
-      setReplayBoard(null);
-      setHistoryReplayMoves(null);
-    } else if (modeSelectorOpen) setModeSelectorOpen(false);
-    else if (resultModalOpen) setResultModalOpen(false);
-  }, [settingsOpen, statsOpen, puzzlesOpen, replayOpen, modeSelectorOpen, resultModalOpen]);
 
   const shortcutHandlers = useMemo(
     () => ({
@@ -366,7 +329,14 @@ function OthelloGame() {
         showTimedMessage('⌨️ Shortcuts: N=New, S=Settings, Z=Undo, Y=Redo, Esc=Close', 4000),
       onEscape: closeTopOverlay,
     }),
-    [handleOpenSettings, handleUndo, handleRedo, showTimedMessage, closeTopOverlay]
+    [
+      handleOpenSettings,
+      handleUndo,
+      handleRedo,
+      showTimedMessage,
+      closeTopOverlay,
+      setModeSelectorOpen,
+    ]
   );
 
   useGameShortcuts(shortcutHandlers);
@@ -383,24 +353,6 @@ function OthelloGame() {
     blogMessageTimeout.current = window.setTimeout(() => setMessage(null), 4000);
   };
 
-  const handleTouchStart = (e: TouchEvent) => {
-    const touch = e.touches[0];
-    if (!touch) return;
-    touchStartX.current = touch.clientX;
-    touchStartY.current = touch.clientY;
-  };
-
-  const handleTouchEnd = (e: TouchEvent) => {
-    const touch = e.changedTouches[0];
-    if (!touch) return;
-    const dx = touch.clientX - touchStartX.current;
-    const dy = touch.clientY - touchStartY.current;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
-      if (dx > 0) handleUndo();
-      else handleRedo();
-    }
-  };
-
   const handleGraphMoveClick = (moveNumber: number) => {
     const undoCount = game.moveHistory.length - moveNumber;
     if (undoCount <= 0) return;
@@ -414,9 +366,10 @@ function OthelloGame() {
   const currentPlayer = engineState.currentPlayer === B ? 'black' : 'white';
   const blackScore = engineState.score.black;
   const whiteScore = engineState.score.white;
-  const displayBoard = replayBoard
-    ? { ...game.engine.getAnnotatedBoard(), tiles: replayBoard }
-    : game.engine.getAnnotatedBoard();
+  const annotatedBoard = game.engine.getAnnotatedBoard();
+  const displayBoard = overlays.replayBoard
+    ? { ...annotatedBoard, tiles: overlays.replayBoard }
+    : annotatedBoard;
 
   return (
     <div className="OthelloGame page-shell">
@@ -429,98 +382,55 @@ function OthelloGame() {
 
           <LandingHero onPlay={handleHeroPlayClick} onJumpToBoard={scrollToGame} />
 
-          <div className="game-wrapper" id="play-area">
-            <ErrorBoundary onReset={handleRestart}>
-              <div
-                className="game-container"
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-              >
-                <div className="board-area">
-                  <EvaluationBar
-                    evaluation={blackScore - whiteScore}
-                    currentPlayer={currentPlayer}
-                  />
-                  <Board
-                    board={displayBoard}
-                    onPlayerTurn={game.makeMove}
-                    lastMove={game.lastMove}
-                    gameOver={game.gameOver}
-                    hintMove={hintMove}
-                  />
-                </div>
-
-                <div className="sidebar-area">
-                  {hintsEnabled && !game.gameOver && (
-                    <PositionAnalysis
-                      board={game.engine.getAnnotatedBoard()}
-                      enabled={hintsEnabled}
-                      onHintMove={setHintMove}
-                      showPanel={true}
-                    />
-                  )}
-
-                  <Sidebar
-                    currentPlayer={currentPlayer}
-                    blackScore={blackScore}
-                    whiteScore={whiteScore}
-                    onUndo={handleUndo}
-                    onRedo={handleRedo}
-                    canUndo={game.canUndo()}
-                    canRedo={game.canRedo()}
-                    moves={game.moveHistory}
-                    message={message}
-                    gameOver={game.gameOver}
-                    timeRemaining={time.timeRemaining}
-                    onTimeOut={() => {
-                      if (!game.gameOver) game.engine.checkTimeout();
-                    }}
-                    onHintRequest={() => requestHint(game.gameOver)}
-                    hintsRemaining={hintsRemaining}
-                    hintsEnabled={hintsEnabled}
-                    aiThinking={ai.thinkingState.isThinking}
-                    aiThinkingDepth={ai.thinkingState.depth}
-                    aiThinkingNodes={ai.thinkingState.nodesSearched}
-                  />
-
-                  <EvaluationGraph
-                    history={game.evaluationHistory}
-                    currentMove={game.moveHistory.length}
-                    onMoveClick={handleGraphMoveClick}
-                    isVisible={graphVisible}
-                    onToggle={() => setGraphVisible((v) => !v)}
-                  />
-                </div>
-              </div>
-
-              <GameActionBar
-                onNewGame={() => {
-                  if (game.engine.hasTimeControl() && !game.gameOver) game.pauseTime();
-                  setModeSelectorOpen(true);
-                }}
-                onSettings={handleOpenSettings}
-                onStats={() => setStatsOpen(true)}
-                onReplay={() =>
-                  setReplayOpen((open) => {
-                    if (open) {
-                      setReplayBoard(null);
-                      setHistoryReplayMoves(null);
-                      setResultModalOpen(false);
-                    }
-                    return !open;
-                  })
-                }
-                onPuzzles={() => setPuzzlesOpen((v) => !v)}
-              />
-            </ErrorBoundary>
-          </div>
+          <PlayArea
+            onReset={handleRestart}
+            displayBoard={displayBoard}
+            analysisBoard={annotatedBoard}
+            onPlayerTurn={game.makeMove}
+            lastMove={game.lastMove}
+            gameOver={game.gameOver}
+            hintMove={hintMove}
+            hintsEnabled={hintsEnabled}
+            onHintMove={setHintMove}
+            currentPlayer={currentPlayer}
+            blackScore={blackScore}
+            whiteScore={whiteScore}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            canUndo={game.canUndo()}
+            canRedo={game.canRedo()}
+            moves={game.moveHistory}
+            message={message}
+            timeRemaining={time.timeRemaining}
+            onTimeOut={() => {
+              if (!game.gameOver) game.engine.checkTimeout();
+            }}
+            onHintRequest={() => requestHint(game.gameOver)}
+            hintsRemaining={hintsRemaining}
+            aiThinking={ai.thinkingState.isThinking}
+            aiThinkingDepth={ai.thinkingState.depth}
+            aiThinkingNodes={ai.thinkingState.nodesSearched}
+            evaluationHistory={game.evaluationHistory}
+            currentMove={game.moveHistory.length}
+            onGraphMoveClick={handleGraphMoveClick}
+            graphVisible={graphVisible}
+            onToggleGraph={() => setGraphVisible((v) => !v)}
+            onNewGame={() => {
+              if (game.engine.hasTimeControl() && !game.gameOver) game.pauseTime();
+              setModeSelectorOpen(true);
+            }}
+            onSettings={handleOpenSettings}
+            onStats={() => setStatsOpen(true)}
+            onReplay={toggleReplay}
+            onPuzzles={() => setPuzzlesOpen((v) => !v)}
+          />
 
           <div className="below-fold">
             <BlogSection posts={blogPosts} onRead={handleBlogOpen} />
           </div>
 
           <GameOverlays
-            settingsOpen={settingsOpen}
+            settingsOpen={overlays.settingsOpen}
             onCloseSettings={handleCloseSettings}
             aiEnabled={ai.aiEnabled}
             aiDifficulty={ai.aiDifficulty}
@@ -554,45 +464,29 @@ function OthelloGame() {
               applyTheme(themeId);
               setBoardTheme(themeId);
             }}
-            statsOpen={statsOpen}
+            statsOpen={overlays.statsOpen}
             onCloseStats={() => setStatsOpen(false)}
             currentGameMoves={game.moveHistory}
             onOpenCurrentReplay={() => setReplayOpen(true)}
-            onReplayGame={(moves) => {
-              setHistoryReplayMoves(
-                moves.map((m) => ({
-                  player: m.player,
-                  coordinate: m.coordinate,
-                  timestamp: 0,
-                  scoreAfter: { black: 0, white: 0 },
-                }))
-              );
-              setReplayOpen(true);
-              setReplayBoard(null);
-              setStatsOpen(false);
-            }}
-            puzzlesOpen={puzzlesOpen}
+            onReplayGame={startHistoryReplay}
+            puzzlesOpen={overlays.puzzlesOpen}
             onClosePuzzles={() => setPuzzlesOpen(false)}
-            replayOpen={replayOpen}
-            historyReplayMoves={historyReplayMoves}
+            replayOpen={overlays.replayOpen}
+            historyReplayMoves={overlays.historyReplayMoves}
             onReplayMoveChange={(_idx, board) => setReplayBoard(board)}
-            onCloseReplay={() => {
-              setReplayOpen(false);
-              setReplayBoard(null);
-              setHistoryReplayMoves(null);
-            }}
-            resultModalOpen={resultModalOpen}
-            gameWinner={gameWinner}
+            onCloseReplay={closeReplay}
+            resultModalOpen={overlays.resultModalOpen}
+            gameWinner={overlays.gameWinner}
             blackScore={blackScore}
             whiteScore={whiteScore}
-            endedByTimeout={endedByTimeout}
+            endedByTimeout={overlays.endedByTimeout}
             onPlayAgain={handleRestart}
             onResultReplay={() => {
               setResultModalOpen(false);
               setReplayOpen(true);
             }}
             onCloseResult={() => setResultModalOpen(false)}
-            modeSelectorOpen={modeSelectorOpen}
+            modeSelectorOpen={overlays.modeSelectorOpen}
             onModeStart={handleModeStart}
             onCloseModeSelector={() => setModeSelectorOpen(false)}
           />

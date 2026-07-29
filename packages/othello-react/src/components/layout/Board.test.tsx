@@ -13,6 +13,7 @@
 
 import { describe, expect, test } from 'vitest';
 import { B, W, E, P, type Board as BoardType } from '../../../../othello-engine/src/index.ts';
+import { features } from '../../config/features';
 
 describe('Board Component Logic', () => {
   describe('Initial Board Detection', () => {
@@ -356,8 +357,6 @@ describe('Board Component Integration', () => {
   });
 
   test('should respect feature flags', () => {
-    const { features } = require('../../config/features');
-
     // Board should check features.animations
     expect(typeof features.animations).toBe('boolean');
 
