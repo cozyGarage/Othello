@@ -1,22 +1,17 @@
-import { useCallback, useEffect, useRef, useState, type TouchEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import Board from './components/layout/Board';
 import { LandingHero } from './components/landing/LandingHero';
 import { GameActionBar } from './components/game/GameActionBar';
+import { GameOverlays } from './components/game/GameOverlays';
 import {
   LoadingScreen,
-  SettingsPanel,
-  GameReplay,
   PositionAnalysis,
-  GameStatistics,
-  GameResultModal,
   ErrorBoundary,
   ScreenReaderAnnouncer,
-  GameModeSelector,
   type GameModeConfig,
   EvaluationBar,
-  Puzzles,
 } from './components/ui';
 import { hasLoadingScreen, hasSoundEffects } from './config/features';
 import { soundEffects } from './utils/soundEffects';
@@ -28,14 +23,12 @@ import {
   clearSavedTimeState,
   getSelectedTimePreset,
 } from './utils/timePreferences';
-import { getHintsPerGame, setHintsPerGame } from './utils/hintPreferences';
 import { applyTheme, getSavedThemeId } from './config/themes';
-import { saveGameRecord } from './utils/gameStatistics';
-import { useGameEngine, useAIPlayer, useTimeControl } from './hooks';
+import { persistCompletedGame } from './utils/gameStatistics';
+import { useGameEngine, useAIPlayer, useTimeControl, useGameShortcuts, useHints } from './hooks';
 import {
   OthelloGameEngine,
   type BotDifficulty,
-  type Coordinate,
   type Move,
   type TileValue,
   B,
@@ -56,7 +49,7 @@ import { BlogSection } from './components/layout/BlogSection';
 import { blogPosts, type BlogPost } from './config/blogPosts';
 
 /**
- * Functional shell: gameplay hooks + chrome orchestration.
+ * Functional shell: gameplay hooks + thin chrome orchestration.
  * window.engine is exposed by useGameEngine for 42 School console testing.
  */
 function OthelloGame() {
@@ -72,13 +65,6 @@ function OthelloGame() {
   const [replayOpen, setReplayOpen] = useState(false);
   const [replayBoard, setReplayBoard] = useState<TileValue[][] | null>(null);
   const [historyReplayMoves, setHistoryReplayMoves] = useState<Move[] | null>(null);
-  const [hintsEnabled, setHintsEnabled] = useState(false);
-  const [hintMove, setHintMove] = useState<Coordinate | null>(null);
-  const [hintsPerGame, setHintsPerGameState] = useState(getHintsPerGame);
-  const [hintsRemaining, setHintsRemaining] = useState(() => {
-    const count = getHintsPerGame();
-    return count === 0 ? 999 : count;
-  });
   const [statsOpen, setStatsOpen] = useState(false);
   const [puzzlesOpen, setPuzzlesOpen] = useState(false);
   const [modeSelectorOpen, setModeSelectorOpen] = useState(false);
@@ -90,6 +76,16 @@ function OthelloGame() {
   const [graphVisible, setGraphVisible] = useState(true);
   const [boardTheme, setBoardTheme] = useState(getSavedThemeId);
 
+  const {
+    hintsPerGame,
+    hintsRemaining,
+    hintsEnabled,
+    hintMove,
+    setHintMove,
+    resetHintsForNewGame,
+    requestHint,
+    setHintsPerGame: setHintsPerGameSetting,
+  } = useHints();
   const blogMessageTimeout = useRef<number | null>(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -98,7 +94,6 @@ function OthelloGame() {
     null
   );
 
-  // Stable refs for engine callbacks (avoid closing over hook return before assignment)
   const statsRef = useRef({
     moveTimestamps,
     gameStartTime,
@@ -114,71 +109,6 @@ function OthelloGame() {
     setMessage(text);
     window.setTimeout(() => setMessage(null), ms);
   }, []);
-
-  const saveGameStatistics = useCallback(
-    (
-      winner: 'B' | 'W' | null,
-      isTimeout: boolean,
-      opts: {
-        engine: OthelloGameEngine;
-        aiEnabled: boolean;
-        aiDifficulty: BotDifficulty;
-        aiPlayer: 'B' | 'W';
-        spectatorMode: boolean;
-        timeControlEnabled: boolean;
-        moveTimestamps: number[];
-        gameStartTime: number;
-      }
-    ) => {
-      const {
-        engine,
-        aiEnabled,
-        aiDifficulty,
-        aiPlayer,
-        spectatorMode,
-        timeControlEnabled,
-        moveTimestamps: stamps,
-        gameStartTime: start,
-      } = opts;
-      const state = engine.getState();
-
-      let avgMoveTime = 0;
-      if (stamps.length > 1) {
-        let totalTime = 0;
-        for (let i = 1; i < stamps.length; i++) {
-          const prevTime = stamps[i - 1];
-          const currTime = stamps[i];
-          if (prevTime !== undefined && currTime !== undefined) {
-            totalTime += currTime - prevTime;
-          }
-        }
-        avgMoveTime = totalTime / (stamps.length - 1);
-      }
-
-      let humanPlayer: 'B' | 'W' | null = null;
-      if (aiEnabled && !spectatorMode) {
-        humanPlayer = aiPlayer === 'B' ? 'W' : 'B';
-      }
-
-      saveGameRecord({
-        winner,
-        humanPlayer,
-        aiDifficulty: aiEnabled ? aiDifficulty : null,
-        spectatorMode,
-        finalScore: state.score,
-        totalMoves: state.moveHistory.length,
-        avgMoveTime,
-        gameDuration: Date.now() - start,
-        timeControlEnabled,
-        endedByTimeout: isTimeout,
-        moves: state.moveHistory.map((move) => ({
-          player: move.player,
-          coordinate: move.coordinate as [number, number],
-        })),
-      });
-    },
-    []
-  );
 
   const game = useGameEngine({
     onMove: (move, passedOpponent) => {
@@ -230,15 +160,22 @@ function OthelloGame() {
       if (!engine) return;
 
       clearSavedTimeState();
-      saveGameStatistics(winner, isTimeout, {
-        engine,
+      const state = engine.getState();
+      persistCompletedGame({
+        winner,
+        isTimeout,
+        moveTimestamps: statsRef.current.moveTimestamps,
+        gameStartTime: statsRef.current.gameStartTime,
         aiEnabled: statsRef.current.aiEnabled,
         aiDifficulty: statsRef.current.aiDifficulty,
         aiPlayer: statsRef.current.aiPlayer,
         spectatorMode: statsRef.current.spectatorMode,
         timeControlEnabled: statsRef.current.timeControlEnabled,
-        moveTimestamps: statsRef.current.moveTimestamps,
-        gameStartTime: statsRef.current.gameStartTime,
+        finalScore: state.score,
+        moveHistory: state.moveHistory.map((m) => ({
+          player: m.player,
+          coordinate: m.coordinate as [number, number],
+        })),
       });
       if (hasSoundEffects()) {
         if (isTimeout) soundEffects.playTimeout();
@@ -281,7 +218,6 @@ function OthelloGame() {
     cancelPendingAIMove: ai.cancelPendingAIMove,
   };
 
-  // Keep statsRef in sync for engine callbacks / game-over persistence
   useEffect(() => {
     statsRef.current = {
       moveTimestamps,
@@ -304,7 +240,6 @@ function OthelloGame() {
     time.selectedTimePreset,
   ]);
 
-  // Theme, loading, sounds, mute restore
   useEffect(() => {
     applyTheme(boardTheme);
     soundEffects.setMuteTimeSounds(getMuteTimeSounds());
@@ -336,15 +271,13 @@ function OthelloGame() {
     setMoveTimestamps([]);
     setReplayOpen(false);
     setReplayBoard(null);
-    setHintMove(null);
-    setHintsEnabled(false);
-    setHintsRemaining(hintsPerGame === 0 ? 999 : hintsPerGame);
+    resetHintsForNewGame();
     setResultModalOpen(false);
     setGameWinner(null);
     setEndedByTimeout(false);
     setHistoryReplayMoves(null);
     window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
-  }, [game, time, ai, hintsPerGame]);
+  }, [game, time, ai, resetHintsForNewGame]);
 
   const scrollToGame = useCallback(() => {
     document.getElementById('play-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -355,98 +288,14 @@ function OthelloGame() {
     scrollToGame();
   }, [handleRestart, scrollToGame]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')
-      ) {
-        return;
-      }
-
-      if (event.key === 'Escape') {
-        if (settingsOpen) setSettingsOpen(false);
-        else if (statsOpen) setStatsOpen(false);
-        else if (puzzlesOpen) setPuzzlesOpen(false);
-        else if (replayOpen) {
-          setReplayOpen(false);
-          setReplayBoard(null);
-          setHistoryReplayMoves(null);
-        } else if (modeSelectorOpen) setModeSelectorOpen(false);
-        else if (resultModalOpen) setResultModalOpen(false);
-        return;
-      }
-
-      if (event.key === 'n' || event.key === 'N') {
-        event.preventDefault();
-        setModeSelectorOpen(true);
-        return;
-      }
-      if (event.key === 's' || event.key === 'S') {
-        event.preventDefault();
-        if (game.engine.hasTimeControl() && !game.gameOver) game.pauseTime();
-        ai.cancelPendingAIMove();
-        setSettingsOpen(true);
-        return;
-      }
-      if ((event.key === 'z' || event.key === 'Z') && !event.ctrlKey && !event.metaKey) {
-        event.preventDefault();
-        if (game.undo()) {
-          setMessage(null);
-          window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
-        }
-        return;
-      }
-      if ((event.key === 'y' || event.key === 'Y') && !event.ctrlKey && !event.metaKey) {
-        event.preventDefault();
-        if (game.redo()) {
-          setMessage(null);
-          window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
-        }
-        return;
-      }
-      if (event.key === '?' || (event.shiftKey && event.key === '/')) {
-        event.preventDefault();
-        showTimedMessage('⌨️ Shortcuts: N=New, S=Settings, Z=Undo, Y=Redo, Esc=Close', 4000);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [
-    settingsOpen,
-    statsOpen,
-    puzzlesOpen,
-    replayOpen,
-    modeSelectorOpen,
-    resultModalOpen,
-    game,
-    ai,
-    showTimedMessage,
-  ]);
-
-  useEffect(() => {
-    return () => {
-      if (blogMessageTimeout.current !== null) clearTimeout(blogMessageTimeout.current);
-    };
-  }, []);
-
-  const handleBlogOpen = (_post: BlogPost) => {
-    if (blogMessageTimeout.current) clearTimeout(blogMessageTimeout.current);
-    setMessage('📝 Blog posts coming soon! Stay tuned for strategy guides and updates.');
-    blogMessageTimeout.current = window.setTimeout(() => setMessage(null), 4000);
-  };
-
-  const handleUndo = () => {
+  const handleUndo = useCallback(() => {
     if (game.undo()) {
       setMessage(null);
       window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
     }
-  };
+  }, [game, ai]);
 
-  const handleRedo = () => {
+  const handleRedo = useCallback(() => {
     if (game.redo()) {
       const state = game.engine.getState();
       setMessage(
@@ -460,36 +309,78 @@ function OthelloGame() {
       );
       window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
     }
-  };
+  }, [game, ai]);
 
-  const handleOpenSettings = () => {
+  const handleOpenSettings = useCallback(() => {
     if (game.engine.hasTimeControl() && !game.gameOver) game.pauseTime();
     ai.cancelPendingAIMove();
     setSettingsOpen(true);
-  };
+  }, [game, ai]);
 
-  const handleCloseSettings = () => {
+  const handleCloseSettings = useCallback(() => {
     if (game.engine.hasTimeControl() && !game.gameOver) game.resumeTime();
     setSettingsOpen(false);
     if (!game.gameOver) window.setTimeout(() => ai.checkAndMakeAIMove(), 300);
-  };
+  }, [game, ai]);
 
-  const handleModeStart = (config: GameModeConfig) => {
-    setModeSelectorOpen(false);
-    if (config.mode === 'ai') {
-      ai.setSpectatorMode(false);
-      ai.setAIDifficulty(config.aiDifficulty);
-      ai.setAIPlayer(config.aiPlaysAs);
-      ai.setAIEnabled(true);
-    } else if (config.mode === 'spectator') {
-      ai.setAIEnabled(false);
-      ai.setAIDifficulty(config.aiDifficulty);
-      ai.setSpectatorMode(true);
-    } else {
-      ai.setAIEnabled(false);
-      ai.setSpectatorMode(false);
-    }
-    handleRestart();
+  const handleModeStart = useCallback(
+    (config: GameModeConfig) => {
+      setModeSelectorOpen(false);
+      if (config.mode === 'ai') {
+        ai.setSpectatorMode(false);
+        ai.setAIDifficulty(config.aiDifficulty);
+        ai.setAIPlayer(config.aiPlaysAs);
+        ai.setAIEnabled(true);
+      } else if (config.mode === 'spectator') {
+        ai.setAIEnabled(false);
+        ai.setAIDifficulty(config.aiDifficulty);
+        ai.setSpectatorMode(true);
+      } else {
+        ai.setAIEnabled(false);
+        ai.setSpectatorMode(false);
+      }
+      handleRestart();
+    },
+    [ai, handleRestart]
+  );
+
+  const closeTopOverlay = useCallback(() => {
+    if (settingsOpen) setSettingsOpen(false);
+    else if (statsOpen) setStatsOpen(false);
+    else if (puzzlesOpen) setPuzzlesOpen(false);
+    else if (replayOpen) {
+      setReplayOpen(false);
+      setReplayBoard(null);
+      setHistoryReplayMoves(null);
+    } else if (modeSelectorOpen) setModeSelectorOpen(false);
+    else if (resultModalOpen) setResultModalOpen(false);
+  }, [settingsOpen, statsOpen, puzzlesOpen, replayOpen, modeSelectorOpen, resultModalOpen]);
+
+  const shortcutHandlers = useMemo(
+    () => ({
+      onNewGame: () => setModeSelectorOpen(true),
+      onOpenSettings: handleOpenSettings,
+      onUndo: handleUndo,
+      onRedo: handleRedo,
+      onShowHelp: () =>
+        showTimedMessage('⌨️ Shortcuts: N=New, S=Settings, Z=Undo, Y=Redo, Esc=Close', 4000),
+      onEscape: closeTopOverlay,
+    }),
+    [handleOpenSettings, handleUndo, handleRedo, showTimedMessage, closeTopOverlay]
+  );
+
+  useGameShortcuts(shortcutHandlers);
+
+  useEffect(() => {
+    return () => {
+      if (blogMessageTimeout.current !== null) clearTimeout(blogMessageTimeout.current);
+    };
+  }, []);
+
+  const handleBlogOpen = (_post: BlogPost) => {
+    if (blogMessageTimeout.current) clearTimeout(blogMessageTimeout.current);
+    setMessage('📝 Blog posts coming soon! Stay tuned for strategy guides and updates.');
+    blogMessageTimeout.current = window.setTimeout(() => setMessage(null), 4000);
   };
 
   const handleTouchStart = (e: TouchEvent) => {
@@ -517,16 +408,6 @@ function OthelloGame() {
       if (!game.undo()) break;
     }
     setMessage(null);
-  };
-
-  const handleHintRequest = () => {
-    if (hintsRemaining <= 0 || game.gameOver) return;
-    setHintsEnabled(true);
-    setHintsRemaining((prev) => prev - 1);
-    window.setTimeout(() => {
-      setHintsEnabled(false);
-      setHintMove(null);
-    }, 5000);
   };
 
   const engineState = game.engine.getState();
@@ -594,7 +475,7 @@ function OthelloGame() {
                     onTimeOut={() => {
                       if (!game.gameOver) game.engine.checkTimeout();
                     }}
-                    onHintRequest={handleHintRequest}
+                    onHintRequest={() => requestHint(game.gameOver)}
                     hintsRemaining={hintsRemaining}
                     hintsEnabled={hintsEnabled}
                     aiThinking={ai.thinkingState.isThinking}
@@ -638,9 +519,9 @@ function OthelloGame() {
             <BlogSection posts={blogPosts} onRead={handleBlogOpen} />
           </div>
 
-          <SettingsPanel
-            isOpen={settingsOpen}
-            onClose={handleCloseSettings}
+          <GameOverlays
+            settingsOpen={settingsOpen}
+            onCloseSettings={handleCloseSettings}
             aiEnabled={ai.aiEnabled}
             aiDifficulty={ai.aiDifficulty}
             aiPlayer={ai.aiPlayer}
@@ -653,7 +534,6 @@ function OthelloGame() {
             selectedTimePreset={time.selectedTimePreset}
             onTimeControlToggle={time.setTimeControlEnabled}
             onTimePresetChange={time.setTimePreset}
-            muteTimeSounds={soundEffects.getMuteTimeSounds()}
             onMuteTimeSoundsToggle={(muted) => {
               time.setMuteTimeSounds(muted);
               soundEffects.setMuteTimeSounds(muted);
@@ -668,21 +548,14 @@ function OthelloGame() {
               setSoundVolumeState(volume);
             }}
             hintsPerGame={hintsPerGame}
-            onHintsPerGameChange={(count) => {
-              setHintsPerGame(count);
-              setHintsPerGameState(count);
-              setHintsRemaining(count === 0 ? 999 : count);
-            }}
+            onHintsPerGameChange={setHintsPerGameSetting}
             boardTheme={boardTheme}
             onThemeChange={(themeId) => {
               applyTheme(themeId);
               setBoardTheme(themeId);
             }}
-          />
-
-          <GameStatistics
-            isVisible={statsOpen}
-            onClose={() => setStatsOpen(false)}
+            statsOpen={statsOpen}
+            onCloseStats={() => setStatsOpen(false)}
             currentGameMoves={game.moveHistory}
             onOpenCurrentReplay={() => setReplayOpen(true)}
             onReplayGame={(moves) => {
@@ -698,46 +571,30 @@ function OthelloGame() {
               setReplayBoard(null);
               setStatsOpen(false);
             }}
-          />
-
-          <Puzzles isVisible={puzzlesOpen} onClose={() => setPuzzlesOpen(false)} />
-
-          {replayOpen && (game.moveHistory.length > 0 || historyReplayMoves) && (
-            <GameReplay
-              moves={historyReplayMoves || game.moveHistory}
-              isVisible={replayOpen}
-              onMoveChange={(_idx, board) => setReplayBoard(board)}
-              onClose={() => {
-                setReplayOpen(false);
-                setReplayBoard(null);
-                setHistoryReplayMoves(null);
-              }}
-            />
-          )}
-
-          <GameResultModal
-            isOpen={resultModalOpen}
-            winner={gameWinner}
+            puzzlesOpen={puzzlesOpen}
+            onClosePuzzles={() => setPuzzlesOpen(false)}
+            replayOpen={replayOpen}
+            historyReplayMoves={historyReplayMoves}
+            onReplayMoveChange={(_idx, board) => setReplayBoard(board)}
+            onCloseReplay={() => {
+              setReplayOpen(false);
+              setReplayBoard(null);
+              setHistoryReplayMoves(null);
+            }}
+            resultModalOpen={resultModalOpen}
+            gameWinner={gameWinner}
             blackScore={blackScore}
             whiteScore={whiteScore}
             endedByTimeout={endedByTimeout}
             onPlayAgain={handleRestart}
-            onReplay={() => {
+            onResultReplay={() => {
               setResultModalOpen(false);
               setReplayOpen(true);
             }}
-            onClose={() => setResultModalOpen(false)}
-          />
-
-          <GameModeSelector
-            isOpen={modeSelectorOpen}
-            onStart={handleModeStart}
-            onClose={() => setModeSelectorOpen(false)}
-            currentConfig={{
-              mode: ai.spectatorMode ? 'spectator' : ai.aiEnabled ? 'ai' : 'human',
-              aiDifficulty: ai.aiDifficulty,
-              aiPlaysAs: ai.aiPlayer,
-            }}
+            onCloseResult={() => setResultModalOpen(false)}
+            modeSelectorOpen={modeSelectorOpen}
+            onModeStart={handleModeStart}
+            onCloseModeSelector={() => setModeSelectorOpen(false)}
           />
         </div>
       )}

@@ -15,5 +15,10 @@ export type { UseAIPlayerConfig, UseAIPlayerReturn } from './useAIPlayer';
 export { useTimeControl } from './useTimeControl';
 export type { UseTimeControlConfig, UseTimeControlReturn } from './useTimeControl';
 
+export { useGameShortcuts } from './useGameShortcuts';
+export type { GameShortcutHandlers } from './useGameShortcuts';
+
+export { useHints } from './useHints';
+
 export { useFlipAnimation } from './useFlipAnimation';
 export { useScoreAnimation } from './useScoreAnimation';
