@@ -244,6 +244,9 @@ export class TimeControlManager {
         if (!this.lastMoveTime || this.isPaused) {
             return 0;
         }
-        return Date.now() - this.lastMoveTime;
+        const raw = Date.now() - this.lastMoveTime;
+        // Bronstein delay: time below the delay does not count against the player
+        const delay = this.config.delay ?? 0;
+        return Math.max(0, raw - delay);
     }
 }

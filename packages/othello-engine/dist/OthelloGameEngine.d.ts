@@ -18,6 +18,8 @@ export interface GameState {
     validMoves: Coordinate[];
     isGameOver: boolean;
     winner: 'W' | 'B' | null;
+    /** True when the game ended because a player's clock expired */
+    endedByTimeout: boolean;
     moveHistory: Move[];
     currentPlayer: 'W' | 'B';
     blackPlayerId?: string;
@@ -85,8 +87,8 @@ export declare class OthelloGameEngine {
     private timeControlConfig?;
     private undoStack;
     private redoStack;
-    /** True once a timeout loss has been declared (board may still look unfinished) */
-    private timeoutDeclared;
+    /** Winner when the game ended on timeout; null if not a timeout end */
+    private timeoutWinner;
     /**
      * Creates a new Othello game engine
      * @param blackPlayerId - Optional ID for the black player

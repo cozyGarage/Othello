@@ -15,7 +15,7 @@ import {
   W,
 } from './index';
 import { TimeControlManager, TimeControlConfig, PlayerTime } from './TimeControlManager';
-import { POSITION_WEIGHTS } from './positionWeights';
+import { evaluateBoardForPlayer } from './evaluateBoard';
 
 /**
  * Represents a single move in the game
@@ -36,6 +36,8 @@ export interface GameState {
   validMoves: Coordinate[];
   isGameOver: boolean;
   winner: 'W' | 'B' | null;
+  /** True when the game ended because a player's clock expired */
+  endedByTimeout: boolean;
   moveHistory: Move[];
   currentPlayer: 'W' | 'B';
   blackPlayerId?: string;
@@ -149,8 +151,8 @@ export class OthelloGameEngine {
   private undoStack: GameSnapshot[] = [];
   private redoStack: GameSnapshot[] = [];
 
-  /** True once a timeout loss has been declared (board may still look unfinished) */
-  private timeoutDeclared = false;
+  /** Winner when the game ended on timeout; null if not a timeout end */
+  private timeoutWinner: 'B' | 'W' | null = null;
 
   /**
    * Creates a new Othello game engine
@@ -272,6 +274,14 @@ export class OthelloGameEngine {
    */
   public makeMove(coordinate: Coordinate): boolean {
     try {
+      if (this.timeoutWinner !== null) {
+        this.emit('invalidMove', {
+          coordinate,
+          error: 'Game is already over (timeout)',
+        });
+        return false;
+      }
+
       const currentPlayer = this.board.playerTurn;
 
       // Check for timeout if time control is enabled
@@ -362,9 +372,10 @@ export class OthelloGameEngine {
     if (previousState) {
       this.restoreSnapshot(previousState);
     }
+    this.timeoutWinner = null;
 
     // Resume time control for current player
-    if (this.timeControl && !isGameOver(this.board)) {
+    if (this.timeControl && !this.isGameOver()) {
       this.timeControl.resume();
     }
 
@@ -396,9 +407,10 @@ export class OthelloGameEngine {
     if (redoState) {
       this.restoreSnapshot(redoState);
     }
+    this.timeoutWinner = null;
 
     // Resume time control for current player
-    if (this.timeControl && !isGameOver(this.board)) {
+    if (this.timeControl && !this.isGameOver()) {
       this.timeControl.resume();
     }
 
@@ -429,12 +441,14 @@ export class OthelloGameEngine {
    * @returns Complete game state including board, score, history, etc.
    */
   public getState(): GameState {
+    const over = this.isGameOver();
     return {
       board: this.board,
       score: score(this.board),
-      validMoves: getValidMoves(this.board),
-      isGameOver: isGameOver(this.board),
-      winner: isGameOver(this.board) ? getWinner(this.board) : null,
+      validMoves: over ? [] : getValidMoves(this.board),
+      isGameOver: over,
+      winner: over ? this.getWinner() : null,
+      endedByTimeout: this.timeoutWinner !== null,
       moveHistory: [...this.moveHistory],
       currentPlayer: this.board.playerTurn,
       blackPlayerId: this.blackPlayerId,
@@ -479,7 +493,7 @@ export class OthelloGameEngine {
    * @returns true if the game has ended
    */
   public isGameOver(): boolean {
-    return isGameOver(this.board);
+    return this.timeoutWinner !== null || isGameOver(this.board);
   }
 
   /**
@@ -487,6 +501,7 @@ export class OthelloGameEngine {
    * @returns 'W', 'B', or null for a tie
    */
   public getWinner(): 'W' | 'B' | null {
+    if (this.timeoutWinner) return this.timeoutWinner;
     return isGameOver(this.board) ? getWinner(this.board) : null;
   }
 
@@ -503,53 +518,7 @@ export class OthelloGameEngine {
    * @returns Evaluation score normalized to approximate disc difference
    */
   public evaluatePosition(): number {
-    const currentScore = score(this.board);
-    const validMoves = getValidMoves(this.board);
-
-    // Switch player temporarily to check opponent mobility
-    const originalPlayer = this.board.playerTurn;
-    this.board.playerTurn = this.board.playerTurn === 'B' ? 'W' : 'B';
-    const opponentMoves = getValidMoves(this.board);
-    this.board.playerTurn = originalPlayer;
-
-    // Position value based on strategic importance (from Black's perspective)
-    let positionValue = 0;
-    for (let y = 0; y < 8; y++) {
-      for (let x = 0; x < 8; x++) {
-        const row = this.board.tiles[y];
-        const tile = row ? row[x] : undefined;
-        const weightRow = POSITION_WEIGHTS[y];
-        const weight = weightRow ? weightRow[x] : 0;
-
-        if (tile === B) {
-          positionValue += weight ?? 0;
-        } else if (tile === W) {
-          positionValue -= weight ?? 0;
-        }
-      }
-    }
-
-    // Mobility value (more moves = better)
-    const myMoves = this.board.playerTurn === 'B' ? validMoves.length : opponentMoves.length;
-    const theirMoves = this.board.playerTurn === 'B' ? opponentMoves.length : validMoves.length;
-    const mobilityValue = (myMoves - theirMoves) * 3;
-
-    // Simple disc difference
-    const discDiff = currentScore.black - currentScore.white;
-
-    // Combine: position is most important early, disc count matters more late game
-    const totalPieces = currentScore.black + currentScore.white;
-    const isEndgame = totalPieces > 50;
-
-    if (isEndgame) {
-      // In endgame, actual disc count matters more
-      return Math.max(-64, Math.min(64, discDiff * 2));
-    }
-
-    // Normalize to -64 to +64 range
-    // Position weight ranges from about -800 to +800, scale it down
-    const normalizedEval = positionValue / 10 + mobilityValue + discDiff * 0.5;
-    return Math.max(-64, Math.min(64, Math.round(normalizedEval)));
+    return evaluateBoardForPlayer(this.board, B, { normalizeUi: true });
   }
 
   /**
@@ -574,7 +543,7 @@ export class OthelloGameEngine {
    * Resume the time control after pausing
    */
   public resumeTime(): void {
-    if (this.timeControl && !isGameOver(this.board)) {
+    if (this.timeControl && !this.isGameOver()) {
       this.timeControl.resume();
     }
   }
@@ -594,12 +563,12 @@ export class OthelloGameEngine {
    * @param config - Time control config, or null/undefined to disable clocks
    */
   public configureTimeControl(config: TimeControlConfig | null | undefined): void {
-    this.timeoutDeclared = false;
+    this.timeoutWinner = null;
     this.timeControlConfig = config ?? undefined;
 
     if (config) {
       this.timeControl = new TimeControlManager(config);
-      if (!isGameOver(this.board)) {
+      if (!this.isGameOver()) {
         this.timeControl.startClock(this.board.playerTurn);
       }
     } else {
@@ -629,7 +598,7 @@ export class OthelloGameEngine {
    * @returns true if a timeout loss was declared
    */
   public checkTimeout(): boolean {
-    if (!this.timeControl || this.timeoutDeclared || isGameOver(this.board)) {
+    if (!this.timeControl || this.timeoutWinner !== null || isGameOver(this.board)) {
       return false;
     }
 
@@ -646,15 +615,14 @@ export class OthelloGameEngine {
    * Stop clocks and emit gameOver for a timeout loss by the given player.
    */
   private handleTimeoutLoss(timedOutPlayer: 'B' | 'W'): void {
-    if (this.timeoutDeclared) {
+    if (this.timeoutWinner !== null) {
       return;
     }
-    this.timeoutDeclared = true;
+    this.timeoutWinner = timedOutPlayer === 'B' ? W : B;
     if (this.timeControl) {
       this.timeControl.stopClock();
     }
-    const winner = timedOutPlayer === 'B' ? W : B;
-    this.emit('gameOver', { winner, state: this.getState() });
+    this.emit('gameOver', { winner: this.timeoutWinner, state: this.getState() });
   }
 
   /**
@@ -663,7 +631,7 @@ export class OthelloGameEngine {
   public reset(): void {
     this.board = createBoard(createStartingTiles());
     this.moveHistory = [];
-    this.timeoutDeclared = false;
+    this.timeoutWinner = null;
 
     // Clear undo/redo stacks
     this.undoStack = [];
@@ -697,6 +665,9 @@ export class OthelloGameEngine {
       moveHistory: this.moveHistory,
       blackPlayerId: this.blackPlayerId,
       whitePlayerId: this.whitePlayerId,
+      timeoutWinner: this.timeoutWinner,
+      timeControlConfig: this.timeControlConfig ?? null,
+      timeControl: this.timeControl ? this.timeControl.exportState() : null,
     });
   }
 
@@ -722,6 +693,9 @@ export class OthelloGameEngine {
       moveHistory?: unknown;
       blackPlayerId?: unknown;
       whitePlayerId?: unknown;
+      timeoutWinner?: unknown;
+      timeControlConfig?: TimeControlConfig | null;
+      timeControl?: string | null;
     };
 
     if (!this.isValidImportedBoard(parsed.board)) {
@@ -743,7 +717,22 @@ export class OthelloGameEngine {
       typeof parsed.whitePlayerId === 'string' ? parsed.whitePlayerId : undefined;
     this.undoStack = [];
     this.redoStack = [];
-    this.timeoutDeclared = false;
+    this.timeoutWinner =
+      parsed.timeoutWinner === 'B' || parsed.timeoutWinner === 'W' ? parsed.timeoutWinner : null;
+
+    if (parsed.timeControlConfig && typeof parsed.timeControlConfig === 'object') {
+      this.timeControlConfig = parsed.timeControlConfig;
+      this.timeControl = new TimeControlManager(parsed.timeControlConfig);
+      if (typeof parsed.timeControl === 'string') {
+        this.timeControl.importState(parsed.timeControl);
+      }
+    } else if (this.timeControlConfig && typeof parsed.timeControl === 'string') {
+      // Legacy: clocks configured on engine, restore clock blob only
+      if (!this.timeControl) {
+        this.timeControl = new TimeControlManager(this.timeControlConfig);
+      }
+      this.timeControl.importState(parsed.timeControl);
+    }
 
     this.emit('stateChange', { state: this.getState() });
   }

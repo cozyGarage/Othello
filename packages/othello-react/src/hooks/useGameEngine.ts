@@ -10,8 +10,6 @@ import {
   type GameOverEventData,
   type StateChangeEventData,
   type TimeControlConfig,
-  B,
-  W,
 } from 'othello-engine';
 import { getDefaultPreset, getPresetById } from '../config/timePresets';
 import {
@@ -147,12 +145,10 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
     };
 
     const handleGameOverEvent = (event: GameEvent) => {
-      const { winner } = event.data as GameOverEventData;
-      const time = engine.getTimeRemaining();
-      const isTimeout =
-        time && ((winner === W && time.black <= 0) || (winner === B && time.white <= 0));
+      const { winner, state } = event.data as GameOverEventData;
+      const isTimeout = state.endedByTimeout;
       setGameOver(true);
-      onGameOverRef.current?.(winner, isTimeout ?? false);
+      onGameOverRef.current?.(winner, isTimeout);
     };
 
     const handleStateChangeEvent = (event: GameEvent) => {

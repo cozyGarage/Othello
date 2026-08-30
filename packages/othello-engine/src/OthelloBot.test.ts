@@ -118,7 +118,7 @@ describe('OthelloBot', () => {
     });
   });
 
-  describe('Medium Difficulty - Greedy Algorithm', () => {
+  describe('Medium Difficulty - Weighted One-Ply', () => {
     test('returns a valid move', () => {
       const bot = new OthelloBot('medium', 'B');
       const board = createStartingBoard();
@@ -133,14 +133,13 @@ describe('OthelloBot', () => {
       }
     });
 
-    test('chooses move that maximizes immediate score', () => {
+    test('prefers a corner when available', () => {
       const bot = new OthelloBot('medium', 'B');
 
-      // Create a board where one move is clearly better
       const board = createBoard([
+        [E, W, B, E, E, E, E, E],
         [E, E, E, E, E, E, E, E],
         [E, E, E, E, E, E, E, E],
-        [E, E, B, W, W, W, E, E],
         [E, E, E, W, B, E, E, E],
         [E, E, E, B, W, E, E, E],
         [E, E, E, E, E, E, E, E],
@@ -148,10 +147,11 @@ describe('OthelloBot', () => {
         [E, E, E, E, E, E, E, E],
       ]);
 
-      const move = bot.calculateMove(board);
+      const valid = getValidMoves(board);
+      expect(valid.some(([x, y]) => x === 0 && y === 0)).toBe(true);
 
-      // The greedy bot should choose a move that flips multiple pieces
-      expect(move).not.toBeNull();
+      const move = bot.calculateMove(board);
+      expect(move).toEqual([0, 0]);
     });
 
     test('is deterministic - same board produces same move', () => {
@@ -188,6 +188,24 @@ describe('OthelloBot', () => {
       const move2 = bot.calculateMove(board);
 
       expect(move1).toEqual(move2);
+    });
+
+    test('iterative deepening respects timeLimitMs', () => {
+      const bot = new OthelloBot('hard', 'B');
+      bot.setUseOpeningBook(false);
+      const board = createStartingBoard();
+      const depths: number[] = [];
+
+      const start = Date.now();
+      const move = bot.calculateMove(board, undefined, {
+        timeLimitMs: 250,
+        onDepthComplete: ({ depth }) => depths.push(depth),
+      });
+      const elapsed = Date.now() - start;
+
+      expect(move).not.toBeNull();
+      expect(depths.length).toBeGreaterThan(0);
+      expect(elapsed).toBeLessThan(2000);
     });
 
     test('prefers strategic positions', () => {

@@ -64,6 +64,21 @@ describe('TimeControlManager', () => {
       expect(timeControl.isTimeOut('B')).toBe(true);
       expect(timeControl.isTimeOut('W')).toBe(false);
     });
+
+    test('Bronstein delay does not count time under the delay window', async () => {
+      const config = { initialTime: 1000, increment: 0, delay: 200 };
+      const timeControl = new TimeControlManager(config);
+
+      timeControl.startClock('B');
+      await new Promise((resolve) => setTimeout(resolve, 80));
+      // Still within delay — essentially no time should be deducted
+      expect(timeControl.getTimeRemaining().black).toBeGreaterThan(980);
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      // Past delay — time should now decrease
+      expect(timeControl.getTimeRemaining().black).toBeLessThan(1000);
+      timeControl.stopClock();
+    });
   });
 
   describe('Pause and Resume', () => {
