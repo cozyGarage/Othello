@@ -1,2 +1,1 @@
-// Setup file for Bun tests
-// This file is preloaded before tests run
+import '@testing-library/jest-dom/vitest';
