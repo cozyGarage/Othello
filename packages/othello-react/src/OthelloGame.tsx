@@ -87,6 +87,7 @@ function OthelloGame() {
   overlaysRef.current = overlays;
 
   const blogMessageTimeout = useRef<number | null>(null);
+  const timedMessageTimeout = useRef<number | null>(null);
   const engineRef = useRef<OthelloGameEngine | null>(null);
   const aiRef = useRef<{ checkAndMakeAIMove: () => void; cancelPendingAIMove: () => void } | null>(
     null
@@ -104,8 +105,15 @@ function OthelloGame() {
   });
 
   const showTimedMessage = useCallback((text: string, ms = 2000) => {
+    if (timedMessageTimeout.current !== null) {
+      clearTimeout(timedMessageTimeout.current);
+      timedMessageTimeout.current = null;
+    }
     setMessage(text);
-    window.setTimeout(() => setMessage(null), ms);
+    timedMessageTimeout.current = window.setTimeout(() => {
+      timedMessageTimeout.current = null;
+      setMessage(null);
+    }, ms);
   }, []);
 
   const game = useGameEngine({
@@ -193,6 +201,10 @@ function OthelloGame() {
     gameOver: game.gameOver,
     onTimeWarning: () => {
       if (hasSoundEffects()) soundEffects.playTimeWarning();
+    },
+    onTimeout: () => {
+      // Engine already ends the game via checkTimeout(); keep AI from moving.
+      aiRef.current?.cancelPendingAIMove();
     },
   });
 
@@ -287,16 +299,16 @@ function OthelloGame() {
   }, [game, ai]);
 
   const handleOpenSettings = useCallback(() => {
-    if (game.engine.hasTimeControl() && !game.gameOver) game.pauseTime();
+    if (game.engine.hasTimeControl() && !game.gameOver) time.pauseTime();
     ai.cancelPendingAIMove();
     setSettingsOpen(true);
-  }, [game, ai, setSettingsOpen]);
+  }, [game, time, ai, setSettingsOpen]);
 
   const handleCloseSettings = useCallback(() => {
-    if (game.engine.hasTimeControl() && !game.gameOver) game.resumeTime();
+    if (game.engine.hasTimeControl() && !game.gameOver) time.resumeTime();
     setSettingsOpen(false);
     if (!game.gameOver) window.setTimeout(() => ai.checkAndMakeAIMove(), 300);
-  }, [game, ai, setSettingsOpen]);
+  }, [game, time, ai, setSettingsOpen]);
 
   const handleModeStart = useCallback(
     (config: GameModeConfig) => {
@@ -344,6 +356,7 @@ function OthelloGame() {
   useEffect(() => {
     return () => {
       if (blogMessageTimeout.current !== null) clearTimeout(blogMessageTimeout.current);
+      if (timedMessageTimeout.current !== null) clearTimeout(timedMessageTimeout.current);
     };
   }, []);
 
@@ -416,7 +429,7 @@ function OthelloGame() {
             graphVisible={graphVisible}
             onToggleGraph={() => setGraphVisible((v) => !v)}
             onNewGame={() => {
-              if (game.engine.hasTimeControl() && !game.gameOver) game.pauseTime();
+              if (game.engine.hasTimeControl() && !game.gameOver) time.pauseTime();
               setModeSelectorOpen(true);
             }}
             onSettings={handleOpenSettings}

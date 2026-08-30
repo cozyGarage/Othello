@@ -22,12 +22,16 @@ export interface AIGameplayOptions {
 /**
  * Owns spectator bots, pending timeouts, and AIManager calls.
  * Extracted from OthelloGame so AI orchestration is not embedded in the UI class.
+ *
+ * Timeouts always re-read the latest options so React state updates (AI on/off,
+ * game over) are not frozen at schedule time.
  */
 export class AIGameplayController {
   private spectatorBotBlack: OthelloBot | null = null;
   private spectatorBotWhite: OthelloBot | null = null;
   private botMoveTimeout: number | null = null;
   private calculating = false;
+  private latestOptions: AIGameplayOptions | null = null;
 
   cancel(): void {
     if (this.botMoveTimeout !== null) {
@@ -40,6 +44,7 @@ export class AIGameplayController {
 
   dispose(): void {
     this.cancel();
+    this.latestOptions = null;
     this.spectatorBotBlack = null;
     this.spectatorBotWhite = null;
     aiManager.dispose();
@@ -60,63 +65,62 @@ export class AIGameplayController {
     this.spectatorBotWhite?.setDifficulty(difficulty);
   }
 
+  private isLiveGameOver(options: AIGameplayOptions): boolean {
+    return options.gameOver || options.engine.getState().isGameOver;
+  }
+
   checkAndMakeAIMove(options: AIGameplayOptions): void {
-    const {
-      engine,
-      gameOver,
-      aiEnabled,
-      aiPlayer,
-      aiDifficulty,
-      spectatorMode,
-      onThinkingChange,
-      onMovePlayed,
-    } = options;
+    this.latestOptions = options;
 
-    if (gameOver || this.calculating) return;
+    if (this.isLiveGameOver(options) || this.calculating) return;
 
-    const state = engine.getState();
+    const state = options.engine.getState();
     const currentPlayer = state.currentPlayer;
 
-    if (spectatorMode) {
+    if (options.spectatorMode) {
       const bot = currentPlayer === 'B' ? this.spectatorBotBlack : this.spectatorBotWhite;
       if (!bot) return;
 
       this.botMoveTimeout = window.setTimeout(() => {
-        if (gameOver) return;
-        const currentState = engine.getState();
+        const opts = this.latestOptions;
+        if (!opts || this.isLiveGameOver(opts)) return;
+
+        const currentState = opts.engine.getState();
         const currentBot =
           currentState.currentPlayer === 'B' ? this.spectatorBotBlack : this.spectatorBotWhite;
         if (!currentBot) return;
 
         const move = currentBot.calculateMove(currentState.board);
         if (move) {
-          engine.makeMove(move);
-          onMovePlayed?.(move);
+          opts.engine.makeMove(move);
+          opts.onMovePlayed?.(move);
         }
       }, 1500);
       return;
     }
 
-    if (!aiEnabled || currentPlayer !== aiPlayer) return;
+    if (!options.aiEnabled || currentPlayer !== options.aiPlayer) return;
 
     this.calculating = true;
-    onThinkingChange?.({ isThinking: true, depth: 0, nodesSearched: 0, bestMove: null });
+    options.onThinkingChange?.({ isThinking: true, depth: 0, nodesSearched: 0, bestMove: null });
 
     this.botMoveTimeout = window.setTimeout(() => {
-      if (!aiEnabled || gameOver) {
+      const opts = this.latestOptions;
+      if (!opts || !opts.aiEnabled || this.isLiveGameOver(opts)) {
         this.calculating = false;
-        onThinkingChange?.(IDLE_AI_THINKING);
+        opts?.onThinkingChange?.(IDLE_AI_THINKING);
         return;
       }
 
-      const currentState = engine.getState();
-      if (currentState.currentPlayer !== aiPlayer) {
+      const currentState = opts.engine.getState();
+      if (currentState.currentPlayer !== opts.aiPlayer) {
         this.calculating = false;
-        onThinkingChange?.(IDLE_AI_THINKING);
+        opts.onThinkingChange?.(IDLE_AI_THINKING);
         return;
       }
 
-      const moveHistory = engine.getMoveHistory().map((m) => ({ coordinate: m.coordinate }));
+      const moveHistory = opts.engine.getMoveHistory().map((m) => ({ coordinate: m.coordinate }));
+      const { aiDifficulty, aiPlayer, onThinkingChange, onMovePlayed, engine } = opts;
 
       aiManager
         .calculateMove(
@@ -130,7 +134,14 @@ export class AIGameplayController {
         .then((result) => {
           this.calculating = false;
           onThinkingChange?.(IDLE_AI_THINKING);
-          if (result.move && !gameOver) {
+          const live = this.latestOptions;
+          if (
+            result.move &&
+            live &&
+            live.aiEnabled &&
+            !this.isLiveGameOver(live) &&
+            live.engine.getState().currentPlayer === live.aiPlayer
+          ) {
             engine.makeMove(result.move);
             onMovePlayed?.(result.move);
           }
