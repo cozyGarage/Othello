@@ -346,7 +346,7 @@ Changes which player the bot controls.
 **AI Difficulty Levels:**
 
 - **Easy**: Random valid move selection
-- **Medium**: Greedy algorithm - maximizes immediate piece gain
+- **Medium**: One-ply weighted evaluation (position, mobility, discs)
 - **Hard**: Minimax with alpha-beta pruning - strategic long-term play
 
 ## Type Definitions

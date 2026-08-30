@@ -672,8 +672,8 @@ constructor(difficulty: 'easy' | 'medium' | 'hard', player: 'B' | 'W')
 
 - `difficulty` - AI difficulty level
   - `'easy'` - Random valid move
-  - `'medium'` - Greedy algorithm (maximize immediate flips)
-  - `'hard'` - Minimax with alpha-beta pruning (depth 4)
+  - `'medium'` - One-ply weighted positional evaluation
+  - `'hard'` - Iterative-deepening minimax with alpha-beta and a time budget
 - `player` - Which color the AI plays as
 
 **Example:**

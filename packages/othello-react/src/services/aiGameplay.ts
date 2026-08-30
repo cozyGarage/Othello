@@ -69,8 +69,24 @@ export class AIGameplayController {
     return options.gameOver || options.engine.getState().isGameOver;
   }
 
+  private clearBotTimeout(): boolean {
+    if (this.botMoveTimeout !== null) {
+      clearTimeout(this.botMoveTimeout);
+      this.botMoveTimeout = null;
+      return true;
+    }
+    return false;
+  }
+
   checkAndMakeAIMove(options: AIGameplayOptions): void {
     this.latestOptions = options;
+
+    // Replace any pending think timer so overlapping kicks cannot stack moves.
+    // Only release `calculating` when we actually canceled a pending timer —
+    // an in-flight aiManager promise must still block re-entry.
+    if (this.clearBotTimeout()) {
+      this.calculating = false;
+    }
 
     if (this.isLiveGameOver(options) || this.calculating) return;
 
@@ -81,16 +97,26 @@ export class AIGameplayController {
       const bot = currentPlayer === 'B' ? this.spectatorBotBlack : this.spectatorBotWhite;
       if (!bot) return;
 
+      this.calculating = true;
       this.botMoveTimeout = window.setTimeout(() => {
+        this.botMoveTimeout = null;
         const opts = this.latestOptions;
-        if (!opts || this.isLiveGameOver(opts)) return;
+        if (!opts || !opts.spectatorMode || this.isLiveGameOver(opts)) {
+          this.calculating = false;
+          return;
+        }
 
         const currentState = opts.engine.getState();
         const currentBot =
           currentState.currentPlayer === 'B' ? this.spectatorBotBlack : this.spectatorBotWhite;
-        if (!currentBot) return;
+        if (!currentBot) {
+          this.calculating = false;
+          return;
+        }
 
-        const move = currentBot.calculateMove(currentState.board);
+        const moveHistory = opts.engine.getMoveHistory().map((m) => ({ coordinate: m.coordinate }));
+        const move = currentBot.calculateMove(currentState.board, moveHistory);
+        this.calculating = false;
         if (move) {
           opts.engine.makeMove(move);
           opts.onMovePlayed?.(move);
@@ -105,6 +131,7 @@ export class AIGameplayController {
     options.onThinkingChange?.({ isThinking: true, depth: 0, nodesSearched: 0, bestMove: null });
 
     this.botMoveTimeout = window.setTimeout(() => {
+      this.botMoveTimeout = null;
       const opts = this.latestOptions;
       if (!opts || !opts.aiEnabled || this.isLiveGameOver(opts)) {
         this.calculating = false;

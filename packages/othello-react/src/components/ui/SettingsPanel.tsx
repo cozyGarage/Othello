@@ -196,13 +196,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     className="difficulty-select"
                   >
                     <option value="easy">Easy (Random)</option>
-                    <option value="medium">Medium (Greedy)</option>
-                    <option value="hard">Hard (Minimax)</option>
+                    <option value="medium">Medium (Positional)</option>
+                    <option value="hard">Hard (Search)</option>
                   </select>
                   <p className="setting-description">
                     {aiDifficulty === 'easy' && 'AI makes random valid moves'}
-                    {aiDifficulty === 'medium' && 'AI maximizes immediate score'}
-                    {aiDifficulty === 'hard' && 'AI uses strategic lookahead'}
+                    {aiDifficulty === 'medium' &&
+                      'AI picks the best-looking move (corners, mobility)'}
+                    {aiDifficulty === 'hard' && 'AI uses timed minimax lookahead'}
                   </p>
                 </div>
 

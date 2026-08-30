@@ -35,8 +35,8 @@ Othello (also known as Reversi) is a classic strategy board game for two players
 - 🔄 **Auto-Pass** - Automatic turn passing when no valid moves are available
 - 🤖 **AI Opponents** - Three difficulty levels:
   - Easy: Random valid move
-  - Medium: Greedy (maximize immediate score)
-  - Hard: Minimax with alpha-beta pruning & positional heuristics
+  - Medium: Positional 1-ply (corners, mobility, discs)
+  - Hard: Timed iterative-deepening minimax with alpha-beta & shared evaluation
 - ⏱️ **Time Controls** - Chess-style time limits with:
   - 4 presets: Bullet (1+0), Blitz (3+2), Rapid (10+5), Classical (30+20)
   - Visual urgency indicators (colors + pulse animation)
@@ -208,8 +208,8 @@ toggleFeature('soundEffects', true);
 `OthelloBot` strategies:
 
 - Easy: Uniform random over valid moves.
-- Medium: Greedy immediate score delta.
-- Hard: Minimax (depth-limited) with alpha-beta pruning; heuristic weights corners > edges > inner tiles.
+- Medium: One-ply weighted evaluation (position, mobility, discs).
+- Hard: Iterative-deepening minimax with alpha-beta, transposition table, and a time budget.
 
 Safety considerations:
 

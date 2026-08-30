@@ -120,8 +120,9 @@ export class OthelloBot {
         return bestMove;
     }
     getHardMove(board, validMoves, options) {
-        if (validMoves.length === 1) {
-            return validMoves[0];
+        const only = validMoves[0];
+        if (validMoves.length === 1 && only) {
+            return only;
         }
         const timeLimit = options?.timeLimitMs;
         if (timeLimit && timeLimit > 0) {
@@ -134,7 +135,11 @@ export class OthelloBot {
         this.searchDeadline = start + timeLimitMs;
         const empties = countEmptySquares(board);
         const maxDepth = empties <= EXACT_ENDGAME_EMPTIES ? Math.min(12, empties + 2) : 10;
-        let bestMove = this.orderMoves(validMoves, board)[0] ?? validMoves[0];
+        const ordered = this.orderMoves(validMoves, board);
+        let bestMove = ordered[0] ?? validMoves[0];
+        if (!bestMove) {
+            throw new Error('No valid moves available');
+        }
         let completedDepth = 0;
         for (let depth = 1; depth <= maxDepth; depth++) {
             if (Date.now() - start >= timeLimitMs * 0.95)

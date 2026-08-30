@@ -89,9 +89,11 @@ function OthelloGame() {
   const blogMessageTimeout = useRef<number | null>(null);
   const timedMessageTimeout = useRef<number | null>(null);
   const engineRef = useRef<OthelloGameEngine | null>(null);
-  const aiRef = useRef<{ checkAndMakeAIMove: () => void; cancelPendingAIMove: () => void } | null>(
-    null
-  );
+  const aiRef = useRef<{
+    checkAndMakeAIMove: () => void;
+    cancelPendingAIMove: () => void;
+    scheduleAICheck: (delayMs: number) => void;
+  } | null>(null);
 
   const statsRef = useRef({
     moveTimestamps,
@@ -216,6 +218,7 @@ function OthelloGame() {
   aiRef.current = {
     checkAndMakeAIMove: ai.checkAndMakeAIMove,
     cancelPendingAIMove: ai.cancelPendingAIMove,
+    scheduleAICheck: ai.scheduleAICheck,
   };
 
   useEffect(() => {
@@ -271,7 +274,7 @@ function OthelloGame() {
     setMoveTimestamps([]);
     resetHintsForNewGame();
     resetOverlaysForNewGame();
-    window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
+    ai.scheduleAICheck(500);
   }, [game, time, ai, resetHintsForNewGame, resetOverlaysForNewGame]);
 
   const scrollToGame = useCallback(() => {
@@ -286,7 +289,7 @@ function OthelloGame() {
   const handleUndo = useCallback(() => {
     if (game.undo()) {
       setMessage(null);
-      window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
+      ai.scheduleAICheck(500);
     }
   }, [game, ai]);
 
@@ -294,7 +297,7 @@ function OthelloGame() {
     if (game.redo()) {
       const state = game.engine.getState();
       setMessage(state.isGameOver ? buildGameOverMessage(state.winner) : null);
-      window.setTimeout(() => ai.checkAndMakeAIMove(), 500);
+      ai.scheduleAICheck(500);
     }
   }, [game, ai]);
 
@@ -307,7 +310,7 @@ function OthelloGame() {
   const handleCloseSettings = useCallback(() => {
     if (game.engine.hasTimeControl() && !game.gameOver) time.resumeTime();
     setSettingsOpen(false);
-    if (!game.gameOver) window.setTimeout(() => ai.checkAndMakeAIMove(), 300);
+    if (!game.gameOver) ai.scheduleAICheck(300);
   }, [game, time, ai, setSettingsOpen]);
 
   const handleModeStart = useCallback(

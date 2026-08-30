@@ -89,4 +89,22 @@ describe('useTimeControl', () => {
     expect(result.current.timeRemaining).toBeNull();
     expect(window.localStorage.getItem('othello:timeControlEnabled')).toBe('false');
   });
+
+  test('fires onTimeout when the active clock expires', () => {
+    const engine = new OthelloGameEngine(undefined, undefined, undefined, {
+      initialTime: 50,
+      increment: 0,
+    });
+    const onTimeout = vi.fn();
+
+    renderHook(() => useTimeControl({ engine, gameOver: false, onTimeout }));
+
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(onTimeout).toHaveBeenCalled();
+    expect(engine.isGameOver()).toBe(true);
+    expect(engine.getState().endedByTimeout).toBe(true);
+  });
 });

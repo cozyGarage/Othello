@@ -27,6 +27,8 @@ export interface UseAIPlayerReturn {
   setSpectatorMode: (enabled: boolean) => void;
   checkAndMakeAIMove: () => void;
   cancelPendingAIMove: () => void;
+  /** Debounced kick; clears any prior hook-level schedule first */
+  scheduleAICheck: (delayMs: number) => void;
 }
 
 /**
@@ -169,5 +171,6 @@ export function useAIPlayer(config: UseAIPlayerConfig): UseAIPlayerReturn {
     setSpectatorMode,
     checkAndMakeAIMove,
     cancelPendingAIMove,
+    scheduleAICheck,
   };
 }

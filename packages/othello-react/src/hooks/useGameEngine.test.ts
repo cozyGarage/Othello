@@ -88,4 +88,23 @@ describe('useGameEngine', () => {
     expect(result.current.lastMove).toBeNull();
     expect(result.current.evaluationHistory).toEqual([{ move: 0, evaluation: 0 }]);
   });
+
+  test('onGameOver receives endedByTimeout from engine events', () => {
+    vi.useFakeTimers();
+    const onGameOver = vi.fn();
+    const { result } = renderHook(() => useGameEngine({ onGameOver }));
+
+    act(() => {
+      result.current.engine.configureTimeControl({ initialTime: 50, increment: 0 });
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(80);
+      result.current.engine.checkTimeout();
+    });
+
+    expect(onGameOver).toHaveBeenCalledWith('W', true);
+    expect(result.current.gameOver).toBe(true);
+    vi.useRealTimers();
+  });
 });
