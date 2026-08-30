@@ -9,12 +9,13 @@
 export { OthelloGameEngine } from './OthelloGameEngine';
 export type { Move, GameState, GameEvent, GameEventType, MoveEventData, GameOverEventData, InvalidMoveEventData, StateChangeEventData, } from './OthelloGameEngine';
 export { OthelloBot } from './OthelloBot';
-export type { BotDifficulty } from './OthelloBot';
+export type { BotDifficulty, CalculateMoveOptions } from './OthelloBot';
 export { TimeControlManager } from './TimeControlManager';
 export type { TimeControlConfig, PlayerTime, TimeControlState } from './TimeControlManager';
 export { lookupOpeningBook, getOpeningName, buildSequenceKey, moveToNotation, notationToMove, OPENING_BOOK, } from './openingBook';
 export type { OpeningBook, OpeningMove } from './openingBook';
 export { POSITION_WEIGHTS, CORNER_COORDINATES, getPositionWeight } from './positionWeights';
+export { evaluateBoardForPlayer, countEmptySquares, discDifference, exactTerminalScore, EXACT_ENDGAME_EMPTIES, TERMINAL_SCORE_SCALE, } from './evaluateBoard';
 /**
  * Tile value types
  * - 'W': White disc

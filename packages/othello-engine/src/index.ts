@@ -22,7 +22,7 @@ export type {
 
 // Re-export the AI bot
 export { OthelloBot } from './OthelloBot';
-export type { BotDifficulty } from './OthelloBot';
+export type { BotDifficulty, CalculateMoveOptions } from './OthelloBot';
 
 // Re-export time control
 export { TimeControlManager } from './TimeControlManager';
@@ -39,8 +39,16 @@ export {
 } from './openingBook';
 export type { OpeningBook, OpeningMove } from './openingBook';
 
-// Shared evaluation constants
+// Shared evaluation
 export { POSITION_WEIGHTS, CORNER_COORDINATES, getPositionWeight } from './positionWeights';
+export {
+  evaluateBoardForPlayer,
+  countEmptySquares,
+  discDifference,
+  exactTerminalScore,
+  EXACT_ENDGAME_EMPTIES,
+  TERMINAL_SCORE_SCALE,
+} from './evaluateBoard';
 
 /**
  * Tile value types

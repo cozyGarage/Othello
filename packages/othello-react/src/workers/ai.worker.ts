@@ -2,8 +2,7 @@
  * AI Web Worker
  *
  * Runs OthelloBot calculations off the main thread so the UI stays responsive.
- * For hard difficulty, uses iterative deepening: searches depth 1, 2, 3...
- * up to a time limit, posting progress updates after each depth completes.
+ * Hard difficulty uses the bot's built-in iterative deepening + time budget.
  *
  * Messages IN:  { type: 'calculate', board, difficulty, player, moveHistory, timeLimit }
  * Messages OUT: { type: 'progress', depth, nodesSearched, bestMove }
@@ -11,13 +10,7 @@
  *               { type: 'error', message }
  */
 
-import {
-  OthelloBot,
-  type Board,
-  type Coordinate,
-  type BotDifficulty,
-  getValidMoves,
-} from 'othello-engine';
+import { OthelloBot, type Board, type Coordinate, type BotDifficulty } from 'othello-engine';
 
 export interface AIWorkerRequest {
   type: 'calculate';
@@ -55,91 +48,34 @@ self.onmessage = (e: MessageEvent<AIWorkerRequest>) => {
 
   try {
     const startTime = performance.now();
+    const bot = new OthelloBot(difficulty, player);
+    let depthReached = difficulty === 'easy' ? 0 : difficulty === 'medium' ? 1 : 0;
 
-    // For easy/medium, just calculate directly — no iterative deepening needed
-    if (difficulty !== 'hard') {
-      const bot = new OthelloBot(difficulty, player);
-      const move = bot.calculateMove(board, moveHistory);
-      const elapsed = performance.now() - startTime;
+    const move =
+      difficulty === 'hard'
+        ? bot.calculateMove(board, moveHistory, {
+            timeLimitMs: timeLimit ?? 3000,
+            onDepthComplete: ({ depth, bestMove, nodesSearched }) => {
+              depthReached = depth;
+              self.postMessage({
+                type: 'progress',
+                depth,
+                nodesSearched,
+                bestMove,
+              } satisfies AIWorkerProgress);
+            },
+          })
+        : bot.calculateMove(board, moveHistory);
 
-      self.postMessage({
-        type: 'result',
-        move,
-        nodesSearched: bot.getNodesSearched(),
-        depthReached: difficulty === 'easy' ? 0 : 1,
-        timeMs: Math.round(elapsed),
-      } satisfies AIWorkerResult);
-      return;
-    }
-
-    // Hard mode: iterative deepening with time limit
-    const limit = timeLimit ?? 3000;
-    const validMoves = getValidMoves(board);
-
-    if (validMoves.length === 0) {
-      self.postMessage({
-        type: 'result',
-        move: null,
-        nodesSearched: 0,
-        depthReached: 0,
-        timeMs: 0,
-      } satisfies AIWorkerResult);
-      return;
-    }
-
-    // If only one valid move, return it immediately
-    if (validMoves.length === 1) {
-      self.postMessage({
-        type: 'result',
-        move: validMoves[0] ?? null,
-        nodesSearched: 1,
-        depthReached: 0,
-        timeMs: Math.round(performance.now() - startTime),
-      } satisfies AIWorkerResult);
-      return;
-    }
-
-    let bestMove: Coordinate | null = null;
-    let totalNodes = 0;
-    let depthReached = 0;
-    const maxDepth = 10;
-
-    // Iterative deepening: search depth 1, then 2, then 3... up to time limit
-    for (let depth = 1; depth <= maxDepth; depth++) {
-      const elapsed = performance.now() - startTime;
-      if (elapsed > limit * 0.8) break; // Leave 20% margin
-
-      const bot = new OthelloBot('hard', player);
-      bot.setSearchDepth(depth);
-      bot.clearTranspositionTable();
-
-      const move = bot.calculateMove(board, moveHistory);
-
-      if (move) {
-        bestMove = move;
-        totalNodes += bot.getNodesSearched();
-        depthReached = depth;
-      }
-
-      // Post progress after each depth
-      self.postMessage({
-        type: 'progress',
-        depth,
-        nodesSearched: totalNodes,
-        bestMove,
-      } satisfies AIWorkerProgress);
-
-      // If the search at this depth was very fast, we can go deeper
-      // If it took a significant chunk of time, the next depth will likely exceed the limit
-      const depthTime = performance.now() - startTime;
-      if (depthTime > limit * 0.5 && depth >= 5) break;
+    if (difficulty === 'hard' && depthReached === 0 && move) {
+      depthReached = bot.getSearchDepth();
     }
 
     const elapsed = performance.now() - startTime;
     self.postMessage({
       type: 'result',
-      move: bestMove,
-      nodesSearched: totalNodes,
+      move,
+      nodesSearched: bot.getNodesSearched(),
       depthReached,
       timeMs: Math.round(elapsed),
     } satisfies AIWorkerResult);

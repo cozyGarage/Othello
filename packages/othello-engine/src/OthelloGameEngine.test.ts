@@ -467,6 +467,29 @@ describe('OthelloGameEngine import/timeout hardening', () => {
     expect(engine.checkTimeout()).toBe(true);
     expect(gameOver).toBe(true);
     expect(engine.checkTimeout()).toBe(false);
+    expect(engine.isGameOver()).toBe(true);
+    expect(engine.getState().isGameOver).toBe(true);
+    expect(engine.getState().endedByTimeout).toBe(true);
+    expect(engine.getWinner()).toBe('W'); // Black's clock was running
+    expect(engine.getState().winner).toBe('W');
+  });
+
+  test('exportState round-trips clocks and timeout winner', async () => {
+    const engine = new OthelloGameEngine(undefined, undefined, undefined, {
+      initialTime: 50,
+      increment: 0,
+    });
+    await new Promise((r) => setTimeout(r, 80));
+    engine.checkTimeout();
+
+    const json = engine.exportState();
+    const restored = new OthelloGameEngine();
+    restored.importState(json);
+
+    expect(restored.isGameOver()).toBe(true);
+    expect(restored.getState().endedByTimeout).toBe(true);
+    expect(restored.getWinner()).toBe('W');
+    expect(restored.hasTimeControl()).toBe(true);
   });
 
   test('configureTimeControl attaches and removes clocks without losing board', () => {

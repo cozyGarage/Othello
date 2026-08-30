@@ -14,8 +14,9 @@ export { OthelloBot } from './OthelloBot';
 export { TimeControlManager } from './TimeControlManager';
 // Re-export opening book
 export { lookupOpeningBook, getOpeningName, buildSequenceKey, moveToNotation, notationToMove, OPENING_BOOK, } from './openingBook';
-// Shared evaluation constants
+// Shared evaluation
 export { POSITION_WEIGHTS, CORNER_COORDINATES, getPositionWeight } from './positionWeights';
+export { evaluateBoardForPlayer, countEmptySquares, discDifference, exactTerminalScore, EXACT_ENDGAME_EMPTIES, TERMINAL_SCORE_SCALE, } from './evaluateBoard';
 // Constants
 /** White player/disc constant */
 export const W = 'W';
