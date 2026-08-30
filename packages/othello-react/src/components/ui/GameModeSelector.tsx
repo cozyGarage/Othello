@@ -18,8 +18,8 @@ interface GameModeSelectorProps {
 
 const DIFFICULTY_LABELS: Record<BotDifficulty, { label: string; desc: string }> = {
   easy: { label: 'Easy', desc: 'Random moves — great for learning' },
-  medium: { label: 'Medium', desc: 'Greedy play — picks the most flips' },
-  hard: { label: 'Hard', desc: 'Minimax search — thinks ahead' },
+  medium: { label: 'Medium', desc: 'Positional 1-ply — values corners and mobility' },
+  hard: { label: 'Hard', desc: 'Timed minimax search — thinks ahead' },
 };
 
 export const GameModeSelector: React.FC<GameModeSelectorProps> = ({

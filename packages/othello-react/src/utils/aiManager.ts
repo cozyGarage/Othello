@@ -55,7 +55,7 @@ export class AIManager {
     this.cancel();
 
     if (!this.workerSupported) {
-      return this.calculateSync(board, difficulty, player, moveHistory);
+      return this.calculateSync(board, difficulty, player, moveHistory, timeLimit);
     }
 
     return new Promise<AICalculationResult>((resolve, reject) => {
@@ -66,7 +66,7 @@ export class AIManager {
       } catch {
         // Worker creation failed, fall back
         this.pendingReject = null;
-        resolve(this.calculateSync(board, difficulty, player, moveHistory));
+        resolve(this.calculateSync(board, difficulty, player, moveHistory, timeLimit));
         return;
       }
 
@@ -97,7 +97,7 @@ export class AIManager {
       this.worker.onerror = () => {
         this.cleanup();
         // Fall back to synchronous on worker error
-        resolve(this.calculateSync(board, difficulty, player, moveHistory));
+        resolve(this.calculateSync(board, difficulty, player, moveHistory, timeLimit));
       };
 
       const request: AIWorkerRequest = {
@@ -119,11 +119,15 @@ export class AIManager {
     board: Board,
     difficulty: BotDifficulty,
     player: 'W' | 'B',
-    moveHistory?: Array<{ coordinate: Coordinate }>
+    moveHistory?: Array<{ coordinate: Coordinate }>,
+    timeLimit?: number
   ): AICalculationResult {
     const start = performance.now();
     const bot = new OthelloBot(difficulty, player);
-    const move = bot.calculateMove(board, moveHistory);
+    const move =
+      difficulty === 'hard' && timeLimit && timeLimit > 0
+        ? bot.calculateMove(board, moveHistory, { timeLimitMs: timeLimit })
+        : bot.calculateMove(board, moveHistory);
     const elapsed = performance.now() - start;
 
     return {

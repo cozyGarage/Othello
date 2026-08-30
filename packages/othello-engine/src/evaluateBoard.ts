@@ -72,9 +72,13 @@ export function evaluateBoardForPlayer(
 
   const validMoves = getValidMoves(board);
   const originalPlayer = board.playerTurn;
-  board.playerTurn = board.playerTurn === 'B' ? 'W' : 'B';
-  const opponentMoves = getValidMoves(board);
-  board.playerTurn = originalPlayer;
+  let opponentMoves: ReturnType<typeof getValidMoves>;
+  try {
+    board.playerTurn = board.playerTurn === 'B' ? 'W' : 'B';
+    opponentMoves = getValidMoves(board);
+  } finally {
+    board.playerTurn = originalPlayer;
+  }
 
   let positionValue = 0;
   const size = board.tiles.length;

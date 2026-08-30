@@ -255,7 +255,7 @@ This section provides manual testing scenarios for evaluating the Othello game f
 | Difficulty | Behavior                          |
 | ---------- | --------------------------------- |
 | Easy       | Random valid moves                |
-| Medium     | Maximizes immediate score         |
+| Medium     | One-ply weighted positional eval  |
 | Hard       | Strategic, considers future moves |
 
 ---
