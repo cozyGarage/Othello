@@ -9,7 +9,6 @@ import {
   type InvalidMoveEventData,
   type GameOverEventData,
   type StateChangeEventData,
-  type PlayerTime,
   type TimeControlConfig,
   B,
   W,
@@ -41,7 +40,8 @@ export interface UseGameEngineConfig {
 }
 
 /**
- * Return type for useGameEngine hook
+ * Return type for useGameEngine hook.
+ * Clock display / presets live in useTimeControl — this hook owns the engine bridge only.
  */
 export interface UseGameEngineReturn {
   engine: OthelloGameEngine;
@@ -50,25 +50,17 @@ export interface UseGameEngineReturn {
   lastMove: Coordinate | null;
   gameOver: boolean;
   evaluationHistory: EvaluationPoint[];
-  timeRemaining: PlayerTime | null;
-  timeControlEnabled: boolean;
-  selectedTimePreset: string;
   makeMove: (coord: Coordinate) => void;
   undo: () => boolean;
   redo: () => boolean;
   canUndo: () => boolean;
   canRedo: () => boolean;
   reset: () => void;
-  setTimeControlEnabled: (enabled: boolean, config?: TimeControlConfig) => void;
-  setTimePreset: (presetId: string) => void;
-  pauseTime: () => void;
-  resumeTime: () => void;
   setGameOver: (value: boolean) => void;
   setMoveHistory: (moves: Move[]) => void;
   setLastMove: (move: Coordinate | null) => void;
   setEvaluationHistory: (history: EvaluationPoint[]) => void;
   addEvaluationPoint: (point: EvaluationPoint) => void;
-  setTimeRemaining: (time: PlayerTime | null) => void;
 }
 
 function resolveInitialTimeConfig(): TimeControlConfig | undefined {
@@ -119,9 +111,6 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
   const [evaluationHistory, setEvaluationHistory] = useState<EvaluationPoint[]>([
     { move: 0, evaluation: 0 },
   ]);
-  const [timeRemaining, setTimeRemaining] = useState<PlayerTime | null>(null);
-  const [timeControlEnabled, setTimeControlEnabledState] = useState(getTimeControlEnabled);
-  const [selectedTimePreset, setSelectedTimePresetState] = useState(getSelectedTimePreset);
 
   const onMoveRef = useRef(onMove);
   const onInvalidMoveRef = useRef(onInvalidMove);
@@ -169,7 +158,6 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
     const handleStateChangeEvent = (event: GameEvent) => {
       const { state } = event.data as StateChangeEventData;
       setBoard(state.board);
-      setTimeRemaining(engine.getTimeRemaining());
       onStateChangeRef.current?.();
     };
 
@@ -244,28 +232,6 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
     setLastMove(null);
     setGameOver(false);
     setEvaluationHistory([{ move: 0, evaluation: 0 }]);
-    setTimeRemaining(engine.getTimeRemaining());
-  }, [engine]);
-
-  const setTimeControlEnabled = useCallback(
-    (enabled: boolean, config?: TimeControlConfig) => {
-      setTimeControlEnabledState(enabled);
-      engine.configureTimeControl(enabled ? (config ?? resolveInitialTimeConfig() ?? null) : null);
-      setTimeRemaining(engine.getTimeRemaining());
-    },
-    [engine]
-  );
-
-  const setTimePreset = useCallback((presetId: string) => {
-    setSelectedTimePresetState(presetId);
-  }, []);
-
-  const pauseTime = useCallback(() => {
-    if (engine.hasTimeControl()) engine.pauseTime();
-  }, [engine]);
-
-  const resumeTime = useCallback(() => {
-    if (engine.hasTimeControl()) engine.resumeTime();
   }, [engine]);
 
   const addEvaluationPoint = useCallback((point: EvaluationPoint) => {
@@ -279,24 +245,16 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
     lastMove,
     gameOver,
     evaluationHistory,
-    timeRemaining,
-    timeControlEnabled,
-    selectedTimePreset,
     makeMove,
     undo,
     redo,
     canUndo,
     canRedo,
     reset,
-    setTimeControlEnabled,
-    setTimePreset,
-    pauseTime,
-    resumeTime,
     setGameOver,
     setMoveHistory,
     setLastMove,
     setEvaluationHistory,
     addEvaluationPoint,
-    setTimeRemaining,
   };
 }
