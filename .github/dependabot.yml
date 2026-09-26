@@ -1,13 +1,20 @@
 version: 2
 updates:
-  # Enable version updates for npm
-  - package-ecosystem: 'npm'
+  # Bun ecosystem so version bumps update bun.lock. The npm ecosystem only
+  # rewrote package.json, and `bun install --frozen-lockfile` then failed.
+  # Keep the runtime on Bun 1.3.x (lockfileVersion 1). Dependabot's updater
+  # still ships Bun 1.3.5, which mishandles lockfileVersion 2 from Bun 1.4.
+  - package-ecosystem: 'bun'
     directory: '/'
     schedule:
       interval: 'weekly'
       day: 'monday'
       time: '09:00'
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
+    cooldown:
+      semver-major-days: 7
+      semver-minor-days: 2
+      semver-patch-days: 2
     reviewers:
       - 'cozyGarage'
     assignees:
@@ -19,14 +26,29 @@ updates:
     labels:
       - 'dependencies'
       - 'automated'
-    # Keep the Vitest stack on one PR so runner + coverage providers stay aligned
     groups:
+      # Runner and coverage/UI providers must move together.
       vitest:
         patterns:
           - 'vitest'
           - '@vitest/*'
+      typescript-eslint:
+        patterns:
+          - '@typescript-eslint/*'
+      commitlint:
+        patterns:
+          - '@commitlint/*'
+      testing-library:
+        patterns:
+          - '@testing-library/*'
+      react-types:
+        patterns:
+          - '@types/react'
+          - '@types/react-dom'
     ignore:
-      # Ignore major version updates for critical build tools
+      # Majors for the toolchain are reviewed by hand. eslint-plugin-react
+      # still does not declare ESLint 10, and Vitest majors change coverage
+      # globs and the Node engine.
       - dependency-name: 'vite'
         update-types: ['version-update:semver-major']
       - dependency-name: 'typescript'
@@ -35,8 +57,19 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: 'react-dom'
         update-types: ['version-update:semver-major']
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@eslint/js'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'vitest'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@vitest/ui'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@vitest/coverage-istanbul'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@vitest/coverage-v8'
+        update-types: ['version-update:semver-major']
 
-  # Enable version updates for GitHub Actions
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
@@ -54,3 +87,11 @@ updates:
     labels:
       - 'github-actions'
       - 'automated'
+    # Fold patch/minor action bumps into one PR. Majors stay separate.
+    groups:
+      actions-non-major:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
