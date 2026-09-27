@@ -60,12 +60,14 @@ describe('useGameEngine', () => {
     });
     expect(result.current.canUndo()).toBe(true);
 
+    const pointsAfterMove = result.current.evaluationHistory.length;
     act(() => {
       expect(result.current.undo()).toBe(true);
     });
     expect(result.current.moveHistory).toHaveLength(0);
     expect(result.current.lastMove).toBeNull();
     expect(result.current.canRedo()).toBe(true);
+    expect(result.current.evaluationHistory).toHaveLength(pointsAfterMove);
 
     act(() => {
       expect(result.current.redo()).toBe(true);
