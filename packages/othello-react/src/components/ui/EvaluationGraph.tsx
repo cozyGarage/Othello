@@ -1,4 +1,5 @@
 import React from 'react';
+import { evaluationGraphMaxMove, nearestEvaluationMove } from '../../utils/gameChromeHelpers';
 import './EvaluationGraph.css';
 
 /**
@@ -51,12 +52,14 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
   const graphHeight = height - padding.top - padding.bottom;
   const totalWidth = baseWidth * zoom;
 
+  const maxMove = evaluationGraphMaxMove(history.map((point) => point.move));
+
   // Scale functions
   const scaleX = React.useCallback(
     (move: number): number => {
-      return padding.left + (move / 60) * graphWidth;
+      return padding.left + (move / maxMove) * graphWidth;
     },
-    [padding.left, graphWidth]
+    [padding.left, graphWidth, maxMove]
   );
 
   const scaleY = (evaluation: number): number => {
@@ -105,10 +108,23 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
         ` L ${scaleX(history[history.length - 1]?.move ?? 0)} ${scaleY(0)} Z`
       : '';
 
-  const handlePointClick = (move: number) => {
-    if (onMoveClick) {
-      onMoveClick(move);
-    }
+  const handlePlotClick = (event: React.MouseEvent<SVGSVGElement>) => {
+    if (!onMoveClick || history.length === 0) return;
+    const svg = event.currentTarget;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return;
+    const point = svg.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    const local = point.matrixTransform(ctm.inverse());
+    const move = nearestEvaluationMove(
+      history.map((entry) => entry.move),
+      local.x,
+      padding.left,
+      graphWidth,
+      maxMove
+    );
+    if (move !== null) onMoveClick(move);
   };
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -170,6 +186,9 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
             width={totalWidth}
             height={height}
             viewBox={`0 0 ${totalWidth} ${height}`}
+            role="img"
+            aria-label="Evaluation graph. Click a point to show that position."
+            onClick={handlePlotClick}
           >
             {/* Background */}
             <rect
@@ -234,7 +253,6 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
                 stroke={point.move === currentMove ? '#4fc3f7' : 'none'}
                 strokeWidth={2}
                 className="graph-point"
-                onClick={() => handlePointClick(point.move)}
               />
             ))}
 
@@ -255,7 +273,7 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
             </text>
 
             {/* X-axis labels roughly every 10 moves */}
-            {[0, 10, 20, 30, 40, 50, 60].map((move) => (
+            {[0, Math.round(maxMove / 2), maxMove].map((move) => (
               <text
                 key={move}
                 x={scaleX(move)}
@@ -274,7 +292,7 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({
         <div className="graph-legend">
           <span className="legend-black">⬤ Black</span>
           <span className="legend-white">⬤ White</span>
-          <span className="legend-hint">(Scroll to zoom)</span>
+          <span className="legend-hint">(Click to review · scroll to zoom)</span>
         </div>
       )}
     </div>

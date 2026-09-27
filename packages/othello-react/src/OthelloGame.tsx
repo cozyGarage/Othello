@@ -17,6 +17,7 @@ import {
 import { applyTheme, getSavedThemeId } from './config/themes';
 import { persistCompletedGame } from './utils/gameStatistics';
 import { buildGameOverMessage, buildMoveAnnouncement } from './utils/moveAnnouncements';
+import { movesToReachGraphIndex } from './utils/gameChromeHelpers';
 import {
   useGameEngine,
   useAIPlayer,
@@ -369,14 +370,21 @@ function OthelloGame() {
     blogMessageTimeout.current = window.setTimeout(() => setMessage(null), 4000);
   };
 
-  const handleGraphMoveClick = (moveNumber: number) => {
-    const undoCount = game.moveHistory.length - moveNumber;
-    if (undoCount <= 0) return;
-    for (let i = 0; i < undoCount; i++) {
-      if (!game.undo()) break;
-    }
-    setMessage(null);
-  };
+  const handleGraphMoveClick = useCallback(
+    (moveNumber: number) => {
+      const steps = movesToReachGraphIndex(game.moveHistory.length, moveNumber);
+      if (steps.undo === 0 && steps.redo === 0) return;
+      for (let i = 0; i < steps.undo; i++) {
+        if (!game.undo()) break;
+      }
+      for (let i = 0; i < steps.redo; i++) {
+        if (!game.redo()) break;
+      }
+      setMessage(null);
+      ai.scheduleAICheck(500);
+    },
+    [game, ai]
+  );
 
   const engineState = game.engine.getState();
   const currentPlayer = engineState.currentPlayer === B ? 'black' : 'white';
@@ -443,6 +451,19 @@ function OthelloGame() {
 
           <div className="below-fold">
             <BlogSection posts={blogPosts} onRead={handleBlogOpen} />
+            <section className="blog-section" id="about">
+              <div className="section-header">
+                <div>
+                  <h2>About</h2>
+                  <p className="section-subtext">
+                    Othello, also called Reversi, is played on an 8×8 board. Black moves first.
+                    Place a disc so it flanks a straight line of the opponent’s discs, and those
+                    discs flip to your color. If you have no legal move, the turn passes. The player
+                    with more discs when neither side can move wins.
+                  </p>
+                </div>
+              </div>
+            </section>
           </div>
 
           <GameOverlays

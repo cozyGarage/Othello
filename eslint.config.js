@@ -44,6 +44,7 @@ export default [
         HTMLDivElement: 'readonly',
         HTMLSpanElement: 'readonly',
         HTMLElement: 'readonly',
+        SVGSVGElement: 'readonly',
         KeyboardEvent: 'readonly',
         MessageEvent: 'readonly',
         Worker: 'readonly',
