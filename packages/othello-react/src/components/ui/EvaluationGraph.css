@@ -118,6 +118,7 @@
   display: block;
   /* Ensure min-width prevents shrinking below container */
   min-width: 100%;
+  cursor: pointer;
 }
 
 /* Axis labels */
@@ -191,7 +192,6 @@
 
   .evaluation-graph {
     width: 100%;
-    max-width: 320px;
   }
 }
 

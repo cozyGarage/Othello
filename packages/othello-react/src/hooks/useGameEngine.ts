@@ -194,7 +194,8 @@ export function useGameEngine(config: UseGameEngineConfig = {}): UseGameEngineRe
       setMoveHistory(history);
       setLastMove(history.length > 0 ? (history[history.length - 1]?.coordinate ?? null) : null);
       setGameOver(false);
-      setEvaluationHistory((prev) => prev.slice(0, history.length + 1));
+      // Keep later evaluation points so the graph can redo back to them.
+      // A new move truncates that tail in the move handler.
     }
     return success;
   }, [engine]);

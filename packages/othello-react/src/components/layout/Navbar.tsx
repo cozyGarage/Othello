@@ -14,55 +14,63 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ onPlayClick, onStatsClick }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
   const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
+    setMobileMenuOpen((open) => !open);
   };
 
   const handlePlayClick = () => {
-    setMobileMenuOpen(false);
+    closeMobileMenu();
     onPlayClick?.();
   };
 
   const handleStatsClick = () => {
-    setMobileMenuOpen(false);
+    closeMobileMenu();
     onStatsClick?.();
   };
 
   return (
     <nav className="navbar">
-      <a href="/Othello/" className="navbar-brand">
+      <a href={import.meta.env.BASE_URL} className="navbar-brand">
         ⚫⚪ Othello
       </a>
 
-      {/* Mobile action buttons removed - now in action bar below game */}
-
-      <button className="navbar-toggle" onClick={toggleMobileMenu} aria-label="Toggle menu">
+      <button
+        type="button"
+        className="navbar-toggle"
+        onClick={toggleMobileMenu}
+        aria-label="Toggle menu"
+        aria-expanded={mobileMenuOpen}
+      >
         {mobileMenuOpen ? '✕' : '☰'}
       </button>
 
       <ul className={`navbar-nav ${mobileMenuOpen ? 'open' : ''}`}>
         <li className="nav-item">
-          <a className="nav-link primary" onClick={handlePlayClick}>
+          <button type="button" className="nav-link primary" onClick={handlePlayClick}>
             ▶ Play
-          </a>
+          </button>
         </li>
         <li className="nav-item">
-          <a className="nav-link" href="#learn">
+          <a className="nav-link" href="#learn" onClick={closeMobileMenu}>
             Learn
           </a>
         </li>
         <li className="nav-item">
-          <a className="nav-link" href="#blog">
+          <a className="nav-link" href="#blog" onClick={closeMobileMenu}>
             Blog
           </a>
         </li>
         <li className="nav-item">
-          <a className="nav-link" onClick={handleStatsClick}>
+          <button type="button" className="nav-link" onClick={handleStatsClick}>
             📊 Stats
-          </a>
+          </button>
         </li>
         <li className="nav-item">
-          <a className="nav-link" href="#about">
+          <a className="nav-link" href="#about" onClick={closeMobileMenu}>
             About
           </a>
         </li>

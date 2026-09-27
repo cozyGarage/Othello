@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { clearGameRecords, getGameRecords, persistCompletedGame } from './gameStatistics';
 import { buildGameOverMessage, buildMoveAnnouncement } from './moveAnnouncements';
-import { initialHintsRemaining, resolveGameShortcut } from './gameChromeHelpers';
+import {
+  evaluationGraphMaxMove,
+  initialHintsRemaining,
+  movesToReachGraphIndex,
+  nearestEvaluationMove,
+  resolveGameShortcut,
+} from './gameChromeHelpers';
 
 describe('persistCompletedGame', () => {
   beforeEach(() => {
@@ -132,6 +138,37 @@ describe('resolveGameShortcut', () => {
     expect(resolveGameShortcut({ ...base, key: 'n', target: { tagName: 'INPUT' } })).toBeNull();
     expect(resolveGameShortcut({ ...base, key: 'z', ctrlKey: true })).toBeNull();
     expect(resolveGameShortcut({ ...base, key: 'x' })).toBeNull();
+  });
+
+  test('Escape still closes overlays when a form field is focused', () => {
+    expect(resolveGameShortcut({ ...base, key: 'Escape', target: { tagName: 'INPUT' } })).toBe(
+      'escape'
+    );
+    expect(resolveGameShortcut({ ...base, key: 'Escape', target: { tagName: 'SELECT' } })).toBe(
+      'escape'
+    );
+  });
+});
+
+describe('evaluation graph navigation', () => {
+  test('spreads early games across the chart', () => {
+    expect(evaluationGraphMaxMove([])).toBe(8);
+    expect(evaluationGraphMaxMove([0, 1, 2])).toBe(8);
+    expect(evaluationGraphMaxMove([0, 12, 24])).toBe(24);
+  });
+
+  test('maps a plot click to the nearest recorded move', () => {
+    const moves = [0, 1, 2];
+    const maxMove = evaluationGraphMaxMove(moves);
+    expect(nearestEvaluationMove(moves, 30, 30, 240, maxMove)).toBe(0);
+    expect(nearestEvaluationMove(moves, 30 + (2 / maxMove) * 240, 30, 240, maxMove)).toBe(2);
+    expect(nearestEvaluationMove([], 40, 30, 240, 8)).toBeNull();
+  });
+
+  test('counts undo and redo steps to a graph point', () => {
+    expect(movesToReachGraphIndex(4, 1)).toEqual({ undo: 3, redo: 0 });
+    expect(movesToReachGraphIndex(1, 4)).toEqual({ undo: 0, redo: 3 });
+    expect(movesToReachGraphIndex(2, 2)).toEqual({ undo: 0, redo: 0 });
   });
 });
 

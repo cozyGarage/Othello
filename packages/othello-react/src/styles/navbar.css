@@ -91,6 +91,9 @@
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
   font-weight: 500;
+  font: inherit;
+  background: transparent;
+  border: none;
   transition: all var(--transition-fast);
   cursor: pointer;
 }
@@ -162,6 +165,11 @@
     transform: translateY(0);
     opacity: 1;
     pointer-events: all;
+    visibility: visible;
+  }
+
+  .navbar-nav:not(.open) {
+    visibility: hidden;
   }
 
   .nav-link {
