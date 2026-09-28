@@ -150,6 +150,7 @@ export const PlayArea: React.FC<PlayAreaProps> = ({
               aiThinking={aiThinking}
               aiThinkingDepth={aiThinkingDepth}
               aiThinkingNodes={aiThinkingNodes}
+              onMoveClick={(index) => onGraphMoveClick(index + 1)}
             />
 
             <EvaluationGraph

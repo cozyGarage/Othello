@@ -5,6 +5,18 @@ import puzzlesData from '../../data/puzzles.json';
 import '../../styles/puzzles.css';
 
 /**
+ * Index of the first puzzle matching a difficulty filter.
+ * "all" stays on the full list; a specific difficulty must not fall back to puzzle 0.
+ */
+export function puzzleIndexForDifficulty(
+  puzzles: { difficulty: string }[],
+  difficulty: 'all' | 'easy' | 'medium' | 'hard'
+): number {
+  if (difficulty === 'all') return puzzles.length > 0 ? 0 : -1;
+  return puzzles.findIndex((puzzle) => puzzle.difficulty === difficulty);
+}
+
+/**
  * Puzzle data structure
  */
 interface Puzzle {
@@ -303,7 +315,8 @@ export const Puzzles: React.FC<PuzzlesProps> = ({ isVisible, onClose }) => {
               className={`difficulty-btn ${selectedDifficulty === diff ? 'active' : ''}`}
               onClick={() => {
                 setSelectedDifficulty(diff);
-                setCurrentPuzzleIndex(0);
+                const nextIndex = puzzleIndexForDifficulty(puzzles, diff);
+                if (nextIndex >= 0) setCurrentPuzzleIndex(nextIndex);
               }}
             >
               {diff === 'all' ? 'All' : diff.charAt(0).toUpperCase() + diff.slice(1)}

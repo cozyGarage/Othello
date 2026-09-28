@@ -167,7 +167,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="control-btn-compact"
             onClick={onUndo}
             disabled={!canUndo}
-            title="Undo (Ctrl+Z)"
+            title="Undo (Z)"
+            aria-label="Undo"
           >
             ↶
           </button>
@@ -175,7 +176,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="control-btn-compact"
             onClick={onRedo}
             disabled={!canRedo}
-            title="Redo (Ctrl+Y)"
+            title="Redo (Y)"
+            aria-label="Redo"
           >
             ↷
           </button>

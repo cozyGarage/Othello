@@ -44,6 +44,13 @@ body {
   margin-bottom: 0;
 }
 
+#learn,
+#blog,
+#about,
+#play-area {
+  scroll-margin-top: calc(var(--navbar-height) + 8px);
+}
+
 .hero {
   width: 100%;
   max-width: 1200px;
